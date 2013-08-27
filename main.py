@@ -1,4 +1,5 @@
 from SimpleCV import ImageSet, Display, Color
+
 import time
 
 class PatchFinder:
@@ -13,6 +14,7 @@ class PatchFinder:
 		self.ratios = set()
 		self.blobs()
 		self.showResults()
+		# self.histogram()
 
 
 	def getBlobs(self, img):
@@ -21,23 +23,25 @@ class PatchFinder:
 
 	def blobs(self):
 		for img in self.images:
-
-			bin = img.binarize(75)
-			bin.morphOpen()
-			blobs = bin.findBlobs(-1)
+			peak = int(img.huePeaks()[-1][0])
+			print peak, img.filename
+			peak = peak if(peak < 120) else peak / 2
+			bin = img.binarize(peak)
+			blobs = bin.findBlobs()
 			img.addDrawingLayer(bin.dl())
 			img.drawText(img.filename)
 			if blobs:
-				print img.filename
 				for b in blobs:
 					if b.isRectangle():
-						print b
 						b.show()
 						self.widths.add(b.width())
 						self.heights.add(b.height())
 						self.lengths.add(b.length())
-
 		self.images.show(3)
+
+	def histogram(self):
+		for img in self.images:
+			print ">>",img.huePeaks()[-1][0]
 
 
 
