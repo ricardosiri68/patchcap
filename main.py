@@ -6,7 +6,7 @@ import time
 class PatchFinder:
 	def __init__(self,testFolder):
 		self.images = ImageSet(testFolder)
-		self.display = Display()
+		self.display = Display((1024,768))
 		self.width = 28.3
 		self.heiht = 7.8 
 		self.ratios = set()
@@ -55,6 +55,11 @@ class PatchFinder:
 			a.sort()
 		
 		print a, len(a)
-		self.images.show(5)
+		self.showImages(5)
+
+	def showImages(self, timeout):
+		for img in self.images:
+			img.save(self.display)
+			time.sleep(timeout)
 
 PatchFinder("images/")
