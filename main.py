@@ -6,7 +6,6 @@ import time
 class PatchFinder:
 	def __init__(self,testFolder):
 		self.images = ImageSet(testFolder)
-		self.mask = Image("mask/rec.jpg").binarize(100)
 		self.display = Display()
 		self.width = 28.3
 		self.heiht = 7.8 
@@ -25,25 +24,28 @@ class PatchFinder:
 		for b in blobs:
 			self.ratios.add(b.aspectRatio())
 			# b.blobImage().save("blobs/%s.jpg" % id(b) )
-
 			b.drawRect(color=Color.RED, width=-1,alpha=128)
 			img.drawText(str(b.area()),b.x,b.y + 22,Color.BLUE,20)
 			img.drawText(str(b.aspectRatio()),b.x,b.y,Color.GREEN,20)
 
 	def validatePlateBlobs(self, blobs):
 		for b in blobs:
-			print b
-		return True
+			ratio = b.aspectRatio()
+			yield ratio > 0.2 and ratio < 5
+		
 
 	def findPlate(self, img, thresh=120):
-		bin = img.binarize(thresh)
-		img.addDrawingLayer(bin.dl())
-		blobs = list(self.blobs(bin))
-		if blobs:
-			if validatePlateBlobs(blobs):
-				self.drawBlobs(img, blobs)
-		else:
-			self.findPlate(img,thresh - 10)
+		if thresh > 50:
+			bin = img.binarize(thresh)
+			img.addDrawingLayer(bin.dl())
+			blobs = list(self.blobs(bin))
+			if blobs:
+				if True in self.validatePlateBlobs(blobs):
+					self.drawBlobs(img, blobs)
+				else:
+					self.findPlate(img,thresh - 10)
+			else:
+				self.findPlate(img,thresh - 10)
 
 
 	def run(self):
@@ -53,6 +55,6 @@ class PatchFinder:
 			a.sort()
 		
 		print a, len(a)
-		self.images.show(2)
+		self.images.show(5)
 
 PatchFinder("images/")
