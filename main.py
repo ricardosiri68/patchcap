@@ -1,5 +1,4 @@
 from SimpleCV import ImageSet, Display, Color
-
 import time
 
 
@@ -7,6 +6,7 @@ class PatchFinder:
 	def __init__(self,testFolder):
 		self.images = ImageSet(testFolder)
 		self.display = Display((1024,768))
+
 		self.width = 28.3
 		self.heiht = 7.8 
 		self.ratios = set()
@@ -23,25 +23,50 @@ class PatchFinder:
 	def drawBlobs(self, img,blobs):
 		for b in blobs:
 			self.ratios.add(b.aspectRatio())
-			# b.blobImage().save("blobs/%s.jpg" % id(b) )
 			b.drawRect(color=Color.RED, width=-1,alpha=128)
 			img.drawText(str(b.area()),b.x,b.y + 22,Color.BLUE,20)
 			img.drawText(str(b.aspectRatio()),b.x,b.y,Color.GREEN,20)
 
-	def validatePlateBlobs(self, blobs):
+	def validatePlateBlobs(self, img, blobs):
 		for b in blobs:
 			ratio = b.aspectRatio()
-			yield ratio > 0.2 and ratio < 5
-		
+			if ratio > 0.2 and ratio < 5:
+				cropImg = img.crop(
+					blobs[0].topLeftCorner()[0],
+					blobs[0].topLeftCorner()[1],
+					b.width(),
+					b.height()
+					).grayscale()
+				if self.findSimbols(cropImg):
+					yield b
+	
+	def findSimbols(self, cropImg):
+		bin = cropImg.binarize()
+		blobs = bin.findBlobs()
+		if blobs:
+			if cropImg.width > cropImg.height:
+				orc = bin.readText()
+				if orc and not orc.isspace():
+					print "ORC",orc
+					return True
+				else:
+					return False
+			else:
+				return False
+		else:
+			return False
 
 	def findPlate(self, img, thresh=120):
 		if thresh > 50:
+
 			bin = img.binarize(thresh)
 			img.addDrawingLayer(bin.dl())
 			blobs = list(self.blobs(bin))
+
 			if blobs:
-				if True in self.validatePlateBlobs(blobs):
-					self.drawBlobs(img, blobs)
+				filteredBlobs = list(self.validatePlateBlobs(img,blobs))
+				if len(filteredBlobs):
+					self.drawBlobs(img, filteredBlobs)
 				else:
 					self.findPlate(img,thresh - 10)
 			else:
