@@ -1,6 +1,7 @@
-from SimpleCV import ImageSet, Display, Color, Image
+from SimpleCV import ImageSet, Display, Color
 
-import time, math
+import time
+
 
 class PatchFinder:
 	def __init__(self,testFolder):
@@ -54,6 +55,4 @@ class PatchFinder:
 		print a, len(a)
 		self.images.show(2)
 
-
-			
 PatchFinder("images/")
