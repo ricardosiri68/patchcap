@@ -1,8 +1,10 @@
 from SimpleCV import ImageSet, Display, Color
-import time, os
+import time, os, logging
 
 class PatchFinder:
     def __init__(self,testFolder):
+        logging.basicConfig(format='%(message)s',level=logging.DEBUG)
+        #        logging.basicConfig(format='[%(levelname)s]%(asctime)s:%(message)s',level=logging.DEBUG)
         self.images = ImageSet(testFolder)
 #        self.display = Display((800,600))
         self.run()
@@ -26,7 +28,7 @@ class PatchFinder:
     def findSimbols(self, img):
         orc = img.readText()
         if orc and not orc.isspace():
-            print "ORC",orc
+            logging.info("ORC %s",orc)
             return True
         else:
             return False
@@ -44,7 +46,7 @@ class PatchFinder:
 
     def run(self):
         for img in self.images:
-            print "procesando "+os.path.splitext(os.path.basename(img.filename))[0].upper()
+            logging.debug("procesando %s",os.path.splitext(os.path.basename(img.filename))[0].upper())
             self.findPlate(img)
             self.saveImage(img)
         
