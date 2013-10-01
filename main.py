@@ -1,6 +1,6 @@
 from SimpleCV import ImageSet, Display, Color
 import time
-
+import Image as pilImage
 
 class PatchFinder:
 	def __init__(self,testFolder):
@@ -41,16 +41,11 @@ class PatchFinder:
 					yield b
 	
 	def findSimbols(self, cropImg):
-		bin = cropImg.binarize()
-		blobs = bin.findBlobs()
-		if blobs:
-			if cropImg.width > cropImg.height:
-				orc = bin.readText()
-				if orc and not orc.isspace():
-					print "ORC",orc
-					return True
-				else:
-					return False
+		if cropImg.width > cropImg.height:
+			bin = cropImg.erode().resize(246,110)
+			blobs = bin.findBlobs()
+			if blobs:
+				return True
 			else:
 				return False
 		else:
@@ -80,7 +75,7 @@ class PatchFinder:
 			a.sort()
 		
 		print a, len(a)
-		self.showImages(5)
+                self.showImages(3)
 
 	def showImages(self, timeout):
 		for img in self.images:
