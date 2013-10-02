@@ -1,0 +1,57 @@
+#Instrucciones para entrenar el tesseract para que reconozca mejor las patentes
+#http://www.cedricve.me/2013/04/12/how-to-train-tesseract/
+#http://code.google.com/p/tesseract-ocr/wiki/TrainingTesseract3
+#http://vietocr.sourceforge.net/training.html
+
+#generar box
+tesseract es.patentes.exp0.tif es.patentes.exp0 batch.nochop makebox
+
+#corregir resultado del reconocimiento
+java -Xms128m -Xmx512m -jar jTessBoxEditor.jar
+
+#entrenar con el resultado corregido
+tesseract es.patentes.exp0.tif es.patentes.exp0.box nobatch box.train
+
+#extraer el charset
+unicharset_extractor es.patentes.exp0.box
+
+#configurar la fuente
+Syntax: fontname italic bold fixed serif fraktur
+echo "patentes 0 1 1 0 0" > font_properties
+
+#clustering
+mftraining -F font_properties -U unicharset -O es.unicharset es.patentes.exp0.box.tr
+cntraining es.patentes.exp0.box.tr
+
+#renombrar segun el lang
+mv Microfeat es.Microfeat
+mv font_properties es.font_properties
+mv inttemp es.inttemp
+mv normproto es.normproto
+mv pffmtable es.pffmtable
+mv unicharset es.unicharset
+
+#Generar diccionario de palabras
+
+
+#combinar  para generar el archivo de salida
+combine_tessdata es.
+mv es.traineddata /usr/share/tessdata
+
+#crear archivos de configuracion
+
+#/usr/share/tesseract/es.patentes-words
+#listado de palabras, una por linea con palabras custom para agregar al diccionario
+
+#patron de texto a reconocer
+/usr/share/tesseract/es.patentes-patterns:
+\n\n\n \d\d\d
+
+#config file
+/usr/share/tesseract/configs/patentes:
+tessedit_char_whitelist ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890
+user_patterns_suffix patentes-patterns
+load_system_dawg F
+load_freq_dawg F
+user_words_suffix patentes-words
+
