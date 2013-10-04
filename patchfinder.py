@@ -6,7 +6,10 @@ import uuid
 
 class PatchFinder(Daemon):
     def __init__(self,testFolder):
-        super(PatchFinder,self).__init__("/tmp/patchfinder.pid", stdin = sys.stdin, stdout=sys.stdout, stderr=sys.stderr)
+        super(PatchFinder,self).__init__(
+                "/tmp/patchfinder.pid", stdin = sys.stdin,
+                stdout=sys.stdout, stderr=sys.stderr
+                )
         logging.basicConfig(format='%(message)s',level=logging.DEBUG)
         self.images = ImageSet(testFolder)
         logging.info("Iniciando aplicacion")
@@ -33,23 +36,19 @@ class PatchFinder(Daemon):
         busca 6 o mas blobs dentro de la patente y evalua sus caracteres uno por uno
         los genera y luego findSimbols los lista y los agrupa en un string
         '''
-        chars = ""
-        logging.info("segmentando A")
-        blobs = img.morphOpen().smooth().invert().findBlobs()
-        
+        blobs = img.invert().findBlobs()
+
         if blobs and len(blobs) >= 6:
-            logging.info("segmentando B %s " % len(blobs))
             # logging.debug("Se detectaron %s en la imagen %s ", len(blobs),img.filename)
             for b in blobs:
-                eroded =  b.crop().invert()
-                char = eroded.readText()
-                if not char.isspace():
-                    chars +=char
-        return chars
+                croped =  b.crop().erode(2).invert()
+                croped.show()
+                char = croped.readText()
+                if char:
+                   yield  char
 
     def findSimbols(self, img):
-        logging.info("findSimbols")
-        orc = self.findInnerChars(img)
+        orc = "".join(list(self.findInnerChars(img.copy())))
         # orc = img.readText()
         if orc:
             return orc.strip()
@@ -79,7 +78,8 @@ class PatchFinder(Daemon):
 
 
     def preProcess(self, img):
-        return (img - img.binarize()).binarize()
+        return (img - img.binarize().morphOpen()).smooth().binarize()
+
 
 
     def log(self, plate):
