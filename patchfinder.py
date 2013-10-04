@@ -15,6 +15,8 @@ class PatchFinder(Daemon):
         detected = 0
 
         for img in self.images:
+            # el valor de control del numero de patente esta alojado en el
+            # nombre del archivo
             orig = os.path.splitext(os.path.basename(img.filename))[0].upper()
             logging.debug("procesando %s", orig)
             plate = self.findPlate(img)
@@ -56,7 +58,7 @@ class PatchFinder(Daemon):
 
 
     def preProcess(self, img):
-        return (img - img.binarize().morphOpen()).smooth().binarize()
+        return (img - img.binarize()).smooth().binarize()
 
 
     def log(self, plate):
