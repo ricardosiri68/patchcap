@@ -21,17 +21,38 @@ class PatchFinder(Daemon):
             logging.debug("procesando %s", orig)
             plate = self.findPlate(img)
             if plate:
-                if plate.upper().replace(" ","")[:6] == orig:
+                output = plate.upper().replace(" ","")[:6]
+                if output == orig[:6]:
                     logging.info ("Detectada OK!")
                     detected+=1
                 self.log(plate)
         logging.debug("Detectadas correctamente %d/%d", detected, len(self.images))
 
-    
+    def findInnerChars(self,img):
+        '''
+        busca 6 o mas blobs dentro de la patente y evalua sus caracteres uno por uno
+        los genera y luego findSimbols los lista y los agrupa en un string
+        '''
+        chars = ""
+        logging.info("segmentando A")
+        blobs = img.morphOpen().smooth().invert().findBlobs()
+        
+        if blobs and len(blobs) >= 6:
+            logging.info("segmentando B %s " % len(blobs))
+            # logging.debug("Se detectaron %s en la imagen %s ", len(blobs),img.filename)
+            for b in blobs:
+                eroded =  b.crop().invert()
+                char = eroded.readText()
+                if not char.isspace():
+                    chars +=char
+        return chars
+
     def findSimbols(self, img):
-        orc = img.readText()
-        if orc and not orc.isspace():
-            return orc
+        logging.info("findSimbols")
+        orc = self.findInnerChars(img)
+        # orc = img.readText()
+        if orc:
+            return orc.strip()
         return False
 
     def findPlate(self, img):
@@ -58,7 +79,7 @@ class PatchFinder(Daemon):
 
 
     def preProcess(self, img):
-        return (img - img.binarize()).smooth().binarize()
+        return (img - img.binarize()).binarize()
 
 
     def log(self, plate):
