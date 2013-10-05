@@ -38,3 +38,5 @@ nosetests.xml
 *.mp4
 *.avi
 *.mkv
+
+blobsChars/*

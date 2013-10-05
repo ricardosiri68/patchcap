@@ -31,6 +31,17 @@ class PatchFinder(Daemon):
                 self.log(plate)
         logging.debug("Detectadas correctamente %d/%d", detected, len(self.images))
 
+    def cropInnerChar(self,blob, img):
+        '''
+        corta los blobs que se encuentran dentro del crop de la patente
+        con un padding de 3px o menos
+        '''
+        x = blob.minX() - 3 if blob.minX() > 3 else blob.minX()
+        y = blob.minY() - 3 if blob.minY() > 3 else blob.minY()
+        width = blob.width() + 6 if (blob.width() + blob.minX() + 6) < img.width else blob.width() + 3 if( blob.minX() + blob.width() + 3 ) < img.width else blob.width()
+        height = blob.height() + 6 if (blob.height() + blob.minY() + 6 ) < img.height else blob.height() + 3 if (blob.minY() + blob.height() + 3) < img.height else blob.height()
+        return img.crop(x,y,width,height)
+
     def findInnerChars(self,img):
         '''
         busca 6 o mas blobs dentro de la patente y evalua sus caracteres uno por uno
@@ -39,10 +50,11 @@ class PatchFinder(Daemon):
         blobs = img.invert().findBlobs()
 
         if blobs and len(blobs) >= 6:
-            # logging.debug("Se detectaron %s en la imagen %s ", len(blobs),img.filename)
+            if not os.path.isdir("blobsChars/%s" % id(img)):
+                os.mkdir("blobsChars/%s" % id(img))
             for b in blobs:
-                croped =  b.crop().erode(2).invert()
-                croped.show()
+                croped = self.cropInnerChar(b,img)
+                croped.save("blobsChars/%s/%s.jpg" % (id(img),id(croped)) )
                 char = croped.readText()
                 if char:
                    yield  char
@@ -51,6 +63,7 @@ class PatchFinder(Daemon):
         orc = "".join(list(self.findInnerChars(img.copy())))
         # orc = img.readText()
         if orc:
+            print orc
             return orc.strip()
         return False
 
@@ -71,7 +84,7 @@ class PatchFinder(Daemon):
 
             #para remover imperfecciones de los bordes
             #habria que ver como mejorar
-            cropImg = cropImg.crop(x=3,y=3,w=cropImg.width-6,h=cropImg.height-6)
+            #cropImg = cropImg.crop(x=3,y=3,w=cropImg.width-6,h=cropImg.height-6)
             plate = self.findSimbols(cropImg)
             if plate:
                 return plate
