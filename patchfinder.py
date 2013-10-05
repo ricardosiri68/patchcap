@@ -3,6 +3,15 @@ from SimpleCV import ImageSet, Display, Color
 from daemon import Daemon
 import os, sys, time, datetime, logging
 import uuid
+from models import *
+import string
+import tesseract
+
+tess = tesseract.TessBaseAPI()
+tess.Init(".","eng",tesseract.OEM_DEFAULT)
+tess.SetVariable("tessedit_char_whitelist", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+tess.SetPageSegMode(tesseract.PSM_SINGLE_CHAR)
+
 
 class PatchFinder(Daemon):
     def __init__(self,testFolder):
@@ -31,6 +40,68 @@ class PatchFinder(Daemon):
                 self.log(plate)
         logging.debug("Detectadas correctamente %d/%d", detected, len(self.images))
 
+    
+    def findPlate(self, img):
+        bin = self.preProcess(img)
+         
+        blobs = list((b for b in bin.findBlobs(minsize=1000) if b.isRectangle() and b.area()>1000 and 3 < b.aspectRatio() < 4))
+        if not blobs:
+            return False
+
+        for b in blobs:
+            cropImg = b.crop()
+
+            #el ocr trabaja mejor con caracteres pequenios
+            #habria que seguir probando para ver cual es la medida ideal
+#            if (cropImg.height>42): 
+#                cropImg=cropImg.resize(h=42)
+
+            #para remover imperfecciones de los bordes
+            #habria que ver como mejorar
+            #cropImg = cropImg.crop(x=3,y=3,w=cropImg.width-6,h=cropImg.height-6)
+            plate = self.findSimbols(cropImg)
+            if plate:
+                return plate
+
+    def findSimbols(self, img):
+        orc = self.findInnerChars(img)
+        if orc:
+            print orc
+            return orc.strip()
+        return False
+
+    def findInnerChars(self,img):
+        '''
+        busca 6 o mas blobs dentro de la patente y evalua sus caracteres uno por uno
+        los genera y luego findSimbols los lista y los agrupa en un string
+        '''
+        inv = img.invert()
+        blobs = inv.findBlobs()
+        if blobs and len(blobs) >= 6:
+            if not os.path.isdir("blobsChars/%s" % id(inv)):
+                os.mkdir("blobsChars/%s" % id(inv))
+            chars=''
+            i = 0
+            conf = []
+            for b in sorted(blobs, key=lambda b: b.minX()) : 
+                aspectRatio = float(b.height())/float(b.width())
+                if not 2<aspectRatio<3: continue
+                croped =  self.cropInnerChar(b,img)
+                letter_path = "blobsChars/%s/%s.jpg" % (id(inv),i) 
+                croped.save(letter_path)
+                tesseract.ProcessPagesWrapper (letter_path,tess)
+                if (i>2):
+                    tess.SetVariable("tessedit_char_whitelist", string.digits )
+                else:
+                    tess.SetVariable("tessedit_char_whitelist", string.ascii_uppercase)
+                char=tess.GetUTF8Text().strip()
+                if char:
+                    chars +=char
+                conf.append(tess.MeanTextConf())
+                i += 1
+            logging.debug(conf)
+            return chars
+        
     def cropInnerChar(self,blob, img):
         '''
         corta los blobs que se encuentran dentro del crop de la patente
@@ -40,56 +111,8 @@ class PatchFinder(Daemon):
         y = blob.minY() - 3 if blob.minY() > 3 else blob.minY()
         width = blob.width() + 6 if (blob.width() + blob.minX() + 6) < img.width else blob.width() + 3 if( blob.minX() + blob.width() + 3 ) < img.width else blob.width()
         height = blob.height() + 6 if (blob.height() + blob.minY() + 6 ) < img.height else blob.height() + 3 if (blob.minY() + blob.height() + 3) < img.height else blob.height()
-        return img.crop(x,y,width,height)
-
-    def findInnerChars(self,img):
-        '''
-        busca 6 o mas blobs dentro de la patente y evalua sus caracteres uno por uno
-        los genera y luego findSimbols los lista y los agrupa en un string
-        '''
-        blobs = img.invert().findBlobs()
-
-        if blobs and len(blobs) >= 6:
-            if not os.path.isdir("blobsChars/%s" % id(img)):
-                os.mkdir("blobsChars/%s" % id(img))
-            for b in blobs:
-                croped = self.cropInnerChar(b,img)
-                croped.save("blobsChars/%s/%s.jpg" % (id(img),id(croped)) )
-                char = croped.readText()
-                if char:
-                   yield  char
-
-    def findSimbols(self, img):
-        orc = "".join(list(self.findInnerChars(img.copy())))
-        # orc = img.readText()
-        if orc:
-            print orc
-            return orc.strip()
-        return False
-
-    def findPlate(self, img):
-        bin = self.preProcess(img)
-        
-        blobs = list((b for b in bin.findBlobs() if b.isRectangle() and b.area()>1000 and 3 < b.aspectRatio() < 4))
-        if not blobs:
-            return False
-
-        for b in blobs:
-            cropImg = b.crop()
-
-            #el ocr trabaja mejor con caracteres pequenios
-            #habria que seguir probando para ver cual es la medida ideal
-            if (cropImg.height>42): 
-                cropImg=cropImg.resize(h=42)
-
-            #para remover imperfecciones de los bordes
-            #habria que ver como mejorar
-            #cropImg = cropImg.crop(x=3,y=3,w=cropImg.width-6,h=cropImg.height-6)
-            plate = self.findSimbols(cropImg)
-            if plate:
-                return plate
-
-
+        return img.crop(x,y,width,height).smooth().resize(h=42)
+    
     def preProcess(self, img):
         return (img - img.binarize().morphOpen()).smooth().binarize()
 
