@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from SimpleCV import ImageSet, Display, Color
+from SimpleCV import ImageSet, Display, Color, Image
 from daemon import Daemon
 import os, sys, time, datetime, logging
 import uuid
@@ -23,8 +23,11 @@ class PatchFinder(Daemon):
         self.images = ImageSet(testFolder)
         logging.info("Iniciando aplicacion")
 
-    def run(self):
+    def run(self, i=None):
         detected = 0
+        if i is not None:
+            self.images = ImageSet()
+            self.images.append(Image(i))
 
         for img in self.images:
             # el valor de control del numero de patente esta alojado en el
@@ -111,10 +114,11 @@ class PatchFinder(Daemon):
         y = blob.minY() - 3 if blob.minY() > 3 else blob.minY()
         width = blob.width() + 6 if (blob.width() + blob.minX() + 6) < img.width else blob.width() + 3 if( blob.minX() + blob.width() + 3 ) < img.width else blob.width()
         height = blob.height() + 6 if (blob.height() + blob.minY() + 6 ) < img.height else blob.height() + 3 if (blob.minY() + blob.height() + 3) < img.height else blob.height()
-        return img.crop(x,y,width,height).smooth().resize(h=42)
+        return img.crop(x,y,width,height).gaussianBlur().resize(h=36)
+       
     
     def preProcess(self, img):
-        return (img - img.binarize().morphOpen()).smooth().binarize()
+        return (img - img.binarize().morphOpen()).gaussianBlur().binarize()
 
 
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from SimpleCV import ImageSet, Display, Color
-import time, os, logging
+import time, os, sys, logging
 
 from patchfinder import PatchFinder
 
@@ -24,6 +24,9 @@ from patchfinder import PatchFinder
         i.save(os.path.join(poc_dir, name))
 '''
 
+i = None
+if len(sys.argv)==2:
+    i = sys.argv[1]
 
 pf = PatchFinder("images/")
-pf.run()
+pf.run(i)
