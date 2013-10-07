@@ -6,12 +6,15 @@ import uuid
 from models import *
 import string
 import tesseract
+import cv2
 
 tess = tesseract.TessBaseAPI()
 tess.Init(".","eng",tesseract.OEM_DEFAULT)
 tess.SetVariable("tessedit_char_whitelist", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+tess.SetVariable("classify_enable_learning", "0")
+tess.SetVariable("classify_enable_adaptive_matcher", "0")
 tess.SetPageSegMode(tesseract.PSM_SINGLE_CHAR)
-
+ 
 
 class PatchFinder(Daemon):
     def __init__(self,testFolder):
@@ -53,50 +56,62 @@ class PatchFinder(Daemon):
 
         for b in blobs:
             cropImg = b.crop()
+            if b.angle()!=0:
+                cropImg = cropImg.rotate(b.angle())
 
-            #el ocr trabaja mejor con caracteres pequenios
-            #habria que seguir probando para ver cual es la medida ideal
-#            if (cropImg.height>42): 
-#                cropImg=cropImg.resize(h=42)
-
-            #para remover imperfecciones de los bordes
-            #habria que ver como mejorar
-            #cropImg = cropImg.crop(x=3,y=3,w=cropImg.width-6,h=cropImg.height-6)
-            plate = self.findSimbols(cropImg)
+            plate = self.findSimbols(cropImg, img.filename)
             if plate:
                 return plate
 
-    def findSimbols(self, img):
-        orc = self.findInnerChars(img)
+    def findSimbols(self, img, imgname):
+
+        imgname = os.path.splitext(os.path.basename(imgname))[0].upper()
+        
+        orc = self.findInnerChars(img, imgname)
+
+        tess = tesseract.TessBaseAPI()
+        tess.Init(".","eng",tesseract.OEM_DEFAULT)
+        tess.SetVariable("tessedit_char_whitelist", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        tess.SetPageSegMode(tesseract.PSM_SINGLE_BLOCK)
+        path = "blobsChars/%s/%s.jpg"%(imgname,imgname)
+        img.crop(3,3,img.width-6,img.height-6).resize(h=42).save(path) 
+        tesseract.ProcessPagesRaw(path,tess)
+        plate=tess.GetUTF8Text().strip()
+        logging.debug("%s: %s"%(imgname, plate))
+
         if orc:
-            print orc
+            logging.debug(orc)
             return orc.strip()
         return False
 
-    def findInnerChars(self,img):
+    def findInnerChars(self,img, imgname):
         '''
         busca 6 o mas blobs dentro de la patente y evalua sus caracteres uno por uno
         los genera y luego findSimbols los lista y los agrupa en un string
         '''
+
+
         inv = img.invert()
         blobs = inv.findBlobs()
         if blobs and len(blobs) >= 6:
-            if not os.path.isdir("blobsChars/%s" % id(inv)):
-                os.mkdir("blobsChars/%s" % id(inv))
+            if not os.path.isdir("blobsChars/%s" % imgname):
+                os.mkdir("blobsChars/%s" % imgname)
             chars=''
             i = 0
             conf = []
             for b in sorted(blobs, key=lambda b: b.minX()) : 
-                aspectRatio = float(b.height())/float(b.width())
-                if not 2<aspectRatio<3: continue
+                aspectRatio = float(float(b.height())/float(b.width()))
+                if not 1.75<=aspectRatio<=3: continue
                 croped =  self.cropInnerChar(b,img)
-                letter_path = "blobsChars/%s/%s.jpg" % (id(inv),i) 
+                letter_path = "blobsChars/%s/%s.jpg" % (imgname,i) 
                 croped.save(letter_path)
-                tesseract.ProcessPagesWrapper (letter_path,tess)
+                tesseract.ProcessPagesRaw(letter_path,tess)
                 if (i>2):
                     tess.SetVariable("tessedit_char_whitelist", string.digits )
+                #    tess.SetVariable("tessedit_char_blacklist", string.ascii_uppercase)
                 else:
                     tess.SetVariable("tessedit_char_whitelist", string.ascii_uppercase)
+                 #   tess.SetVariable("tessedit_char_blacklist", string.digits )
                 char=tess.GetUTF8Text().strip()
                 if char:
                     chars +=char
@@ -110,11 +125,14 @@ class PatchFinder(Daemon):
         corta los blobs que se encuentran dentro del crop de la patente
         con un padding de 3px o menos
         '''
-        x = blob.minX() - 3 if blob.minX() > 3 else blob.minX()
-        y = blob.minY() - 3 if blob.minY() > 3 else blob.minY()
-        width = blob.width() + 6 if (blob.width() + blob.minX() + 6) < img.width else blob.width() + 3 if( blob.minX() + blob.width() + 3 ) < img.width else blob.width()
-        height = blob.height() + 6 if (blob.height() + blob.minY() + 6 ) < img.height else blob.height() + 3 if (blob.minY() + blob.height() + 3) < img.height else blob.height()
-        return img.crop(x,y,width,height).gaussianBlur().resize(h=36)
+#        x = blob.minX() - 10 if blob.minX() > 10 else blob.minX()
+#        y = blob.minY() - 10 if blob.minY() > 10 else blob.minY()
+#        width = blob.width() + 20 if (blob.width() + 20) < img.width else blob.width() + 10 if( blob.width() + 10 ) < img.width else blob.width()
+#        height = blob.height() + 20 if (blob.height() + 20 ) < img.height else blob.height() + 10 if (blob.height() + 10) < img.height else blob.height()
+#       return img.crop(x,y,width,height).gaussianBlur().resize(h=50)
+        
+        new_img = Image(cv2.copyMakeBorder(blob.crop().getNumpyCv2(),20,20,20,20,cv2.BORDER_CONSTANT, value=Color.BLACK), cv2image=True).rotate90()
+        return new_img.resize(h=42).invert()
        
     
     def preProcess(self, img):
