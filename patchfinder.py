@@ -4,24 +4,19 @@ from daemon import Daemon
 import os, sys, time, datetime, logging
 import uuid
 from models import *
-import string
+from string import maketrans
 import tesseract
-import cv2
+import cv2.cv as cv
+from cv2 import copyMakeBorder, BORDER_CONSTANT 
 
-tess = tesseract.TessBaseAPI()
-tess.Init(".","eng",tesseract.OEM_DEFAULT)
-tess.SetVariable("tessedit_char_whitelist", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-tess.SetVariable("classify_enable_learning", "0")
-tess.SetVariable("classify_enable_adaptive_matcher", "0")
-tess.SetPageSegMode(tesseract.PSM_SINGLE_CHAR)
- 
 
 class PatchFinder(Daemon):
     def __init__(self,testFolder):
         super(PatchFinder,self).__init__(
-                "/tmp/patchfinder.pid", stdin = sys.stdin,
-                stdout=sys.stdout, stderr=sys.stderr
-                )
+                "/tmp/patchfinder.pid", 
+                stdin = sys.stdin, 
+                stdout=sys.stdout, 
+                stderr=sys.stderr)
         logging.basicConfig(format='%(message)s',level=logging.DEBUG)
         self.images = ImageSet(testFolder)
         logging.info("Iniciando aplicacion")
@@ -35,13 +30,13 @@ class PatchFinder(Daemon):
         for img in self.images:
             # el valor de control del numero de patente esta alojado en el
             # nombre del archivo
-            orig = os.path.splitext(os.path.basename(img.filename))[0].upper()
-            logging.debug("procesando %s", orig)
+            
+            real = os.path.splitext(os.path.basename(img.filename))[0].upper()
+            
             plate = self.findPlate(img)
             if plate:
                 output = plate.upper().replace(" ","")[:6]
-                if output == orig[:6]:
-                    logging.info ("Detectada OK!")
+                if output == real[:6]:
                     detected+=1
                 self.log(plate)
         logging.debug("Detectadas correctamente %d/%d", detected, len(self.images))
@@ -49,7 +44,6 @@ class PatchFinder(Daemon):
     
     def findPlate(self, img):
         bin = self.preProcess(img)
-         
         blobs = list((b for b in bin.findBlobs(minsize=1000) if b.isRectangle() and b.area()>1000 and 3 < b.aspectRatio() < 4))
         if not blobs:
             return False
@@ -66,7 +60,6 @@ class PatchFinder(Daemon):
     def findSimbols(self, img, imgname):
 
         imgname = os.path.splitext(os.path.basename(imgname))[0].upper()
-        
         orc = self.findInnerChars(img, imgname)
 
         tess = tesseract.TessBaseAPI()
@@ -78,12 +71,11 @@ class PatchFinder(Daemon):
         tess.SetPageSegMode(tesseract.PSM_SINGLE_BLOCK)
         path = "blobsChars/%s/%s.jpg"%(imgname,imgname)
         img.crop(3,3,img.width-6,img.height-6).resize(h=42).save(path) 
-        tesseract.ProcessPagesRaw(path,tess)
-        plate=tess.GetUTF8Text().strip()
-        logging.debug("%s: %s"%(imgname, plate))
 
+        orc = self.fix(self.findInnerChars(img, imgname))
+        
         if orc:
-            logging.debug(orc)
+            logging.debug(imgname[:6]+": "+orc)
             return orc.strip()
         return False
 
@@ -102,62 +94,57 @@ class PatchFinder(Daemon):
             chars=''
             i = 0
             conf = []
-            for b in sorted(blobs, key=lambda b: b.minX()) : 
-                aspectRatio = float(float(b.height())/float(b.width()))
-                if not 1.75<=aspectRatio<=3: continue
-                croped =  self.cropInnerChar(b,img)
-                letter_path = "blobsChars/%s/%s.jpg" % (imgname,i) 
-                croped.save(letter_path)
-                tesseract.ProcessPagesRaw(letter_path,tess)
-                if (i>2):
-                    tess.SetVariable(
-                        "tessedit_char_whitelist",
-                        string.digits)
-                #    tess.SetVariable("tessedit_char_blacklist", string.ascii_uppercase)
-                else:
-                    tess.SetVariable(
-                        "tessedit_char_whitelist",
-                        string.ascii_uppercase
-                        )
-                 #   tess.SetVariable("tessedit_char_blacklist", string.digits )
-                char=tess.GetUTF8Text().strip()
-                if char:
-                    chars +=char
-                conf.append(tess.MeanTextConf())
-                i += 1
-            logging.debug(conf)
+            tess = tesseract.TessBaseAPI()
+            tess.Init(".","eng",tesseract.OEM_DEFAULT)
+            tess.SetPageSegMode(tesseract.PSM_SINGLE_CHAR)
+
+            try:
+                for b in sorted(blobs, key=lambda b: b.minX()) : 
+                    aspectRatio = float(float(b.height())/float(b.width()))
+                    if not 1.75<=aspectRatio<=3: continue
+                    croped =  self.cropInnerChar(b,img)
+                    letter_path = "blobsChars/%s/%s.png" % (imgname,imgname[i]) 
+                    croped.save(letter_path)
+                    image = cv.LoadImage(letter_path, cv.CV_LOAD_IMAGE_UNCHANGED)
+                    tesseract.SetCvImage(image,tess)
+                    char=tess.GetUTF8Text().strip()
+                    if char:
+                        chars +=char
+                    conf.append(tess.MeanTextConf())
+                    i += 1
+                #logging.debug(conf)
+            except:
+                logging.error("Error procesando %s",imgname)
+                logging.error(sys.exc_info()[0])
             return chars
         
     def cropInnerChar(self,blob, img):
+        '''
+        corta los blobs que se encuentran dentro del blob de la patente
+        con un padding de 20px alrededor
+        '''
         
-        # corta los blobs que se encuentran dentro del crop de la patente
-        # con un padding de 3px o menos
-        #######################
-      #  x = blob.minX() - 10 if blob.minX() > 10 else blob.minX()
-      #  y = blob.minY() - 10 if blob.minY() > 10 else blob.minY()
-      #  width = blob.width() + 20 if (blob.width() + 20) < img.width else blob.width() + 10 if( blob.width() + 10 ) < img.width else blob.width()
-      #  height = blob.height() + 20 if (blob.height() + 20 ) < img.height else blob.height() + 10 if (blob.height() + 10) < img.height else blob.height()
-      # return img.crop(x,y,width,height).gaussianBlur().resize(h=50)
-        
-        new_img = Image(
-            cv2.copyMakeBorder(
-                blob.crop().getNumpyCv2(),
-                20,20,20,20,
-                cv2.BORDER_CONSTANT,
-                value=Color.BLACK),
-            cv2image=True
-            ).rotate90()
-        return new_img.resize(h=42).invert()
+        new_img = Image(copyMakeBorder(blob.crop().getNumpyCv2(),15,15,15,15,BORDER_CONSTANT, value=Color.BLACK), cv2image=True).rotate90()
+        return new_img.resize(h=50).invert().smooth()
+
        
     
     def preProcess(self, img):
         return (img - img.binarize().morphOpen()).gaussianBlur().binarize()
 
 
+    def fix(self,plate):
+        intab = "0124568"
+        outab ="OIZASGB"
+        chrtab = maketrans(intab, outab)
+        digitab = maketrans(outab, intab)
+        if not plate:
+            return None
+        return plate[:3].translate(chrtab)+plate[3:].translate(digitab)
 
     def log(self, plate):
         dt =datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-        logging.info("[%s] %s", dt, plate)
+        #logging.info("[%s] %s", dt, plate)
         #TODO: guardar en db
 
 

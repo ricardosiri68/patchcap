@@ -43,3 +43,6 @@ nosetests.xml
 *.swp
 
 blobsChars/*
+jTessBoxEditor
+ocr/pruebas
+patchcap.db
