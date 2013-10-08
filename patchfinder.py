@@ -61,10 +61,10 @@ class PatchFinder(Daemon):
 
         imgname = os.path.splitext(os.path.basename(imgname))[0].upper()
         
-        orc = self.findInnerChars(img, imgname)
-
         path = "blobsChars/%s/%s.png"%(imgname,imgname)
         img.crop(3,3,img.width-6,img.height-6).resize(h=42).save(path) 
+
+        orc = self.findInnerChars(img, imgname)
 
         if orc:
             logging.debug(imgname[:6]+": "+orc)
@@ -88,28 +88,32 @@ class PatchFinder(Daemon):
             conf = []
             tess = tesseract.TessBaseAPI()
 
-            for b in sorted(blobs, key=lambda b: b.minX()) : 
-                aspectRatio = float(float(b.height())/float(b.width()))
-                if not 1.75<=aspectRatio<=3: continue
-                croped =  self.cropInnerChar(b,img)
-                letter_path = "blobsChars/%s/%s.png" % (imgname,imgname[i]) 
-                croped.save(letter_path)
-                tess.Init(".","eng",tesseract.OEM_DEFAULT)
-                if (i>2):
-                    tess.SetVariable("tessedit_char_whitelist", string.digits )
-                    tess.SetVariable("tessedit_char_blacklist", string.ascii_uppercase)
-                else:
-                    tess.SetVariable("tessedit_char_whitelist", string.ascii_uppercase)
-                    tess.SetVariable("tessedit_char_blacklist", string.digits )
-                
-                tess.SetPageSegMode(tesseract.PSM_SINGLE_CHAR)
-                tesseract.ProcessPagesRaw(letter_path,tess)
-                char=tess.GetUTF8Text().strip()
-                if char:
-                    chars +=char
-                conf.append(tess.MeanTextConf())
-                i += 1
-            #logging.debug(conf)
+            try:
+                for b in sorted(blobs, key=lambda b: b.minX()) : 
+                    aspectRatio = float(float(b.height())/float(b.width()))
+                    if not 1.75<=aspectRatio<=3: continue
+                    croped =  self.cropInnerChar(b,img)
+                    letter_path = "blobsChars/%s/%s.png" % (imgname,imgname[i]) 
+                    croped.save(letter_path)
+                    tess.Init(".","eng",tesseract.OEM_DEFAULT)
+                    if (i>2):
+                        tess.SetVariable("tessedit_char_whitelist", string.digits )
+                        tess.SetVariable("tessedit_char_blacklist", string.ascii_uppercase)
+                    else:
+                        tess.SetVariable("tessedit_char_whitelist", string.ascii_uppercase)
+                        tess.SetVariable("tessedit_char_blacklist", string.digits )
+                    
+                    tess.SetPageSegMode(tesseract.PSM_SINGLE_CHAR)
+                    tesseract.ProcessPagesRaw(letter_path,tess)
+                    char=tess.GetUTF8Text().strip()
+                    if char:
+                        chars +=char
+                    conf.append(tess.MeanTextConf())
+                    i += 1
+                #logging.debug(conf)
+            except:
+                logging.error("Error procesando %s",imgname)
+                return None
             return chars
         
     def cropInnerChar(self,blob, img):
