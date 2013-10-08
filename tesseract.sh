@@ -1,12 +1,27 @@
 #!/bin/bash
 plate=
-for d in {0..5}; do
-    if [[ "$d" > "2.jpg" ]]; then
+dir=$PWD
+
+if [ $# > 1 ];then
+    dir=$1
+fi
+cd $dir
+rm -f *.txt
+
+pate=`basename $dir`
+i=0
+echo "analizando $pate"
+for ((i=0; i<6; i++)); do      
+    c=`echo ${pate:$i:1}`
+    if [ $i -ge 3 ]; then
         conf="digits"
     else
         conf=
     fi
-    tesseract -psm 10 $d.jpg $d $conf 1>/dev/null
-    plate="$plate`cat "$d.txt"`"
+    tesseract -psm 10 $c.png $c $conf 1>/dev/null
+    plate="$plate`cat "$c.txt"`"
 done
 echo $plate
+
+cd $OLDPWD
+
