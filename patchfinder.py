@@ -71,7 +71,10 @@ class PatchFinder(Daemon):
 
         tess = tesseract.TessBaseAPI()
         tess.Init(".","eng",tesseract.OEM_DEFAULT)
-        tess.SetVariable("tessedit_char_whitelist", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        tess.SetVariable(
+            "tessedit_char_whitelist",
+            "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            )
         tess.SetPageSegMode(tesseract.PSM_SINGLE_BLOCK)
         path = "blobsChars/%s/%s.jpg"%(imgname,imgname)
         img.crop(3,3,img.width-6,img.height-6).resize(h=42).save(path) 
@@ -85,10 +88,10 @@ class PatchFinder(Daemon):
         return False
 
     def findInnerChars(self,img, imgname):
-        '''
-        busca 6 o mas blobs dentro de la patente y evalua sus caracteres uno por uno
-        los genera y luego findSimbols los lista y los agrupa en un string
-        '''
+        
+        # busca 6 o mas blobs dentro de la patente y evalua sus caracteres uno por uno
+        # los genera y luego findSimbols los lista y los agrupa en un string
+        
 
 
         inv = img.invert()
@@ -107,10 +110,15 @@ class PatchFinder(Daemon):
                 croped.save(letter_path)
                 tesseract.ProcessPagesRaw(letter_path,tess)
                 if (i>2):
-                    tess.SetVariable("tessedit_char_whitelist", string.digits )
+                    tess.SetVariable(
+                        "tessedit_char_whitelist",
+                        string.digits)
                 #    tess.SetVariable("tessedit_char_blacklist", string.ascii_uppercase)
                 else:
-                    tess.SetVariable("tessedit_char_whitelist", string.ascii_uppercase)
+                    tess.SetVariable(
+                        "tessedit_char_whitelist",
+                        string.ascii_uppercase
+                        )
                  #   tess.SetVariable("tessedit_char_blacklist", string.digits )
                 char=tess.GetUTF8Text().strip()
                 if char:
@@ -121,17 +129,24 @@ class PatchFinder(Daemon):
             return chars
         
     def cropInnerChar(self,blob, img):
-        '''
-        corta los blobs que se encuentran dentro del crop de la patente
-        con un padding de 3px o menos
-        '''
-#        x = blob.minX() - 10 if blob.minX() > 10 else blob.minX()
-#        y = blob.minY() - 10 if blob.minY() > 10 else blob.minY()
-#        width = blob.width() + 20 if (blob.width() + 20) < img.width else blob.width() + 10 if( blob.width() + 10 ) < img.width else blob.width()
-#        height = blob.height() + 20 if (blob.height() + 20 ) < img.height else blob.height() + 10 if (blob.height() + 10) < img.height else blob.height()
-#       return img.crop(x,y,width,height).gaussianBlur().resize(h=50)
         
-        new_img = Image(cv2.copyMakeBorder(blob.crop().getNumpyCv2(),20,20,20,20,cv2.BORDER_CONSTANT, value=Color.BLACK), cv2image=True).rotate90()
+        # corta los blobs que se encuentran dentro del crop de la patente
+        # con un padding de 3px o menos
+        #######################
+      #  x = blob.minX() - 10 if blob.minX() > 10 else blob.minX()
+      #  y = blob.minY() - 10 if blob.minY() > 10 else blob.minY()
+      #  width = blob.width() + 20 if (blob.width() + 20) < img.width else blob.width() + 10 if( blob.width() + 10 ) < img.width else blob.width()
+      #  height = blob.height() + 20 if (blob.height() + 20 ) < img.height else blob.height() + 10 if (blob.height() + 10) < img.height else blob.height()
+      # return img.crop(x,y,width,height).gaussianBlur().resize(h=50)
+        
+        new_img = Image(
+            cv2.copyMakeBorder(
+                blob.crop().getNumpyCv2(),
+                20,20,20,20,
+                cv2.BORDER_CONSTANT,
+                value=Color.BLACK),
+            cv2image=True
+            ).rotate90()
         return new_img.resize(h=42).invert()
        
     
