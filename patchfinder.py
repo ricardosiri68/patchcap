@@ -17,9 +17,11 @@ class PatchFinder(Daemon):
                 stdin = sys.stdin, 
                 stdout=sys.stdout, 
                 stderr=sys.stderr)
+
         logging.basicConfig(format='%(message)s',level=logging.DEBUG)
         self.images = ImageSet(testFolder)
         logging.info("Iniciando aplicacion")
+        self.configTess()
 
     def run(self, i=None):
         detected = 0
@@ -30,18 +32,20 @@ class PatchFinder(Daemon):
         for img in self.images:
             # el valor de control del numero de patente esta alojado en el
             # nombre del archivo
+            detected+=self.comparePlate(img)
             
-            real = os.path.splitext(os.path.basename(img.filename))[0].upper()
-            
-            plate = self.findPlate(img)
-            if plate:
-                output = plate.upper().replace(" ","")[:6]
-                if output == real[:6]:
-                    detected+=1
-                self.log(plate)
         logging.debug("Detectadas correctamente %d/%d", detected, len(self.images))
 
-    
+    def comparePlate(self, img):
+        real = os.path.splitext(os.path.basename(img.filename))[0].upper()
+        plate = self.findPlate(img)
+        if plate:
+            output = plate.upper().replace(" ","")[:6]
+            self.log(plate)
+            if output == real[:6]:
+                return 1
+        return 0
+                
     def findPlate(self, img):
         bin = self.preProcess(img)
         blobs = list((b for b in bin.findBlobs(minsize=1000) if b.isRectangle() and b.area()>1000 and 3 < b.aspectRatio() < 4))
@@ -49,26 +53,21 @@ class PatchFinder(Daemon):
             return False
 
         for b in blobs:
-            cropImg = b.crop()
-            if b.angle()!=0:
-                cropImg = cropImg.rotate(b.angle())
+            return self.checkBlob(img,b)
 
-            plate = self.findSimbols(cropImg, img.filename)
-            if plate:
-                return plate
+    def checkBlob(self,img, blob):
+        cropImg = blob.crop()
+        if blob.angle()!=0:
+            cropImg = cropImg.rotate(blob.angle())
+
+        plate = self.findSimbols(cropImg, img.filename)
+        if plate:
+            return plate
 
     def findSimbols(self, img, imgname):
 
         imgname = os.path.splitext(os.path.basename(imgname))[0].upper()
-        orc = self.findInnerChars(img, imgname)
-
-        tess = tesseract.TessBaseAPI()
-        tess.Init(".","eng",tesseract.OEM_DEFAULT)
-        tess.SetVariable(
-            "tessedit_char_whitelist",
-            "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            )
-        tess.SetPageSegMode(tesseract.PSM_SINGLE_BLOCK)
+        
         path = "blobsChars/%s/%s.jpg"%(imgname,imgname)
         img.crop(3,3,img.width-6,img.height-6).resize(h=42).save(path) 
 
@@ -78,6 +77,17 @@ class PatchFinder(Daemon):
             logging.debug(imgname[:6]+": "+orc)
             return orc.strip()
         return False
+
+    def configTess(self):
+        # confirmame si es mejor o no configurar una sola vez el tesseract
+        # en en el constructor
+        self.tessConf = tesseract.TessBaseAPI()
+        self.tessConf.Init(".","eng",tesseract.OEM_DEFAULT)
+        self.tessConf.SetVariable(
+            "tessedit_char_whitelist",
+            "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            )
+        self.tessConf.SetPageSegMode(tesseract.PSM_SINGLE_BLOCK)
 
     def findInnerChars(self,img, imgname):
         
@@ -94,9 +104,9 @@ class PatchFinder(Daemon):
             chars=''
             i = 0
             conf = []
-            tess = tesseract.TessBaseAPI()
-            tess.Init(".","eng",tesseract.OEM_DEFAULT)
-            tess.SetPageSegMode(tesseract.PSM_SINGLE_CHAR)
+            # tess = tesseract.TessBaseAPI()
+            # tess.Init(".","eng",tesseract.OEM_DEFAULT)
+            # tess.SetPageSegMode(tesseract.PSM_SINGLE_CHAR)
 
             try:
                 for b in sorted(blobs, key=lambda b: b.minX()) : 
@@ -106,11 +116,11 @@ class PatchFinder(Daemon):
                     letter_path = "blobsChars/%s/%s.png" % (imgname,imgname[i]) 
                     croped.save(letter_path)
                     image = cv.LoadImage(letter_path, cv.CV_LOAD_IMAGE_UNCHANGED)
-                    tesseract.SetCvImage(image,tess)
-                    char=tess.GetUTF8Text().strip()
+                    tesseract.SetCvImage(image,self.tessConf)
+                    char=self.tessConf.GetUTF8Text().strip()
                     if char:
                         chars +=char
-                    conf.append(tess.MeanTextConf())
+                    conf.append(self.tessConf.MeanTextConf())
                     i += 1
                 #logging.debug(conf)
             except:
