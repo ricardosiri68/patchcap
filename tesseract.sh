@@ -13,7 +13,7 @@ i=0
 echo "analizando $pate"
 for ((i=0; i<6; i++)); do      
     c=`echo ${pate:$i:1}`
-    if [ $i -ge 3 ]; then
+    if [ $i -ge 7 ]; then
         conf="digits"
     else
         conf=

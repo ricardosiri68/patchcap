@@ -6,8 +6,8 @@ import uuid
 from models import *
 import string
 import tesseract
-import cv2
-
+import cv2.cv as cv
+from cv2 import copyMakeBorder, BORDER_CONSTANT 
 
 
 class PatchFinder(Daemon):
@@ -87,6 +87,8 @@ class PatchFinder(Daemon):
             i = 0
             conf = []
             tess = tesseract.TessBaseAPI()
+            tess.Init(".","eng",tesseract.OEM_DEFAULT)
+            tess.SetPageSegMode(tesseract.PSM_SINGLE_CHAR)
 
             try:
                 for b in sorted(blobs, key=lambda b: b.minX()) : 
@@ -95,16 +97,14 @@ class PatchFinder(Daemon):
                     croped =  self.cropInnerChar(b,img)
                     letter_path = "blobsChars/%s/%s.png" % (imgname,imgname[i]) 
                     croped.save(letter_path)
-                    tess.Init(".","eng",tesseract.OEM_DEFAULT)
-                    if (i>2):
-                        tess.SetVariable("tessedit_char_whitelist", string.digits )
-                        tess.SetVariable("tessedit_char_blacklist", string.ascii_uppercase)
-                    else:
-                        tess.SetVariable("tessedit_char_whitelist", string.ascii_uppercase)
-                        tess.SetVariable("tessedit_char_blacklist", string.digits )
-                    
-                    tess.SetPageSegMode(tesseract.PSM_SINGLE_CHAR)
-                    tesseract.ProcessPagesRaw(letter_path,tess)
+#                    if (i>2):
+#                        tess.SetVariable("tessedit_char_whitelist", string.digits )
+#                        tess.SetVariable("tessedit_char_blacklist", string.ascii_uppercase)
+#                    else:
+#                        tess.SetVariable("tessedit_char_whitelist", string.ascii_uppercase)
+#                        tess.SetVariable("tessedit_char_blacklist", string.digits )
+                    image = cv.LoadImage(letter_path, cv.CV_LOAD_IMAGE_UNCHANGED)
+                    tesseract.SetCvImage(image,tess)
                     char=tess.GetUTF8Text().strip()
                     if char:
                         chars +=char
@@ -113,7 +113,7 @@ class PatchFinder(Daemon):
                 #logging.debug(conf)
             except:
                 logging.error("Error procesando %s",imgname)
-                return None
+                logging.error(sys.exc_info()[0])
             return chars
         
     def cropInnerChar(self,blob, img):
@@ -122,7 +122,7 @@ class PatchFinder(Daemon):
         con un padding de 20px alrededor
         '''
         
-        new_img = Image(cv2.copyMakeBorder(blob.crop().getNumpyCv2(),15,15,15,15,cv2.BORDER_CONSTANT, value=Color.BLACK), cv2image=True).rotate90()
+        new_img = Image(copyMakeBorder(blob.crop().getNumpyCv2(),15,15,15,15,BORDER_CONSTANT, value=Color.BLACK), cv2image=True).rotate90()
         return new_img.resize(h=50).invert().smooth()
        
     
