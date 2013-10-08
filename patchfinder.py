@@ -4,7 +4,7 @@ from daemon import Daemon
 import os, sys, time, datetime, logging
 import uuid
 from models import *
-import string
+from string import maketrans
 import tesseract
 import cv2.cv as cv
 from cv2 import copyMakeBorder, BORDER_CONSTANT 
@@ -64,8 +64,8 @@ class PatchFinder(Daemon):
         path = "blobsChars/%s/%s.png"%(imgname,imgname)
         img.crop(3,3,img.width-6,img.height-6).resize(h=42).save(path) 
 
-        orc = self.findInnerChars(img, imgname)
-
+        orc = self.fix(self.findInnerChars(img, imgname))
+        
         if orc:
             logging.debug(imgname[:6]+": "+orc)
             return orc.strip()
@@ -97,12 +97,6 @@ class PatchFinder(Daemon):
                     croped =  self.cropInnerChar(b,img)
                     letter_path = "blobsChars/%s/%s.png" % (imgname,imgname[i]) 
                     croped.save(letter_path)
-#                    if (i>2):
-#                        tess.SetVariable("tessedit_char_whitelist", string.digits )
-#                        tess.SetVariable("tessedit_char_blacklist", string.ascii_uppercase)
-#                    else:
-#                        tess.SetVariable("tessedit_char_whitelist", string.ascii_uppercase)
-#                        tess.SetVariable("tessedit_char_blacklist", string.digits )
                     image = cv.LoadImage(letter_path, cv.CV_LOAD_IMAGE_UNCHANGED)
                     tesseract.SetCvImage(image,tess)
                     char=tess.GetUTF8Text().strip()
@@ -130,6 +124,14 @@ class PatchFinder(Daemon):
         return (img - img.binarize().morphOpen()).gaussianBlur().binarize()
 
 
+    def fix(self,plate):
+        intab = "0124568"
+        outab ="OIZASGB"
+        chrtab = maketrans(intab, outab)
+        digitab = maketrans(outab, intab)
+        if not plate:
+            return None
+        return plate[:3].translate(chrtab)+plate[3:].translate(digitab)
 
     def log(self, plate):
         dt =datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
