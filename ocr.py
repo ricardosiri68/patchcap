@@ -14,6 +14,9 @@ class Ocr(object):
         self.api.SetPageSegMode(tesseract.PSM_SINGLE_CHAR)
         self.reset()
 
+    def __del__(self):
+        self.reset()
+
     def reset(self):
         self.confidence = []
         self.plate = ''
@@ -68,14 +71,17 @@ class Ocr(object):
             return None
         return c.strip().translate(tab)
 
-    def __loadImage(self, path):
-        if not os.path.isfile(path):
-            raise IOError("File %s not found"%(path))
+    def __loadImage(self, img):
+        is_path = isinstance(img, basestring)
+        if is_path and not os.path.isfile(img):
+            raise IOError("File %s not found"%(img))
         try:
-            self.image = cv.LoadImage(path, cv.CV_LOAD_IMAGE_UNCHANGED)
+            if is_path:
+                self.image = cv.LoadImage(img, cv.CV_LOAD_IMAGE_UNCHANGED)
+            else:
+                self.image = cv.GetImage(img)
             tesseract.SetCvImage(self.image,self.api)
             return True 
         except:
-            logger.error("Error seteando imagen a tesseract: %s",path)
+            logger.error("Error seteando imagen a tesseract: %s", img)
             return False
-

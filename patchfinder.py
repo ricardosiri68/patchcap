@@ -44,7 +44,7 @@ class PatchFinder(Daemon):
             real = os.path.splitext(os.path.basename(img.filename))[0].upper()
             detected+=self.comparePlate(img)
             
-        logger.debug("Detectadas correctamente %d/%d", detected, len(self.images))
+        logger.info("Detectadas correctamente %d/%d", detected, len(self.images))
 
     def comparePlate(self, img):
         real = os.path.splitext(os.path.basename(img.filename))[0].upper()
@@ -109,18 +109,15 @@ class PatchFinder(Daemon):
                 aspectRatio = float(float(b.height())/float(b.width()))
                 if not 1.75<=aspectRatio<=3: continue
                 croped =  self.cropInnerChar(b,img)
-                tmp_path = "blobsChars/%s/%s-%s-%s-%s.png" % (imgname,b.height(),b.width(),b.minX(), b.minY())
-                croped.save(tmp_path)
+                ipl_img = croped.getBitmap()
                 if (i>2):
-                    readed = self.ocr.readDigit(tmp_path)
+                    readed = self.ocr.readDigit(ipl_img)
                 else:
-                    readed = self.ocr.readText(tmp_path)
-                if readed:
+                    readed = self.ocr.readText(ipl_img)
+                if readed and logger.isEnabledFor(logging.DEBUG):
                     path = "blobsChars/%s/%s-%s.png" % (imgname,readed,i)
-                    os.rename(tmp_path, path)
+                    croped.save(path)
                 i += 1
-                        
-            
             return self.ocr.text()
         
     
@@ -139,7 +136,7 @@ class PatchFinder(Daemon):
 
     def log(self, plate):
         dt =datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-        #logger.info("[%s] %s", dt, plate)
+        logger.info(plate)
         #TODO: guardar en db
 
 

@@ -14,7 +14,7 @@ def setup():
     rotating_file.setLevel(logging.WARNING)
 
     logger = logging.getLogger('')
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     logger.addHandler(console)
     logger.addHandler(rotating_file)
 
