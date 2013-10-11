@@ -46,3 +46,4 @@ blobsChars/*
 jTessBoxEditor
 ocr/pruebas
 patchcap.db
+logs/*.log.*
