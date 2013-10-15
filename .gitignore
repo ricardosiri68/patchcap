@@ -42,6 +42,7 @@ nosetests.xml
 *.mkv
 *.swp
 
+logs/*
 blobsChars/*
 jTessBoxEditor
 ocr/pruebas
