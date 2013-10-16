@@ -53,6 +53,7 @@ class PatchFinder(Daemon):
             output = plate.upper().replace(" ","")[:6]
             self.log(plate)
             if output == real[:6]:
+                logger.debug("\033[92m"+output+": OK \033[0m")
                 return 1
         return 0
                 
@@ -80,7 +81,7 @@ class PatchFinder(Daemon):
     def findSimbols(self, img, imgname):
 
         img_name = os.path.splitext(os.path.basename(imgname))[0].upper()
-
+        
         if logger.isEnabledFor(logging.DEBUG):
             if not os.path.isdir("blobsChars/%s" % img_name):
                 os.mkdir("blobsChars/%s" % img_name)
@@ -126,7 +127,15 @@ class PatchFinder(Daemon):
         corta los blobs que se encuentran dentro del blob de la patente
         con un padding de 20px alrededor
         '''
-        new_img = Image(copyMakeBorder(blob.crop().getNumpyCv2(),15,15,15,15,BORDER_CONSTANT, value=Color.BLACK), cv2image=True).rotate90()
+        new_img = Image(
+            copyMakeBorder(
+            
+                blob.crop().getNumpyCv2(),
+                15,15,15,15,BORDER_CONSTANT, 
+                value=Color.BLACK),
+            
+            cv2image=True).rotate90()
+
         return new_img.resize(h=50).invert().smooth()
 
     
