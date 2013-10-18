@@ -145,8 +145,8 @@ class PatchFinder(Daemon):
 
     def log(self, plate):
         dt =datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-        logger.info(plate)
-        #TODO: guardar en db
+        # logger.info(plate)
+        # TODO: guardar en db
 
 
 if __name__ == "__main__":
