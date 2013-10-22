@@ -12,7 +12,8 @@ class MakeTiff:
 
 
 	def __init__(self):
-		self.__output = Image.new("RGB",(1200,self.sizeRows()*50))
+		self.__output = Image.new("RGB",(1200,self.sizeRows()*50),"white")
+		self.insertPNGs();
 
 	def isPNG(self, f):
 		return f.split(".")[1].upper() == "PNG"
@@ -31,14 +32,45 @@ class MakeTiff:
 		return self.__widths
 
 	def sizeCol(self):
-		return 1200//max(list(self.getWidths()))
+		return 1200//self.getColPx()
+
+	def getColPx(self):
+		return max(list(self.getWidths()))
 
 	def sizeRows(self):
 		return len(list(self.getPNGs()))//self.sizeCol()
 
-	def getRowList(self):
+	def rows(self):
+		row = [];
+		col = 0;
+		for png in self.getPNGs():
+			if col < 26:
+				row.append(png)
+				col += 1
+			else:
+				col = 0
+				yield row
+				row = []
+
+	def insertPNG(self, x,y, png):
+		print "INSERTING on (%s,%s) %s" % (x,y,png)
+		p = Image.open(png)
+		self.__output.paste(p,(x,y))
+
+	def insertPNGs(self):
+		w = self.getColPx()
+		y = 0
+		for row in self.rows():
+			x = 0
+			for png in row:
+				self.insertPNG(x*w,y*50,png)
+				x += 1
+			y += 1
+		self.__output.save("treaning-tiff.png")
 
 
+
+		
 
 if __name__ == "__main__":
 	MakeTiff()
