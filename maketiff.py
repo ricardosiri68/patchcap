@@ -13,6 +13,7 @@ class MakeTiff:
 
 	def __init__(self):
 		self.__output = Image.new("RGB",(1200,self.sizeRows()*50),"white")
+		print "se capturaron: %s caracteres" % len(list(self.getPNGs()))
 		self.insertPNGs();
 
 	def isPNG(self, f):
