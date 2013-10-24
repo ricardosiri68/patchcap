@@ -1,0 +1,69 @@
+<%namespace file="/base/uiHelpers.html" import="pager"/>
+<%namespace file="/base/confirmModal.html" import="delete_modal"/>
+
+<div class="list-partial">
+	% if len(brands):
+		<table class="condensed-table zebra-striped sortable">
+			<thead>
+				<tr>
+				    <th>
+						${self.sortable('name')}
+					</th>
+					<th style="width: 130px;"></th>
+				</tr>
+			</thead>
+			<tbody>
+				% for item in brands:
+		        <tr>
+			        <td valign="top">
+						<a href="/brands/${item.id}/edit">       	
+			        		${item.name}
+			        	</a>
+			        </td>
+			        <td valign="top">
+			        	<a class="btn" href="/brands/${item.id}/edit" style="height: 14px;">
+			        		Editar
+			        	</a>
+			        	<a class="btn" style="height: 14px;" data-controls-modal="confirm-modal" 
+			        		data-backdrop="true" data-keyboard="true" 
+			        		href="javascript:;" 
+			        		onclick="$('#confirm-modal #delete').attr('href', 
+			        			'/brands/' + ${item.id} + '/delete');">
+						    Borrar	
+			        	</a>
+			        </td>
+				</tr>
+				% endfor
+			</tbody>
+		</table>
+		
+		## pager	
+	    ${pager(brands)}
+		
+	% else:
+	<p>
+		No se encontraron Marcas!
+	</p>
+	% endif
+
+	## delete confirm modal dialog	
+    ${delete_modal("Esta seguro que desea eliminar esta marca?")}
+    
+</div>
+
+<%def name="sortable(column)">
+    <% sort_column = request.GET.get("sort") if request.GET.get("sort") else "name" %>
+    <% sort_direction = request.GET.get("direction") if request.GET.get("direction") else "asc" %>  
+	<% css_class = "" %>
+	% if (column == sort_column):
+		<% css_class = "current " + sort_direction %>
+	% endif
+	
+	<% direction = "asc" %>
+	% if (column == sort_column and sort_direction == "asc"):
+		<% direction = "desc" %>
+	% endif
+
+		<a href="${request.route_url('brand_list')}?sort=${column}&direction=${direction}" 
+			class="${css_class}">Name</a>
+</%def>

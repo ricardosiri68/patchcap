@@ -1,0 +1,33 @@
+<%inherit file="/base/index.html" />
+
+<div class="page-header">
+  	<h1>${dashboard}</h1>
+</div>
+
+<div class="row show-grid">
+	<div class="span5">
+		<h4>Monitor</h4>
+		<a class="btn" style="margin-right:10px; height:15px;" 
+			href="${request.route_url('device_view',id=0)}">Ver Registros »</a>
+		<br/>	
+		<br/>	
+	</div>
+	<div class="span4">
+		<h4>Patentes</h4>
+		<a class="btn" style="margin-right:10px; height:15px;" 
+			href="${request.route_url('plate_list')}">Ver Patentes »</a>
+		<br/>	
+		<br/>	
+		<a class="btn primary" style="margin-right:10px; height:15px;" 
+			href="${request.route_url('plate_new')}">Agregar Patente »</a>
+	</div>
+	<div class="span4">
+		<h4>Marcas</h4>
+		<a class="btn" style="margin-right:10px; height:15px;" 
+			href="${request.route_url('brand_list')}">Ver Marcas »</a>
+		<br/>	
+		<br/>	
+		<a class="btn primary" style="margin-right:10px; height:15px;" 
+			href="${request.route_url('brand_new')}">Agregar Marca »</a>
+	</div>
+</div>

@@ -1,0 +1,21 @@
+<%inherit file="/base/index.html" />
+<%namespace file="listPartial.html" name="listPartial" import="*"/>
+
+<div class="page-header">
+	<h1 class="pull-left">Patentes</h1>
+  	<div class="pull-right">
+		<a class="btn primary" style="margin-right:10px; height:15px;" 
+			href="${request.route_url('plate_new')}">Agregar Patente</a>
+		<div id="quicksearch" class="search-box">
+			<form method="get" action="${request.route_url('plate_list')}">
+				<input name="search" type="text" value="" placeholder="Buscar">
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="row">
+	<div class="span14">
+	    <%include file="listPartial.html"/>
+  </div>
+</div>

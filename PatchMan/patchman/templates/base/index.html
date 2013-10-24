@@ -1,0 +1,91 @@
+## -*- coding:utf-8 -*-
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Patchap Manager</title>
+    <meta name="description" content="">
+    <meta name="author" content="">
+    
+    <script src="${request.static_url('patchman:static/js/jquery-1.7.min.js')}"></script>
+    <script src="${request.static_url('patchman:static/js/bootstrap-alerts.js')}"></script>
+    <script src="${request.static_url('patchman:static/js/bootstrap-modal.js')}"></script>
+    <script src="${request.static_url('patchman:static/js/bootstrap-tabs.js')}"></script>
+    
+    <!-- not used 
+    <script src="/static/js/bootstrap-twipsy.js"></script>
+    <script src="/static/js/bootstrap-popover.js"></script>
+    <script src="/static/js/bootstrap-dropdown.js"></script>
+    <script src="/static/js/bootstrap-scrollspy.js"></script>
+    <script src="/static/js/bootstrap-buttons.js"></script>
+    -->
+    
+	<link rel="stylesheet" href="${request.static_url('patchman:static/css/bootstrap.css')}">    
+	<link rel="stylesheet" href="${request.static_url('patchman:static/css/main.css')}">    
+	
+</head>
+<%
+from pyramid.security import authenticated_userid 
+user_id = authenticated_userid(request)
+%>
+<body>
+	<div class="topbar">
+      <div class="fill">
+        <div class="container">
+          <a class="brand" href="${request.route_url('home')}">Patchcap Manager</a>
+          <ul class="nav">
+            <li class="active"><a href="${request.route_url('home')}">Home</a></li>
+            <li><a href="${request.route_url('device_view',id=0)}">Monitor</a></li>
+            <li><a href="${request.route_url('plate_list')}">Patentes</a></li>
+            <li><a href="${request.route_url('brand_list')}">Marcas</a></li>
+          </ul>
+          <p class="pull-right">
+            % if user_id:
+	            Welcome <strong>${user_id}</strong> :: 
+	            <a href="${request.route_url('auth',action='out')}">Sign Out</a>
+            %else:
+	            <form action="${request.route_url('auth',action='in')}" method="post" class="form-inline">
+                    <input id="_csrf" type="hidden" value="${request.session.get_csrf_token()}" name="_csrf">
+	            <input type="text" name="username" class="input-small" placeholder="usuarip">
+	            <input type="password" name="password" class="input-small" placeholder="clave">
+	            <input type="submit" value="Log in" class="btn">
+	            </form>
+            %endif
+          </p>
+        </div>
+      </div>
+    </div>
+	
+    <div class="container">
+      <div class="content">
+		${self.flash_messages()}
+   		${next.body()}
+      </div>
+
+      <footer>
+        <p>
+        	patchcap Manager ver: 1.0 Copyright &copy; 2013  MVS4 
+        	<a href="http://mirich.com.ar" target="_blank">mirich.com.ar</a>.
+        </p>
+      </footer>
+
+    </div> <!-- /container -->
+	
+</body>
+</html>
+
+<%def name="flash_messages()">
+	% if request.session.peek_flash():
+	
+		<% flash = request.session.pop_flash() %>
+		% for message in flash:
+		<div class="alert-message ${message.split(';')[0]} fade in" data-alert="alert">
+			<a class="close" href="#">&times;</a>
+			<p>
+				${message.split(";")[1]}<br>
+			</p>
+		</div>
+		% endfor
+
+	% endif
+</%def>
