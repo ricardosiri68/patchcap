@@ -1,0 +1,43 @@
+<%namespace file="/base/uiHelpers.html" import="validate_errors"/>
+
+${form.csrf_token()}
+
+<ul data-tabs="tabs" class="tabs">
+	<li class="active"><a href="#general">General</a></li>
+	<li class=""><a href="#car">Auto</a></li>
+	<li class=""><a href="#notes">Notas</a></li>
+</ul>
+
+<div class="tab-content" id="my-tab-content">
+	<div id="general" class="tab-pane active">
+		<div class="${'clearfix error' if form.errors_for('code') else 'clearfix'}">
+			<label for="code">Patente</label>
+			<div class="input">
+				${form.text("code", class_="small", maxlength="6")}
+				${validate_errors("code")}
+			</div>
+		</div>
+	</div>
+	
+	<div id="car" class="tab-pane">
+		<div class="clearfix">
+			<label for="brand_id">Marca</label>
+			<div class="input">
+			    ${form.select("brand_id", 
+			    	id="brand_id",
+			        options=brands, 
+			        prompt="Seleccionar Marca")}
+			</div>
+		</div>
+	</div>
+	
+	<div id="notes" class="tab-pane">
+		<div class="clearfix">
+			<label for="notes">Notas</label>
+			<div class="input">
+				${form.textarea("notes", class_="xlarge", cols="40", rows="10")}
+			</div>
+		</div>
+	</div>
+    
+</div>

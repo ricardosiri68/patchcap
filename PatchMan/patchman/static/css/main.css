@@ -1,0 +1,101 @@
+/* 
+ * main app css
+ */
+
+/* search box */
+.search-box {
+    display: inline-block;
+    height: 24px;
+    padding-left: 10px;
+    margin-right: 10px;
+    vertical-align: top;
+    width: 180px;
+}
+
+.search-box input {
+    background: url("/static/images/12/search.png") no-repeat scroll 5px center padding-box #FFFFFF;
+    border: 1px solid rgba(0, 0, 0, 0.33);
+    border-radius: 12px 12px 12px 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) inset, 0 1px 0 rgba(255, 255, 255, 0.33);
+    height: 20px;
+    padding: 5px 5px 0 20px;
+    width: 100%;
+}
+
+/* sortable table captions */
+.sortable th .current {
+	padding-right: 12px;
+	background-repeat: no-repeat;
+	background-position: right center;
+}
+
+.sortable th .asc {
+	background-image: url("/static/images/12/up_arrow.gif");
+}
+
+.sortable th .desc {
+	background-image: url("/static/images/12/down_arrow.gif");
+}
+
+/* paginate */
+.pager {
+	float: right;
+
+
+}
+
+
+ /* Override some defaults */
+      html, body {
+        background-color: #eee;
+      }
+      body {
+        padding-top: 40px; /* 40px to make the container go all the way to the bottom of the topbar */
+      }
+      .container > footer p {
+        text-align: center; /* center align it with the container */
+      }
+      .container {
+        width: 820px; /* downsize our container to make the content feel a bit tighter 
+        				and more cohesive. NOTE: this removes two full columns from the 
+        				grid, meaning you only go to 14 columns and not 16. */
+      }
+
+      /* The white background content wrapper */
+      .container > .content {
+        background-color: #fff;
+        padding: 20px;
+        margin: 0 -20px; /* negative indent the amount of the padding to maintain the grid system */
+        -webkit-border-radius: 0 0 6px 6px;
+           -moz-border-radius: 0 0 6px 6px;
+                border-radius: 0 0 6px 6px;
+        -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.15);
+           -moz-box-shadow: 0 1px 2px rgba(0,0,0,.15);
+                box-shadow: 0 1px 2px rgba(0,0,0,.15);
+      }
+
+      /* Page header tweaks */
+      .page-header {
+        background-color: #f5f5f5;
+        padding: 20px 20px 10px;
+        margin: -20px -20px 20px;
+        height: 40px;
+      }
+
+      /* Styles you shouldn't keep as they are for displaying this base example only */
+      .content .span14,
+      .content .span10,
+      .content {
+        min-height: 500px;
+      }
+      /* Give a quick and non-cross-browser friendly divider */
+      .content .span4 {
+        margin-left: 0;
+        padding-left: 19px;
+        border-left: 1px solid #eee;
+      }
+
+      .topbar .btn {
+        border: 0;
+      }
+

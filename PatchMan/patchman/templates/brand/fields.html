@@ -1,0 +1,11 @@
+<%namespace file="/base/uiHelpers.html" import="validate_errors"/>
+
+${form.csrf_token()}
+
+<div class="${'clearfix error' if form.errors_for('name') else 'clearfix'}">
+	<label for="name">Nombre</label>
+	<div class="input">
+		${form.text("name", class_="large", maxlength="100")}
+		${validate_errors("name")}
+	</div>
+</div>

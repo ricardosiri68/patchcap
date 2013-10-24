@@ -1,0 +1,22 @@
+<%inherit file="/base/index.html" />
+<%namespace file="fields.html" name="fields" import="*"/>
+
+<div class="page-header">
+	<h1 class="pull-left">Agregar Marca</h1>
+</div>
+
+<div class="row">
+  <div class="span14">
+  	
+	${form.begin(url=action_url, method="post")}
+	    ${fields.body()}
+	    
+	    <div class="actions">
+			<input type="submit" name="form_submitted" value="Guardar" class="btn primary">
+			<input type="reset" name="form_reset" value="Cancelar" class="btn" 
+				onclick="location.href='${request.route_url('brand_list')}'">
+	    </div>
+	${form.end()}
+		
+  </div>
+</div>

@@ -1,0 +1,31 @@
+<%inherit file="/base/index.html" />
+<%namespace file="fields.html" name="fields" import="*"/>
+
+<div class="page-header">
+	<h1 class="pull-left">Edit brand</h1>
+  	<div class="pull-right">
+		<a class="btn primary" style="margin-right:10px;" href="${request.route_url('brand_new')}">
+			Agregar Marca
+		</a>
+	</div>
+</div>
+
+<div class="row">
+  <div class="span14">
+	
+	${form.begin(url=action_url, method="post")}
+	    ${fields.body()}
+	    
+	    <div class="actions">
+			<input type="submit" name="form_submitted" value="Guardar" class="btn primary">
+			<input type="reset" name="form_reset" value="Cancelar" class="btn" 
+				onclick="location.href='${request.route_url('brand_list')}'">
+	    </div>
+	${form.end()}
+	
+  </div>
+</div>
+
+
+
+
