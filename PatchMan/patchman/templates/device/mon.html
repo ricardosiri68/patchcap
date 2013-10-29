@@ -1,0 +1,42 @@
+<%inherit file="/base/index.html" />
+<%block name="head">
+<script src="${request.static_url('patchman:static/js/jsmpg.js')}"></script>
+<script type="text/javascript">
+
+    $(document).ready(function(){
+    var canvas = document.getElementById('videoCanvas');
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#444';
+    ctx.fillText('Cargando...', canvas.width/2-30, canvas.height/3);
+
+    // Setup the WebSocket connection and start the player
+    //var client = new WebSocket( 'ws://localhost:8084/' );
+    //var player = new jsmpeg(client, {canvas:canvas});
+    var player = new jsmpeg("${request.static_url('patchman:static/sample.mpeg')}", {canvas: canvas, autoplay: true, loop: true});
+    
+    });    
+
+</script>
+
+</%block>
+
+<div class="page-header">
+  	<h1>${device.name}</h1>
+</div>
+
+<div class="row show-grid">
+	<div class="span6">
+		<h4>Monitor</h4>
+   	<canvas id="videoCanvas" width="640" height="480">
+		<p>
+			Please use a browser that supports the Canvas Element, like
+			<a href="http://www.google.com/chrome">Chrome</a>,
+			<a href="http://www.mozilla.com/firefox/">Firefox</a>,
+			<a href="http://www.apple.com/safari/">Safari</a> or Internet Explorer 10
+		</p>
+	</canvas> 
+    </div>
+	<div class="span6">
+		<h4>Historial</h4>
+	</div>
+</div>

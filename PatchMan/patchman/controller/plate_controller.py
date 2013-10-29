@@ -31,8 +31,7 @@ def list(request):
     search = request.params.get("search", "")
         
     sort= "code"
-    if request.GET.get("sort") and request.GET.get("sort") in \
-            ["code", "brand"]:
+    if request.GET.get("sort") and request.GET.get("sort") in ["code", "brand"]:
         sort = request.GET.get("sort")
     if sort == "brand":
         sort = "brand.name"    
@@ -43,7 +42,7 @@ def list(request):
 
     # db query     
     dbsession = DBSession()
-    query = dbsession.query(Plate).join(PlateLog).\
+    query = dbsession.query(Plate).outerjoin(Brand).\
         filter(Plate.code.like(search + "%")).\
                    order_by(sort + " " + direction)
     
@@ -84,8 +83,12 @@ def new(request):
     if "form_submitted" in request.POST and form.validate():
         dbsession = DBSession()
         plate = form.bind(Plate())
-        dbsession.add(plate)
-        request.session.flash("warning;Nueva Patente guardada!")
+        existing = dbsession.query(Plate).filter_by(code=plate.code).count()
+        if not existing:
+            dbsession.add(plate)
+            request.session.flash("warning;Nueva Patente guardada!")
+        else:
+            request.session.flash("error; Ya existe la patente!")
         return HTTPFound(location = request.route_url("plate_list"))
         
     return dict(form=FormRenderer(form),

@@ -22,7 +22,8 @@
     
 	<link rel="stylesheet" href="${request.static_url('patchman:static/css/bootstrap.css')}">    
 	<link rel="stylesheet" href="${request.static_url('patchman:static/css/main.css')}">    
-	
+
+    <%block name="head"/>    
 </head>
 <%
 from pyramid.security import authenticated_userid 
