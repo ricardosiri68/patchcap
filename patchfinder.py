@@ -23,7 +23,7 @@ class PatchFinder(Daemon):
         self.images = []
         
         logger.info("Iniciando aplicacion")
-        self.ocr = Ocr()
+        self.ocr = Ocr('spa')
         self.testFolder = testFolder
 
     def run(self, i=None):
