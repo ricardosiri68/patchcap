@@ -2,43 +2,41 @@
 <%namespace file="/base/confirmModal.html" import="delete_modal"/>
 
 <div class="list-partial">
-	% if len(plates):
+	% if len(devices):
 		<table class="condensed-table zebra-striped sortable">
 			<thead>
 				<tr>
-					<th style="width: 300px;">
-						${self.sortable('code')}
+				    <th>
+						${self.sortable('name')}
 					</th>
 				    <th>
-						${self.sortable('brand')}
+						${self.sortable('ip')}
 					</th>
 					<th style="width: 130px;"></th>
 				</tr>
 			</thead>
 			<tbody>
-				% for item in plates:
+				% for item in devices:
 		        <tr>
 			        <td valign="top">
-						<a href="/plates/${item.id}/edit">       	
-			            	${item.code}
+						<a href="/devices/${item.id}/edit">       	
+			        		${item.name}
+			        	</a>
+                    </td>
+                    <td valign="top">
+						<a href="/devices/${item.id}/edit">       	
+			        		${item.ip}
 			        	</a>
 			        </td>
 			        <td valign="top">
-						<a href="/plates/${item.id}/edit">       	
-				            % if item.brand: 
-			        		    ${item.brand.name}
-                            % endif
-			        	</a>
-			        </td>
-			        <td valign="top">
-			        	<a class="btn" href="/plates/${item.id}/edit" style="height: 14px;">
+			        	<a class="btn" href="/devices/${item.id}/edit" style="height: 14px;">
 			        		Editar
 			        	</a>
 			        	<a class="btn" style="height: 14px;" data-controls-modal="confirm-modal" 
 			        		data-backdrop="true" data-keyboard="true" 
 			        		href="javascript:;" 
 			        		onclick="$('#confirm-modal #delete').attr('href', 
-			        			'/plates/' + ${item.id} + '/delete');">
+			        			'/devices/' + ${item.id} + '/delete');">
 						    Borrar	
 			        	</a>
 			        </td>
@@ -48,21 +46,21 @@
 		</table>
 		
 		## pager	
-	    ${pager(plates)}
-	    
+	    ${pager(devices)}
+		
 	% else:
 	<p>
-		No se encontraron patentes!
+		No se encontraron Camaras!
 	</p>
 	% endif
 
 	## delete confirm modal dialog	
-    ${delete_modal("Esta seguro que desea eliminar esta patente?")}
-	
+    ${delete_modal("Esta seguro que desea eliminar esta camara?")}
+    
 </div>
 
 <%def name="sortable(column)">
-    <% sort_column = request.GET.get("sort") if request.GET.get("sort") else "code" %>
+    <% sort_column = request.GET.get("sort") if request.GET.get("sort") else "name" %>
     <% sort_direction = request.GET.get("direction") if request.GET.get("direction") else "asc" %>  
 	<% css_class = "" %>
 	% if (column == sort_column):
@@ -74,12 +72,9 @@
 		<% direction = "desc" %>
 	% endif
 
-	% if column == "code":
-		<a href="${request.route_url('plate_list')}?sort=${column}&direction=${direction}" 
-			class="${css_class}">Patente</a>
-    % else:
-		<a href="${request.route_url('plate_list')}?sort=${column}&direction=${direction}" 
-			class="${css_class}">Marca</a>
-	% endif
-</%def>
+		<a href="${request.route_url('device_list')}?sort=${column}&direction=${direction}" 
+            class="${css_class}">Nombre</a>
+        <a href="${request.route_url('device_list')}?sort=${column}&direction=${direction}" 
+			class="${css_class}">IP</a>
 
+</%def>

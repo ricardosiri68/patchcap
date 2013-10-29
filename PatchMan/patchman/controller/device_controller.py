@@ -18,6 +18,9 @@ class DeviceForm(Schema):
     filter_extra_fields = True
     allow_extra_fields = True
     name = validators.String(not_empty=True)
+    ip = validators.String(not_empty=True)
+    username = validators.String(not_empty=True)
+    password = validators.String(not_empty=True)
 
 @view_config(route_name="device_list")
 def list(request):
@@ -102,7 +105,7 @@ def edit(request):
     return dict(form=FormRenderer(form), 
                 action_url=action_url)
    
-@view_config(route_name='device_view', renderer="device/view.html")
+@view_config(route_name='device_view', renderer="device/mon.html")
 def view(request):
     id = int(request.matchdict.get('id', -1))
     device = Device.by_id(id) if id>0 else  Device.first()
