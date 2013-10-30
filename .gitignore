@@ -48,3 +48,6 @@ jTessBoxEditor
 ocr/pruebas
 patchcap.db
 logs/*.log.*
+
+#PatchMan
+PatchMan/data/*
