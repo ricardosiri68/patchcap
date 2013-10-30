@@ -4,7 +4,7 @@ import re
 
 class MakeTiff:
 	
-	__blobsChars = "blobsChars"
+	__blobsChars = "../blobsChars"
 
 	__dirs = os.listdir(__blobsChars)
 
@@ -14,7 +14,7 @@ class MakeTiff:
 
 	__numRowOfSheet = 5
 
-	__sheetHight = __numRowOfSheet * 50
+	__sheetHight = __numRowOfSheet * 60
 
 	__outputFolder = "training-tiff"
 
@@ -74,7 +74,7 @@ class MakeTiff:
 		for row in rows:
 			x = 0
 			for png in row:
-				self.insertPNG(output, x*w,y*50,png)
+				self.insertPNG(output, x*w,y*60,png)
 				x += 1
 			y += 1
 
