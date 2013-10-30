@@ -23,10 +23,14 @@ from patchfinder import PatchFinder
             os.makedirs(poc_dir)
         i.save(os.path.join(poc_dir, name))
 '''
+stream = "http://192.168.3.20/axis-cgi/mjpg/video.cgi"
 
 i = None
 if len(sys.argv)==2:
     i = sys.argv[1]
+else:
+    i = "images/"
 
-pf = PatchFinder("images/")
-pf.run(i)
+
+pf = PatchFinder(i)
+pf.run()

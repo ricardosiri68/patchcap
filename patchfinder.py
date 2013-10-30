@@ -1,62 +1,82 @@
 #!/usr/bin/env python
-from SimpleCV import ImageSet, Display, Color, Image
-from daemon import Daemon
-import os, sys, time, datetime
+import log, sys, time, datetime
 import logging, logging.config
-import uuid
-from ocr import Ocr
-from models import *
 import cv2.cv as cv
+import transaction
 from cv2 import copyMakeBorder, BORDER_CONSTANT 
-import log
+from SimpleCV import Color, Image, Camera,JpegStreamer, JpegStreamCamera, VirtualCamera
+from daemon import Daemon
+from os import path, mkdir,getcwd
+from ocr import Ocr
+from pyramid.paster import bootstrap
+from patchman.models import * 
 
 logger = log.setup()
 
 class PatchFinder(Daemon):
-    def __init__(self,testFolder):
-        super(PatchFinder,self).__init__(
-                "/tmp/patchfinder.pid", 
-                stdin = sys.stdin, 
-                stdout=sys.stdout, 
-                stderr=sys.stderr)
 
-        self.images = []
+    def __init__(self,src):
+        self.env = None
+
+        super(PatchFinder,self).__init__("/tmp/patchfinder.pid",stdin='/dev/stdin', stderr='/dev/stderr',stdout='/dev/stdout')
+
+        self.dataBind(src)
+
+        
+    def dataBind(self, src):
+        if src is not None:
+            if path.isdir(src):
+                self.device = VirtualCamera(src, "imageset")
+            elif src.endswith(".jpg"):
+                self.device = VirtualCamera(src, "image")
+            elif src.endswith("mpeg") or src.endswith("mpg"):
+                self.device = VirtualCamera(src,"video")
+            elif "mjpg" in src:
+                self.device = JpegStreamCamera(src)
+        else:
+            self.device = Camera()
+
+
+    def run(self):
         
         logger.info("Iniciando aplicacion")
+        self.env = bootstrap('PatchMan/development.ini')
         self.ocr = Ocr('spa')
-        self.testFolder = testFolder
-
-    def run(self, i=None):
+        initialize_sql(self.env['registry'].settings)
+        self.js = JpegStreamer()
+        
         detected = 0
-        if i is not None:
-            self.images = []
-            self.images.append(i)
-        else:
-            if self.testFolder:
-                for imgfile in os.listdir(self.testFolder):
-                    if imgfile.endswith(".jpg"):
-                        self.images.append(os.path.join(self.testFolder,imgfile))
-
-        for imgpath in self.images:
-            img = Image(imgpath)
-            # el valor de control del numero de patente esta alojado en el
-            # nombre del archivo
-            real = os.path.splitext(os.path.basename(img.filename))[0].upper()
+        total = 0
+        while True:
+            img = self.device.getImage()
+            if not img: break
             detected+=self.comparePlate(img)
-            
-        logger.info("Detectadas correctamente %d/%d", detected, len(self.images))
+            total +=1
+            time.sleep(.5)
+            img.save(self.js) 
+        logger.info("Detectadas correctamente %d/%d", detected, total)
 
     def comparePlate(self, img):
-        real = os.path.splitext(os.path.basename(img.filename))[0].upper()
+        if img.filename:
+            real = path.splitext(path.basename(img.filename))[0].upper()
+        else:
+            real = None
         plate = self.findPlate(img)
         if plate:
-            output = plate.upper().replace(" ","")[:6]
             self.log(plate)
-            if output == real[:6]:
-                logger.debug("\033[92m"+output+": OK \033[0m")
-                return 1
+            if real:
+                output = plate.upper().replace(" ","")[:6]
+                if output == real[:6]:
+                    logger.debug("\033[92m"+output+": OK \033[0m")
+                    return 1
+            else:
+                return self.isPlate(plate)
         return 0
-                
+
+    def isPlate(self, plate):
+        return len(plate)==6 and \
+                len(filter(lambda x: x in '1234567890', list(plate)))==3
+
     def findPlate(self, img):
         bin = self.preProcess(img)
         blobs = list((b for b in bin.findBlobs(minsize=1000) 
@@ -80,13 +100,16 @@ class PatchFinder(Daemon):
 
     def findSimbols(self, img, imgname):
 
-        img_name = os.path.splitext(os.path.basename(imgname))[0].upper()
+        img_name = path.splitext(path.basename(imgname))[0].upper()
         
         if logger.isEnabledFor(logging.DEBUG):
-            if not os.path.isdir("blobsChars/%s" % img_name):
-                os.mkdir("blobsChars/%s" % img_name)
-            path = "blobsChars/%s/%s.jpg"%(img_name,img_name)
-            img.crop(3,3,img.width-6,img.height-6).resize(h=42).save(path) 
+
+            if not path.isdir("blobsChars/%s" % img_name):
+                logger.debug(path.dirname(path.abspath(__file__)))
+                logger.debug(getcwd())
+                mkdir("blobsChars/%s" % img_name)
+            imgpath = "blobsChars/%s/%s.jpg"%(img_name,img_name)
+            img.crop(3,3,img.width-6,img.height-6).resize(h=42).save(imgpath) 
 
         text = self.findChars(img, img_name)
 
@@ -116,8 +139,8 @@ class PatchFinder(Daemon):
                 else:
                     readed = self.ocr.readText(ipl_img)
                 if readed and logger.isEnabledFor(logging.DEBUG):
-                    path = "blobsChars/%s/%s-%s.png" % (imgname,readed,i)
-                    croped.save(path)
+                    imgpath = "blobsChars/%s/%s-%s.png" % (imgname,readed,i)
+                    croped.save(imgpath)
                 i += 1
             return self.ocr.text()
         
@@ -129,11 +152,9 @@ class PatchFinder(Daemon):
         '''
         new_img = Image(
             copyMakeBorder(
-            
                 blob.crop().getNumpyCv2(),
                 15,15,15,15,BORDER_CONSTANT, 
                 value=Color.BLACK),
-            
             cv2image=True).rotate90()
 
         return new_img.resize(h=50).invert().smooth()
@@ -144,15 +165,29 @@ class PatchFinder(Daemon):
 
 
     def log(self, plate):
-        dt =datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-        # logger.info(plate)
-        # TODO: guardar en db
+        dt =datetime.now().strftime("%Y-%m-%d %H:%M")
+        transaction.begin()
+        p= DBSession.query(Plate).filter_by(code=plate).first()
+        if p is None:
+            p=Plate(plate, active=False, notes="Agregada automaticamente...")
+            DBSession.add(p)
+
+        log = PlateLog()
+        log.plate = p
+        DBSession.add(log)
+        transaction.commit()
+
+    def __del__(self):
+        self.device = None
+        if self.env:
+            self.env['closer']()
+            del self.env
 
 
 if __name__ == "__main__":
     
     daemon = PatchFinder("images/")
-
+    
     if len(sys.argv) == 2:
         if 'start' == sys.argv[1]:
                 daemon.start()
@@ -167,4 +202,5 @@ if __name__ == "__main__":
     else:
         print "uso: %s start|stop|restart" % sys.argv[0]
         sys.exit(2)
+
 

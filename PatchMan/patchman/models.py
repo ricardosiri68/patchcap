@@ -1,6 +1,7 @@
 """
 """
 from datetime import datetime
+from sqlalchemy import engine_from_config
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import (backref, relationship, scoped_session, sessionmaker)
@@ -79,12 +80,13 @@ class Plate(Base, BaseEntity):
     # foreing key
     brand_id = Column(Integer, ForeignKey('brand.id', 
         name="fk_plate_brand", onupdate='CASCADE', ondelete='RESTRICT'), nullable=True)
-    brand = relationship("Brand", passive_deletes=True, passive_updates=True)
+    brand = relationship("Brand")
     notes = Column(TEXT)
     created_by_user = Column(String(50))  
     created_at = Column(DateTime)  
     updated_by_user = Column(String(50))  
     updated_at = Column(DateTime)  
+    logs  = relationship("PlateLog", order_by="desc(PlateLog.id)", backref="plate")
     
     def __init__(self, code="", brand_id=0, active=True, notes=""):
         self.code = code
@@ -93,19 +95,24 @@ class Plate(Base, BaseEntity):
         self.notes = notes
 
     def __repr__(self):
-        return "<Plate('%s - %i')>" % (self.code, int(self.enabled))
+        return "<Plate('%s - %i')>" % (self.code, int(self.active))
 
 class PlateLog(Base, BaseEntity):
     __tablename__ = 'logs'
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, nullable=False)
     plate_id = Column(Integer, ForeignKey('plates.id'))
-    plate = relationship("Plate", backref=backref('logs', order_by=id))
     created_at = Column(DateTime)  
     updated_at = Column(DateTime)  
-    
+   
+    def __init__(self):
+        self.timestamp = datetime.now()
     def __repr__(self):
         return "<Log('%s')>" %(self.timestamp)
+
+    def __json__(self, request):
+        return {'t':self.timestamp.isoformat(),'p':self.plate.code}
+
 
 class User(Base, BaseEntity):
     __tablename__ = 'users'
@@ -139,7 +146,8 @@ def populate():
         transaction.abort()
     
 
-def initialize_sql(engine):
+def initialize_sql(settings):
+    engine = engine_from_config(settings, "sqlalchemy.")
     DBSession.configure(bind=engine)
 #    Base.metadata.bind = engine
 #    Base.metadata.create_all(engine)

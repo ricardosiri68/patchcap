@@ -6,17 +6,16 @@ from patchman.utils.subscribers import csrf_validation
 from pyramid.config import Configurator
 from pyramid.events import BeforeRender
 from pyramid.events import NewRequest
-from pyramid_beaker import session_factory_from_settings
-from sqlalchemy import engine_from_config
+from pyramid_beaker import session_factory_from_settings,set_cache_regions_from_settings
 
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
     """
-    engine = engine_from_config(settings, "sqlalchemy.")
-    initialize_sql(engine)
+    initialize_sql(settings)
     
     session_factory = session_factory_from_settings(settings)
-   
+    set_cache_regions_from_settings(settings) 
+    
     authentication_policy = AuthTktAuthenticationPolicy('somesecret')
     authorization_policy = ACLAuthorizationPolicy()
  
@@ -29,7 +28,6 @@ def main(global_config, **settings):
     
     config.add_subscriber(add_renderer_globals, BeforeRender)
     config.add_subscriber(csrf_validation, NewRequest)    
-    
     
     # mako settings for file extension .html
     config.include('pyramid_mako')
@@ -80,6 +78,7 @@ def main(global_config, **settings):
     config.add_route("plate_delete", "/plates/{id}/delete",
                      factory='patchman.security.EntryFactory'
 )
+    config.add_route("log_get", "/logs/get")
     
     config.add_route('auth', '/sign/{action}')
     
