@@ -127,16 +127,17 @@ class PatchFinder(Daemon):
         corta los blobs que se encuentran dentro del blob de la patente
         con un padding de 20px alrededor
         '''
+
+        blobCroped = blob.crop().resize(h=50)
         new_img = Image(
             copyMakeBorder(
-            
-                blob.crop().getNumpyCv2(),
-                15,15,15,15,BORDER_CONSTANT, 
+                blobCroped.getNumpyCv2(),
+                5,5,5,5,BORDER_CONSTANT, 
                 value=Color.BLACK),
             
             cv2image=True).rotate90()
 
-        return new_img.resize(h=50).invert().smooth()
+        return new_img.invert().smooth()
 
     
     def preProcess(self, img):
