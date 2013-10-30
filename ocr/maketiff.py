@@ -19,7 +19,7 @@ class MakeTiff:
 	__outputFolder = "training-tiff"
 
 	def __init__(self):
-		print "se capturaron: %s caracteres" % len(list(self.getPNGs()))
+		print "SE CAPTURARON: %s CARACTERES" % len(list(self.getPNGs()))
 		self.createSheets();
 
 	def createSheet(self):
@@ -48,26 +48,27 @@ class MakeTiff:
 		return max(list(self.getWidths()))
 
 	def sizeRows(self):
-		return len(list(self.getPNGs()))//self.sizeCol()
+		cantPNGs = len(list(self.getPNGs()))
+		sizeCol = self.sizeCol()
+		more  = 1 if ( cantPNGs//sizeCol < cantPNGs/sizeCol) else 0
+		return (cantPNGs//sizeCol) + more
 
 	def rows(self):
 		row = [];
-		col = 0;
 		for png in self.getPNGs():
-			if col < self.sizeCol():
-				row.append(png)
-				col += 1
-			else:
-				col = 0
+			row.append(png)
+			if len(row) == self.sizeCol():
 				yield row
 				row = []
+		if row:
+			yield row
 
 	def insertPNG(self, output, x,y, png):
 		print "INSERTING on (%s,%s) %s" % (x,y,png)
 		p = Image.open(png)
 		output.paste(p,(x,y))
 
-	def insertPNGs(self, rows , output, sheetNum):
+	def insertPNGs(self, rows , output):
 		w = self.getColPx()
 		y = 0
 		for row in rows:
@@ -78,15 +79,18 @@ class MakeTiff:
 			y += 1
 
 	def numSheets(self):
-		return len(list(self.rows()))//self.__numRowOfSheet
+		cantRows = len(list(self.rows()))
+		more = 1 if cantRows//self.__numRowOfSheet < cantRows/self.__numRowOfSheet else 0
+		return (cantRows//self.__numRowOfSheet) + more
 
 	def createSheets(self):
 		fullRows = list(self.rows())
-		for i in range(self.numSheets()):
+		numSheet = self.numSheets()
+		print "CANTIDAD DE HOJAS: %s" % numSheet
+		for i in range(numSheet + 1):
 			output = self.createSheet()
 			rows = fullRows[i * self.__numRowOfSheet: (i + 1) * self.__numRowOfSheet]
-			print rows
-			self.insertPNGs(rows, output,i)
+			self.insertPNGs(rows, output)
 			output.save("%s/%s.png" % (self.__outputFolder,i) )
 
 
