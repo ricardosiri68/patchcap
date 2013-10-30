@@ -4,26 +4,17 @@ import re
 
 class MakeTiff:
 	
-	__blobsChars = "blobsChars"
+	__blobsChars = "../blobsChars"
 
 	__dirs = os.listdir(__blobsChars)
 
 	__widths = set()
 
-	__sheetWidth = 360
-
-	__numRowOfSheet = 5
-
-	__sheetHight = __numRowOfSheet * 50
-
-	__outputFolder = "training-tiff"
 
 	def __init__(self):
+		self.__output = Image.new("RGB",(1200,self.sizeRows()*60),"white")
 		print "se capturaron: %s caracteres" % len(list(self.getPNGs()))
-		self.createSheets();
-
-	def createSheet(self):
-		return Image.new("RGB",(self.__sheetWidth,self.__sheetHight),"white")
+		self.insertPNGs();
 
 	def isPNG(self, f):
 		return f.split(".")[1].upper() == "PNG"
@@ -42,7 +33,7 @@ class MakeTiff:
 		return self.__widths
 
 	def sizeCol(self):
-		return self.__sheetWidth//self.getColPx()
+		return 1200//self.getColPx()
 
 	def getColPx(self):
 		return max(list(self.getWidths()))
@@ -54,40 +45,28 @@ class MakeTiff:
 		row = [];
 		col = 0;
 		for png in self.getPNGs():
-			if col < self.sizeCol():
-				row.append(png)
-				col += 1
-			else:
-				col = 0
+			row.append(png)
+			if not(len(row) < self.sizeCol()):
 				yield row
 				row = []
+		if row:
+			yield row
 
-	def insertPNG(self, output, x,y, png):
+	def insertPNG(self, x,y, png):
 		print "INSERTING on (%s,%s) %s" % (x,y,png)
 		p = Image.open(png)
-		output.paste(p,(x,y))
+		self.__output.paste(p,(x,y))
 
-	def insertPNGs(self, rows , output, sheetNum):
+	def insertPNGs(self):
 		w = self.getColPx()
 		y = 0
-		for row in rows:
+		for row in self.rows():
 			x = 0
 			for png in row:
-				self.insertPNG(output, x*w,y*50,png)
+				self.insertPNG(x*w,y*60,png)
 				x += 1
 			y += 1
-
-	def numSheets(self):
-		return len(list(self.rows()))//self.__numRowOfSheet
-
-	def createSheets(self):
-		fullRows = list(self.rows())
-		for i in range(self.numSheets()):
-			output = self.createSheet()
-			rows = fullRows[i * self.__numRowOfSheet: (i + 1) * self.__numRowOfSheet]
-			print rows
-			self.insertPNGs(rows, output,i)
-			output.save("%s/%s.png" % (self.__outputFolder,i) )
+		self.__output.save("treaning-tiff.png")
 
 
 

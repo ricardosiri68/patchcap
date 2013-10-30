@@ -105,8 +105,6 @@ class PatchFinder(Daemon):
         if logger.isEnabledFor(logging.DEBUG):
 
             if not path.isdir("blobsChars/%s" % img_name):
-                logger.debug(path.dirname(path.abspath(__file__)))
-                logger.debug(getcwd())
                 mkdir("blobsChars/%s" % img_name)
             imgpath = "blobsChars/%s/%s.jpg"%(img_name,img_name)
             img.crop(3,3,img.width-6,img.height-6).resize(h=42).save(imgpath) 
@@ -150,14 +148,16 @@ class PatchFinder(Daemon):
         corta los blobs que se encuentran dentro del blob de la patente
         con un padding de 20px alrededor
         '''
+
+        blobCroped = blob.crop().resize(h=50)
         new_img = Image(
             copyMakeBorder(
-                blob.crop().getNumpyCv2(),
-                15,15,15,15,BORDER_CONSTANT, 
+                blobCroped.getNumpyCv2(),
+                5,5,5,5,BORDER_CONSTANT, 
                 value=Color.BLACK),
             cv2image=True).rotate90()
 
-        return new_img.resize(h=50).invert().smooth()
+        return new_img.invert().smooth()
 
     
     def preProcess(self, img):
