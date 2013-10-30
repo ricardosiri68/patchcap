@@ -10,11 +10,20 @@ class MakeTiff:
 
 	__widths = set()
 
+	__sheetWidth = 360
+
+	__numRowOfSheet = 5
+
+	__sheetHight = __numRowOfSheet * 50
+
+	__outputFolder = "training-tiff"
 
 	def __init__(self):
-		self.__output = Image.new("RGB",(1200,self.sizeRows()*50),"white")
 		print "se capturaron: %s caracteres" % len(list(self.getPNGs()))
-		self.insertPNGs();
+		self.createSheets();
+
+	def createSheet(self):
+		return Image.new("RGB",(self.__sheetWidth,self.__sheetHight),"white")
 
 	def isPNG(self, f):
 		return f.split(".")[1].upper() == "PNG"
@@ -33,7 +42,7 @@ class MakeTiff:
 		return self.__widths
 
 	def sizeCol(self):
-		return 1200//self.getColPx()
+		return self.__sheetWidth//self.getColPx()
 
 	def getColPx(self):
 		return max(list(self.getWidths()))
@@ -45,7 +54,7 @@ class MakeTiff:
 		row = [];
 		col = 0;
 		for png in self.getPNGs():
-			if col < 26:
+			if col < self.sizeCol():
 				row.append(png)
 				col += 1
 			else:
@@ -53,21 +62,32 @@ class MakeTiff:
 				yield row
 				row = []
 
-	def insertPNG(self, x,y, png):
+	def insertPNG(self, output, x,y, png):
 		print "INSERTING on (%s,%s) %s" % (x,y,png)
 		p = Image.open(png)
-		self.__output.paste(p,(x,y))
+		output.paste(p,(x,y))
 
-	def insertPNGs(self):
+	def insertPNGs(self, rows , output, sheetNum):
 		w = self.getColPx()
 		y = 0
-		for row in self.rows():
+		for row in rows:
 			x = 0
 			for png in row:
-				self.insertPNG(x*w,y*50,png)
+				self.insertPNG(output, x*w,y*50,png)
 				x += 1
 			y += 1
-		self.__output.save("treaning-tiff.png")
+
+	def numSheets(self):
+		return len(list(self.rows()))//self.__numRowOfSheet
+
+	def createSheets(self):
+		fullRows = list(self.rows())
+		for i in range(self.numSheets()):
+			output = self.createSheet()
+			rows = fullRows[i * self.__numRowOfSheet: (i + 1) * self.__numRowOfSheet]
+			print rows
+			self.insertPNGs(rows, output,i)
+			output.save("%s/%s.png" % (self.__outputFolder,i) )
 
 
 
