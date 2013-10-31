@@ -13,6 +13,24 @@ from patchman.models import *
 
 logger = log.setup()
 
+
+class VirtualDevice(object):
+    def __init__(self,src, t):
+        self.frames = []
+        if t == 'imageset':
+            for imgfile in os.listdir(self.testFolder):
+                if imgfile.endswith(".jpg"):
+                    self.frames.append(os.path.join(self.testFolder,imgfile))
+        elif t =='image':
+            self.frames.append(src)
+
+    def getImage(self):
+        if len(self.frames):
+            return Image(self.frames.pop())
+        return None
+
+
+
 class PatchFinder(Daemon):
 
     def __init__(self,src):
@@ -26,9 +44,9 @@ class PatchFinder(Daemon):
     def dataBind(self, src):
         if src is not None:
             if path.isdir(src):
-                self.device = VirtualCamera(src, "imageset")
+                self.device = VirtualDevice(src, "imageset")
             elif src.endswith(".jpg"):
-                self.device = VirtualCamera(src, "image")
+                self.device = VirtualDevice(src, "image")
             elif src.endswith("mpeg") or src.endswith("mpg"):
                 self.device = VirtualCamera(src,"video")
             elif "mjpg" in src:
@@ -137,16 +155,11 @@ class PatchFinder(Daemon):
                 else:
                     readed = self.ocr.readText(ipl_img)
                 if readed and logger.isEnabledFor(logging.DEBUG):
-<<<<<<< HEAD
-                    imgpath = "blobsChars/%s/%s-%s.png" % (imgname,readed,i)
-                    croped.save(imgpath)
-=======
                     path = "blobsChars/%s/%s-%s.png" % (imgname,readed,i)
                     croped.save(path)
                 else:
                     path = "blobsChars/%s/NaN-%s.png" % (imgname,i)
                     croped.save(path)
->>>>>>> exp6
                 i += 1
             return self.ocr.text()
         
