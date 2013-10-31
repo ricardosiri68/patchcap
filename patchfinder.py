@@ -52,7 +52,7 @@ class PatchFinder(Daemon):
             if not img: break
             detected+=self.comparePlate(img)
             total +=1
-            time.sleep(.5)
+            time.sleep(.01)
             img.save(self.js) 
         logger.info("Detectadas correctamente %d/%d", detected, total)
 
