@@ -40,6 +40,7 @@ class Ocr(object):
             self.api.SetVariable("tessedit_char_whitelist", string.ascii_uppercase)
             self.api.SetVariable("tessedit_char_blacklist", string.digits) 
         '''
+        self.api.SetPageSegMode(tesseract.PSM_SINGLE_CHAR)
         try:
             self.__loadImage(path)
             c = self.__fix(self.api.GetUTF8Text(), is_digit)
@@ -55,6 +56,16 @@ class Ocr(object):
             self.plate +=c
         return c 
 
+    def readWord(self, img):
+        self.api = tesseract.TessBaseAPI()
+        self.api.Init(".","spa",tesseract.OEM_DEFAULT)
+        self.api.SetVariable("tessedit_char_whitelist", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        #self.api.SetPageSegMode(tesseract.PSM_AUTO)
+        self.__loadImage(img)
+        tt= self.api.GetUTF8Text()
+        logger.debug("leido: "+tt)
+        return tt
+ 
 
     def getConfidence(self):
         return self.api.MeanConf()

@@ -6,7 +6,7 @@ import transaction
 from cv2 import copyMakeBorder, BORDER_CONSTANT 
 from SimpleCV import Color, Image, Camera,JpegStreamer, JpegStreamCamera, VirtualCamera
 from daemon import Daemon
-from os import path, mkdir,getcwd
+from os import path, mkdir, listdir
 from ocr import Ocr
 from pyramid.paster import bootstrap
 from patchman.models import * 
@@ -18,9 +18,9 @@ class VirtualDevice(object):
     def __init__(self,src, t):
         self.frames = []
         if t == 'imageset':
-            for imgfile in os.listdir(self.testFolder):
+            for imgfile in listdir(src):
                 if imgfile.endswith(".jpg"):
-                    self.frames.append(os.path.join(self.testFolder,imgfile))
+                    self.frames.append(path.join(src, imgfile))
         elif t =='image':
             self.frames.append(src)
 
@@ -73,7 +73,7 @@ class PatchFinder(Daemon):
             time.sleep(.01)
             img.save(self.js) 
         logger.info("Detectadas correctamente %d/%d", detected, total)
-
+        
     def comparePlate(self, img):
         if img.filename:
             real = path.splitext(path.basename(img.filename))[0].upper()
@@ -81,15 +81,19 @@ class PatchFinder(Daemon):
             real = None
         plate = self.findPlate(img)
         if plate:
-            self.log(plate)
+            #self.log(plate)
             if real:
                 output = plate.upper().replace(" ","")[:6]
                 if output == real[:6]:
                     logger.debug("\033[92m"+output+": OK \033[0m")
                     return 1
+                else:
+                    logger.debug(real[:6]+": "+output)
+                    return 0
             else:
                 return self.isPlate(plate)
         return 0
+
 
     def isPlate(self, plate):
         return len(plate)==6 and \
@@ -121,16 +125,17 @@ class PatchFinder(Daemon):
         img_name = path.splitext(path.basename(imgname))[0].upper()
         
         if logger.isEnabledFor(logging.DEBUG):
-
             if not path.isdir("blobsChars/%s" % img_name):
                 mkdir("blobsChars/%s" % img_name)
             imgpath = "blobsChars/%s/%s.jpg"%(img_name,img_name)
-            img.crop(3,3,img.width-6,img.height-6).resize(h=42).save(imgpath) 
+            img = img.crop(3,3,img.width-6,img.height-6).resize(h=50)
+            img.save(imgpath) 
 
-        text = self.findChars(img, img_name)
+        #text = self.ocr.readWord(img.dilate().getBitmap())
+
+        text = self.findChars(img.dilate(), img_name)
 
         if text:
-            logger.debug(img_name[:6]+": "+text)
             return text
         return None
 
@@ -170,17 +175,17 @@ class PatchFinder(Daemon):
         con un padding de 20px alrededor
         '''
 
-        blobCroped = blob.crop().resize(h=50)
+        blobCroped = blob.crop()
+         
         new_img = Image(
             copyMakeBorder(
                 blobCroped.getNumpyCv2(),
                 5,5,5,5,BORDER_CONSTANT, 
                 value=Color.BLACK),
-            cv2image=True).rotate90()
+            cv2image=True)
 
-        return new_img.invert().smooth()
+        return new_img.invert()
 
-    
     def preProcess(self, img):
         return (img - img.binarize().morphOpen()).gaussianBlur().binarize()
 
@@ -204,7 +209,6 @@ class PatchFinder(Daemon):
             self.env['closer']()
             del self.env
 
-
 if __name__ == "__main__":
     
     daemon = PatchFinder("images/")
@@ -223,5 +227,4 @@ if __name__ == "__main__":
     else:
         print "uso: %s start|stop|restart" % sys.argv[0]
         sys.exit(2)
-
 
