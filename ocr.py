@@ -60,8 +60,8 @@ class Ocr(object):
         return self.api.MeanConf()
 
     def __fix(self,c, is_digit):
-        tab1 = "001124568"
-        tab2 ="ODIJZASGB"
+        tab1 = "0001124568"
+        tab2 ="ODQIJZASGB"
         
         if is_digit:
             tab = maketrans(tab2, tab1)
@@ -69,6 +69,7 @@ class Ocr(object):
             tab = maketrans(tab1, tab2)
         if not c:
             return None
+
         return c.strip().translate(tab)
 
     def __loadImage(self, img):
