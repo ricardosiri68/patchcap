@@ -6,6 +6,7 @@ from webhelpers import paginate
 from webhelpers.paginate import Page
 import logging
 import transaction
+from datetime import datetime
 
 log = logging.getLogger(__name__)
 
@@ -16,6 +17,14 @@ class Log(object):
     
 @view_config(route_name="log_get", renderer='json')
 def list(request):
-    query = DBSession.query(PlateLog).order_by("id desc").all()
-    return query 
+    s=request.session
+    if 'logts' not in s:
+        s['logts'] =datetime.min
+
+    query = DBSession.query(PlateLog).join(Plate).filter(PlateLog.timestamp>s['logts']).order_by("logs.id desc").all()
+
+    if len(query):
+        s['logts'] = query[0].timestamp
+
+    return query
 
