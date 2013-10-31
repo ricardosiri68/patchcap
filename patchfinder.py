@@ -137,8 +137,16 @@ class PatchFinder(Daemon):
                 else:
                     readed = self.ocr.readText(ipl_img)
                 if readed and logger.isEnabledFor(logging.DEBUG):
+<<<<<<< HEAD
                     imgpath = "blobsChars/%s/%s-%s.png" % (imgname,readed,i)
                     croped.save(imgpath)
+=======
+                    path = "blobsChars/%s/%s-%s.png" % (imgname,readed,i)
+                    croped.save(path)
+                else:
+                    path = "blobsChars/%s/NaN-%s.png" % (imgname,i)
+                    croped.save(path)
+>>>>>>> exp6
                 i += 1
             return self.ocr.text()
         
