@@ -118,6 +118,9 @@ class PatchFinder(Daemon):
                 if readed and logger.isEnabledFor(logging.DEBUG):
                     path = "blobsChars/%s/%s-%s.png" % (imgname,readed,i)
                     croped.save(path)
+                else:
+                    path = "blobsChars/%s/NaN-%s.png" % (imgname,i)
+                    croped.save(path)
                 i += 1
             return self.ocr.text()
         
