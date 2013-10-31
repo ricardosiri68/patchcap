@@ -7,7 +7,6 @@ class MakeTiff:
 	__blobsChars = "../blobsChars"
 
 	__dirs = os.listdir(__blobsChars)
-
 	__widths = set()
 
 
@@ -33,7 +32,7 @@ class MakeTiff:
 
 	def getPNGs(self):
 		for d in self.__dirs:
-			directory = "%s/%s" % (self.__blobsChars,d)
+			directory = os.path.join(self.__blobsChars,d)
 			for f in os.listdir(directory):
 				if self.isPNG(f):
 					yield "%s/%s" % (directory,f)

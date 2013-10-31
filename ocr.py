@@ -71,8 +71,8 @@ class Ocr(object):
         return self.api.MeanConf()
 
     def __fix(self,c, is_digit):
-        tab1 = "0001124568"
-        tab2 ="ODQIJZASGB"
+        tab1 = "00011245688"
+        tab2 ="ODQIJZASGBX"
         
         if is_digit:
             tab = maketrans(tab2, tab1)
