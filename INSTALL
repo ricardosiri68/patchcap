@@ -1,33 +1,43 @@
-1)Herramienta de configuracion y consulta patchup
+1) Demonio PatchFinder. Reconocedor de patentes
+1.1) Dependencias
+Tesseract 3.02
 
-./patchup.py -h 
+1.2) Instalacion
 
-para ver las opciones disponibles:
+> virtual_env --no-site-packages env
+> source env/bin/activate
+(env)> pip install -r requirements.txt
 
-./patchup.py
-	[-b | --generate-db] <base.db>
-	[-a | --add-plate] <XXXNNN>
-	[-d | --delete-plate] <XXXNNN>
-	[-l | --list-all] 
+1.3) Uso
+./patchfinder.py start|stop|restart
 
 
- 
-1.1) Crear y/o regenerar base de datos
-cd patchcap/
 
-./patchup -b patchcap.db
 
-ATENCION: Si ya existe una base con el mismo nombre, se resetea y se elimina toda la informacion.
 
-1.2) Dar de alta una patente
+2) Herramienta de Visualizacion
 
-./patchup -a LYD134 
+2.1) Instalacion
 
-Se agrega la patente al registro de patentes conocidas. 
-Si ya existia un registro con el mismo nro, se ignora el comando. 
+> cd PatchMan/
+> setup.py develop
+> initialize_PatchMan_db development.ini [production.ini]
+> serve development.ini [production.ini]
 
-1.3) 
+2.2) Uso
 
-./patchup -a LYD134 
-Se elimina la patente de la base y todos sus registros asociados. 
-Si no existe, se ignora el comando
+http://localhost:6543/
+user: admin
+pass: admin
+
+2.3) Navegadores soportados
+Internet Explorer 10 
+Firefox[15] (PC)  11  
+Firefox (Android)   11
+Chrome (PC, Mobile)   16  
+Safari (Mac, iOS)    6
+Opera (PC, Mobile)  12
+
+
+
+
