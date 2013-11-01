@@ -1,5 +1,5 @@
 import os
-from SimpleCV import JpegStreamCamera, VirtualCamera
+from SimpleCV import Image, JpegStreamCamera, VirtualCamera
 
 
 class VirtualDevice(object):
@@ -20,10 +20,10 @@ class VirtualDevice(object):
             self._source_type = 'imageset'
             for imgfile in os.listdir(src):
                 if imgfile.endswith(".jpg"):
-                    self.frames.append(os.path.join(src, imgfile))
+                    self._frames.append(os.path.join(src, imgfile))
         elif src.endswith('jpg','png'):
             self._source_type = 'image'
-            self.frames.append(src) 
+            self._frames.append(src) 
         else:
             self._source_type = 'video'
             self._device = VirtualCamera(src,"video")
