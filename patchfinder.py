@@ -4,36 +4,63 @@ import logging, logging.config
 import cv2.cv as cv
 import transaction
 from cv2 import copyMakeBorder, BORDER_CONSTANT 
-from SimpleCV import Color, Image, JpegStreamer
+from SimpleCV import Color, Image, Camera,JpegStreamer, JpegStreamCamera, VirtualCamera
 from daemon import Daemon
 from os import path, mkdir, listdir
 from ocr import Ocr
 from pyramid.paster import bootstrap
 from patchman.models import * 
-from device import VirtualDevice
+
 logger = log.setup()
 
+
+class VirtualDevice(object):
+    def __init__(self,src, t):
+        self.frames = []
+        if t == 'imageset':
+            for imgfile in listdir(src):
+                if imgfile.endswith(".jpg"):
+                    self.frames.append(path.join(src, imgfile))
+        elif t =='image':
+            self.frames.append(src)
+
+    def getImage(self):
+        if len(self.frames):
+            return Image(self.frames.pop())
+        return None
 
 
 
 class PatchFinder(Daemon):
 
-    #app context environment (pyramid)
-    _env = None
-
     def __init__(self,src):
+        self.env = None
 
         super(PatchFinder,self).__init__("/tmp/patchfinder.pid",stdin='/dev/stdin', stderr='/dev/stderr',stdout='/dev/stdout')
 
-        self.device = VirtualDevice(src)
+        self.dataBind(src)
+
         
-  
+    def dataBind(self, src):
+        if src is not None:
+            if path.isdir(src):
+                self.device = VirtualDevice(src, "imageset")
+            elif src.endswith(".jpg"):
+                self.device = VirtualDevice(src, "image")
+            elif src.endswith("mpeg") or src.endswith("mpg"):
+                self.device = VirtualCamera(src,"video")
+            elif "mjpg" in src:
+                self.device = JpegStreamCamera(src)
+        else:
+            self.device = Camera()
+
+
     def run(self):
         
         logger.info("Iniciando aplicacion")
-        self._env = bootstrap('PatchMan/development.ini')
+        self.env = bootstrap('PatchMan/development.ini')
         self.ocr = Ocr('spa')
-        initialize_sql(self._env['registry'].settings)
+        initialize_sql(self.env['registry'].settings)
         self.js = JpegStreamer()
         
         detected = 0
@@ -43,7 +70,7 @@ class PatchFinder(Daemon):
             if not img: break
             detected+=self.comparePlate(img)
             total +=1
-        #    time.sleep(.01)
+            time.sleep(.01)
             img.save(self.js) 
         logger.info("Detectadas correctamente %d/%d", detected, total)
         
@@ -178,9 +205,9 @@ class PatchFinder(Daemon):
 
     def __del__(self):
         self.device = None
-        if self._env:
-            self._env['closer']()
-            del self._env
+        if self.env:
+            self.env['closer']()
+            del self.env
 
 if __name__ == "__main__":
     

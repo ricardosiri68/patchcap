@@ -21,7 +21,7 @@ class VirtualDevice(object):
             for imgfile in os.listdir(src):
                 if imgfile.endswith(".jpg"):
                     self._frames.append(os.path.join(src, imgfile))
-        elif src.endswith('jpg','png'):
+        elif src.endswith(('jpg','png')):
             self._source_type = 'image'
             self._frames.append(src) 
         else:
