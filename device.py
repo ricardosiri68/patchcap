@@ -1,6 +1,6 @@
 import os
 from SimpleCV import Image, JpegStreamCamera, VirtualCamera
-
+from cv import CreateFileCapture, QueryFrame
 
 class VirtualDevice(object):
         
@@ -22,19 +22,22 @@ class VirtualDevice(object):
                 if imgfile.endswith(".jpg"):
                     self._frames.append(os.path.join(src, imgfile))
 
-        elif src.endswith(('jpg','png')):
+        elif src.endswith(('.jpg','.png')):
             self._source_type = 'image'
             self._frames.append(src) 
         else:
             self._source_type = 'video'
-            self._device = VirtualCamera(src,"video")
+            self._device = CreateFileCapture(src)
         #else: #stream
         #    self._device = Camera(src)
 
     def getImage(self):
         if self._source_type in ('video', 'stream'):
-            return self._device.getImage()
+            img = QueryFrame(self._device)
+            if img:
+                if not(img.width < img.height):
+                    return Image(img)
+
         else:
             if len(self._frames):
                 return Image(self._frames.pop())
-        return None

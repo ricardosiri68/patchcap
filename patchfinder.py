@@ -10,25 +10,9 @@ from os import path, mkdir, listdir
 from ocr import Ocr
 from pyramid.paster import bootstrap
 from patchman.models import * 
+from device import VirtualDevice
 
 logger = log.setup()
-
-
-class VirtualDevice(object):
-    def __init__(self,src, t):
-        self.frames = []
-        if t == 'imageset':
-            for imgfile in listdir(src):
-                if imgfile.endswith(".jpg"):
-                    self.frames.append(path.join(src, imgfile))
-        elif t =='image':
-            self.frames.append(src)
-
-    def getImage(self):
-        if len(self.frames):
-            return Image(self.frames.pop())
-        return None
-
 
 
 class PatchFinder(Daemon):
@@ -38,22 +22,7 @@ class PatchFinder(Daemon):
 
         super(PatchFinder,self).__init__("/tmp/patchfinder.pid",stdin='/dev/stdin', stderr='/dev/stderr',stdout='/dev/stdout')
 
-        self.dataBind(src)
-
-        
-    def dataBind(self, src):
-        if src is not None:
-            if path.isdir(src):
-                self.device = VirtualDevice(src, "imageset")
-            elif src.endswith(".jpg"):
-                self.device = VirtualDevice(src, "image")
-            elif src.endswith("mpeg") or src.endswith("mpg"):
-                self.device = VirtualCamera(src,"video")
-            elif "mjpg" in src:
-                self.device = JpegStreamCamera(src)
-        else:
-            self.device = Camera()
-
+        self.device = VirtualDevice(src)
 
     def run(self):
         
@@ -62,12 +31,11 @@ class PatchFinder(Daemon):
         self.ocr = Ocr('spa')
         initialize_sql(self.env['registry'].settings)
         self.js = JpegStreamer()
-        
         detected = 0
         total = 0
         while True:
             img = self.device.getImage()
-            if not img: break
+            if not img: continue
             detected+=self.comparePlate(img)
             total +=1
             #time.sleep(1)

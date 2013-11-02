@@ -4,21 +4,30 @@
 <script type="text/javascript">
 
 $(document).ready(function(){
-        
-        $('.stream').bind('load', function() {
-            $.getJSON( "${request.route_url('log_get')}", function( data ) {
-                var items = [];
-                fmt = new DateFmt("%d/%m/%y %H:%M")
-                if (data.length) {
-                $.each( data, function(i, l ) {
-                    d = 
-                    items.push( "<li class='new'>" +l.p+": " +fmt.format(new Date(l.t))+ "</li>" );
-                    });
-                $("#logs li").removeClass("new"); 
-                $( "#logs").prepend(items.join( "" ));
-                }
-                });    
-        });  
+        var logsLi =  $("#logs li");
+        var logs = $( "#logs");
+        var insertLog = function(i, l ) {
+                var element = 
+                "<li class='new'>"+
+                l.p+": " +fmt.format(new Date(l.t))+ 
+                "</li>" ;
+                d = items.push(element);
+            }
+        var logResponse = function( data ) {
+            var items = [];
+            fmt = new DateFmt("%d/%m/%y %H:%M");
+            if (data.length) {
+                $.each( data, insertLog);
+                logsLi.removeClass("new"); 
+                logs.prepend(items.join( "" ));
+            }
+        };
+        var logFrame = function() {
+            console.log("load");
+            $.getJSON( "${request.route_url('log_get')}", logResponse);    
+        };
+
+        $('.stream').bind('load', logFrame);  
 });    
 
 </script>
