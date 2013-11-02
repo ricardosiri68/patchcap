@@ -39,5 +39,7 @@ class VirtualDevice(object):
                     return Image(img)
 
         else:
-            if len(self._frames):
+            if self._frames:
                 return Image(self._frames.pop())
+            else:
+                return False

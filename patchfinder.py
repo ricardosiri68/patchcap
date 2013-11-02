@@ -35,7 +35,10 @@ class PatchFinder(Daemon):
         total = 0
         while True:
             img = self.device.getImage()
-            if not img: continue
+            if img is False: 
+                break
+            elif not img:
+                continue
             detected+=self.comparePlate(img)
             total +=1
             #time.sleep(1)
