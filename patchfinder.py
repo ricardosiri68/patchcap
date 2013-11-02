@@ -36,16 +36,32 @@ class PatchFinder(Daemon):
         initialize_sql(self._env['registry'].settings)
         self.js = JpegStreamer()
         
-        detected = 0
+        found = 0
         total = 0
+        failures = 0
+
         while True:
             img = self.device.getImage()
-            if not img: break
-            detected+=self.comparePlate(img)
+            if not img:
+                failures += 1
+                if failures > 1000: 
+                    logger.fatal("No se pueden obtener imagenes (repetido 1000 veces)")
+                    failures = 0
+                break
+            
+            detected=self.comparePlate(img)
+            if detected:
+                found +=1
+                #TODO: sleep until next car
+                time.sleep(3)
+            
             total +=1
         #    time.sleep(.01)
-            img.save(self.js) 
-        logger.info("Detectadas correctamente %d/%d", detected, total)
+            try:
+                img.save(self.js) 
+            except:
+                logger.error("sending stream...")
+        logger.info("Detectadas correctamente %d/%d", found, total)
         
     def comparePlate(self, img):
         if img.filename:
@@ -54,7 +70,7 @@ class PatchFinder(Daemon):
             real = None
         plate = self.findPlate(img)
         if plate:
-            #self.log(plate)
+            self.log(plate)
             if real:
                 output = plate.upper().replace(" ","")[:6]
                 if output == real[:6]:
