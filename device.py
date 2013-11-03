@@ -30,26 +30,28 @@ class VirtualDevice(object):
             for imgfile in os.listdir(src):
                 if imgfile.endswith(".jpg"):
                     self._frames.append(os.path.join(src, imgfile))
-        elif src.endswith('jpg') or src.endswith('png'):
+
+        elif src.endswith(('.jpg','.png')):
             self._source_type = 'image'
             self._frames.append(src) 
         else:
             self._source_type = 'video'
-            self._device = VirtualCamera(src,"video")
+            self._device = cv.CreateFileCapture(src)
         #else: #stream
         #    self._device = Camera(src)
             
     def getImage(self):
-        if self._source_type in ('video', 'stream'):
+        if self._source_type == 'stream':
             return self._device.getImage()
-        elif self._source_type == 'h264':
+
+        elif self._source_type in ('h264','video'):
             frame = cv.QueryFrame(self._device)
             if not frame:
                 logger.warn("no se pudo leer frame")
                 return None
             time.sleep(int(1/self._fps))
             return Image(frame, cv2image=True) 
-        else:
+
+        else: #image,imageset
             if len(self._frames):
                 return Image(self._frames.pop())
-        return None

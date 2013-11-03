@@ -41,6 +41,8 @@ nosetests.xml
 *.avi
 *.mkv
 *.swp
+*.mpeg
+*.mjpg
 
 videos/*
 logs/*

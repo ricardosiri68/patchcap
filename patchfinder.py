@@ -4,39 +4,35 @@ import logging, logging.config
 import cv2.cv as cv
 import transaction
 from cv2 import copyMakeBorder, BORDER_CONSTANT 
-from SimpleCV import Color, Image, JpegStreamer
+from SimpleCV import Color, Image, Camera,JpegStreamer, JpegStreamCamera, VirtualCamera
 from daemon import Daemon
 from os import path, mkdir, listdir
 from ocr import Ocr
 from pyramid.paster import bootstrap
 from patchman.models import * 
 from device import VirtualDevice
+
 logger = log.setup()
-
-
 
 
 class PatchFinder(Daemon):
 
-    #app context environment (pyramid)
-    _env = None
-
     def __init__(self,src):
+        self.env = None
 
         super(PatchFinder,self).__init__("/tmp/patchfinder.pid",stdin='/dev/stdin', stderr='/dev/stderr',stdout='/dev/stdout')
 
         self.device = VirtualDevice(src)
-        
-  
+
     def run(self):
         
         logger.info("Iniciando aplicacion")
-        self._env = bootstrap('PatchMan/development.ini')
+        self.env = bootstrap('PatchMan/development.ini')
         self.ocr = Ocr('spa')
-        initialize_sql(self._env['registry'].settings)
+        initialize_sql(self.env['registry'].settings)
         self.js = JpegStreamer()
-        
         found = 0
+        detected = 0
         total = 0
         failures = 0
 
@@ -56,7 +52,6 @@ class PatchFinder(Daemon):
                 time.sleep(3)
             
             total +=1
-        #    time.sleep(.01)
             try:
                 img.save(self.js) 
             except:
@@ -194,9 +189,9 @@ class PatchFinder(Daemon):
 
     def __del__(self):
         self.device = None
-        if self._env:
-            self._env['closer']()
-            del self._env
+        if self.env:
+            self.env['closer']()
+            del self.env
 
 if __name__ == "__main__":
     
