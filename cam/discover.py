@@ -21,19 +21,24 @@ logging.getLogger('suds.transport').setLevel(logging.WARNING)
 logging.getLogger('suds.xsd.schema').setLevel(logging.WARNING)
 logging.getLogger('suds.wsdl').setLevel(logging.WARNING)
 
+'''
 wsd = WSDiscovery()
 wsd.start()
 typeNVT = QName("http://www.onvif.org/ver10/network/wsdl","NetworkVideoTransmitter");
 ret = wsd.searchServices(types=[typeNVT])
-#for service in ret:
-#    print "Device: " + service.getEPR() + ":"
-#    print "Address information: " + str(service.getXAddrs())
-#    print "Scopes: " + str(service.getScopes())
-#exit(0)
+for service in ret:
+    print "Device: " + service.getEPR() + ":"
+    print "Address information: " + str(service.getXAddrs())
+    print "Scopes: " + str(service.getScopes())
+
 service = ret[0]
 uri =  service.getXAddrs()[0]
 urn = service.getEPR()
 wsd.stop()
+'''
+
+uri = 'http://192.168.3.20/onvif/services'
+urn = 'uuid:76931fac-9dab-2b36-c248-a8556a00bec4'
 
 u = 'root'
 p = 'root'
@@ -59,11 +64,13 @@ token = UsernameDigestToken(u, p)
 security.tokens.append(token) 
 #client.set_options(wsse=security)
 
-#client = Client('file:///home/hernando/proyectos/patchcap/cam/onvif/devicemgmt_1.wsdl')#,location=uri, wsse=security)
-client = Client(uri)
+client = Client('file:///home/hernando/proyectos/patchcap/cam/onvif/devicemgmt_1.wsdl',location=uri, wsse=security)
+#client = Client('http://www.onvif.org/onvif/ver10/device/wsdl/devicemgmt.wsdl',location=uri)#, wsse=security)
+#client = Client(uri)
 #print client.service.GetWsdlUrl()
-#print client.GetSystemDateAndTime()
-print client
+print client.GetSystemDateAndTime()
+client.last_sent()
+client.last_received()
 
 
 

@@ -1,4 +1,4 @@
-rtsp://192.168.3.20:554/cam1/onvif-h264
+rtsp://root:root@192.168.3.20:554/cam1/onvif-h264
 http://192.168.3.20/axis-cgi/mjpg/video.cgi
 crear mpeg-4 desde jpgs
 mencoder mf://*.jpg -mf w=800:h=600:fps=25:type=jpg -ovc lavc \
