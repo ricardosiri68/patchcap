@@ -111,7 +111,7 @@ class PlateLog(Base, BaseEntity):
         return "<Log('%s')>" %(self.timestamp)
 
     def __json__(self, request):
-        return {'t':self.timestamp.isoformat(),'p':self.plate.code}
+        return {'t':self.timestamp.isoformat(),'p':self.plate.code,'e':self.plate.active}
 
 
 class User(Base, BaseEntity):

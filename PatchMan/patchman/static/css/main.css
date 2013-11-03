@@ -56,7 +56,7 @@
         text-align: center; /* center align it with the container */
       }
       .container {
-        width: 820px; /* downsize our container to make the content feel a bit tighter 
+        width: 920px; /* downsize our container to make the content feel a bit tighter 
         				and more cohesive. NOTE: this removes two full columns from the 
         				grid, meaning you only go to 14 columns and not 16. */
       }
@@ -99,4 +99,5 @@
         border: 0;
       }
 
-.new { background-color:#DDD}
+.new { background-color:green; color:black}
+.new-disabled {background-color:red; color:white}

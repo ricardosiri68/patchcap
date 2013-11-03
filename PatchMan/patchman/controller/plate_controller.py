@@ -124,7 +124,7 @@ def delete(request):
     """plate delete """
     id = request.matchdict['id']
     dbsession = DBSession()
-    plate = dbsession.query(plate).filter_by(id=id).first()
+    plate = dbsession.query(Plate).filter_by(id=id).first()
     if plate is None:
         request.session.flash("error;Patente no encontrada!")
         return HTTPFound(location=request.route_url("plate_list"))        

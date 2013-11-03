@@ -9,6 +9,9 @@
 					<th style="width: 300px;">
 						${self.sortable('code')}
 					</th>
+					<th style="width: 150px;">
+						${self.sortable('active')}
+					</th>
 				    <th>
 						${self.sortable('brand')}
 					</th>
@@ -24,11 +27,16 @@
 			        	</a>
 			        </td>
 			        <td valign="top">
-						<a href="/plates/${item.id}/edit">       	
+                        % if item.active:
+                        Si
+                        %else:
+                        No
+                        %endif
+			        </td>
+			        <td valign="top">
 				            % if item.brand: 
 			        		    ${item.brand.name}
                             % endif
-			        	</a>
 			        </td>
 			        <td valign="top">
 			        	<a class="btn" href="/plates/${item.id}/edit" style="height: 14px;">
@@ -77,9 +85,13 @@
 	% if column == "code":
 		<a href="${request.route_url('plate_list')}?sort=${column}&direction=${direction}" 
 			class="${css_class}">Patente</a>
+    % elif column == 'active':
+		<a href="${request.route_url('plate_list')}?sort=${column}&direction=${direction}" 
+			class="${css_class}">Activa</a>
     % else:
 		<a href="${request.route_url('plate_list')}?sort=${column}&direction=${direction}" 
 			class="${css_class}">Marca</a>
-	% endif
+
+    % endif
 </%def>
 

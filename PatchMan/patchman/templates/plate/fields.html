@@ -17,6 +17,13 @@ ${form.csrf_token()}
 				${validate_errors("code")}
 			</div>
 		</div>
+		<div class="${'clearfix error' if form.errors_for('active') else 'clearfix'}">
+			<label for="code">Habilitada</label>
+			<div class="input">
+				${form.checkbox("active")}
+				${validate_errors("code")}
+			</div>
+		</div>
 	</div>
 	
 	<div id="car" class="tab-pane">
