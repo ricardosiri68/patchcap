@@ -3,6 +3,7 @@ import tesseract
 from string import maketrans
 import cv2.cv as cv
 from exceptions import IOError
+
 logger = logging.getLogger(__name__)
 
 class Ocr(object):
@@ -60,11 +61,9 @@ class Ocr(object):
         self.api = tesseract.TessBaseAPI()
         self.api.Init(".","spa",tesseract.OEM_DEFAULT)
         self.api.SetVariable("tessedit_char_whitelist", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-        #self.api.SetPageSegMode(tesseract.PSM_AUTO)
+        self.api.SetPageSegMode(tesseract.PSM_AUTO)
         self.__loadImage(img)
-        tt= self.api.GetUTF8Text()
-        logger.debug("leido: "+tt)
-        return tt
+        return self.api.GetUTF8Text()
  
 
     def getConfidence(self):

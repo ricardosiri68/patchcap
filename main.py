@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-from SimpleCV import ImageSet, Display, Color
-import time, os, sys, logging
-
+import sys
 from patchfinder import PatchFinder
 
 '''
@@ -23,14 +21,12 @@ from patchfinder import PatchFinder
             os.makedirs(poc_dir)
         i.save(os.path.join(poc_dir, name))
 '''
-stream = "http://192.168.3.20/axis-cgi/mjpg/video.cgi"
-
-i = None
-if len(sys.argv)==2:
+if len(sys.argv)>=2:
     i = sys.argv[1]
 else:
     i = "images/"
 
+log = len(sys.argv)==3 and sys.argv[2]
 
-pf = PatchFinder(i)
+pf = PatchFinder(i, log)
 pf.run()

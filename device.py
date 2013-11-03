@@ -7,12 +7,15 @@ import time
 logger = logging.getLogger(__name__)
 
 class VirtualDevice(object):
-        
+    MAX_RETRIES = 30
+
     _device = None
     _frames = []
     _source_type = None
     _src = None
     _fps = 15
+
+    _errorCount = 0
 
     def __init__(self,src):
     
@@ -39,19 +42,25 @@ class VirtualDevice(object):
             self._device = cv.CreateFileCapture(src)
         #else: #stream
         #    self._device = Camera(src)
-            
+    
     def getImage(self):
+        img = None
+        
         if self._source_type == 'stream':
-            return self._device.getImage()
-
+            img = self._device.getImage()
+        
         elif self._source_type in ('h264','video'):
             frame = cv.QueryFrame(self._device)
-            if not frame:
-                logger.warn("no se pudo leer frame")
-                return None
-            time.sleep(int(1/self._fps))
-            return Image(frame, cv2image=True) 
-
+            if frame:
+                img = Image(frame, cv2image=True) 
+            
         else: #image,imageset
             if len(self._frames):
-                return Image(self._frames.pop())
+                img = Image(self._frames.pop())
+
+        if img is None and self._errorCount< VirtualDevice.MAX_RETRIES:
+            time.sleep(1)
+            self._errorCount +=1
+            img = self.getImage()
+        
+        return img

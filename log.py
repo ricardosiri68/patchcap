@@ -30,5 +30,5 @@ def setup():
     logger.addHandler(console)
     logger.addHandler(rotating_file)
 
-
     return logger
+
