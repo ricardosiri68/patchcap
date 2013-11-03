@@ -64,7 +64,7 @@ class PatchFinder(Daemon):
             log.plate = p
             DBSession.add(log)
             transaction.commit()
-        
+       
         if img.filename:
             real = path.splitext(path.basename(img.filename))[0].upper()
             output = plate.upper().replace(" ","")[:6]
