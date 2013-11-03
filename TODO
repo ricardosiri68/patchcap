@@ -1,0 +1,8 @@
+Guardar captura de la patente reconocida.
+que no siga detectando mientras no varia la captura (si detecta, mientras no cambie el auto no vale la pena seguir analizando)
+Poder configurar tamanio minimo de la patente en la imagen.
+Poder configurar angulo de la camara.
+Marcar la posicion del caracter que no pudo reconocer.
+Guardar lista de streamings de la camara. Permitir seleccionar desde cual se captura y cual se usa para la visualizacion
+Permitir habilitar/deshabilitar dispositivo para el reconocimiento.
+Loguear la camara que hizo la captura.
