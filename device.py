@@ -44,7 +44,6 @@ class VirtualDevice(object):
         #    self._device = Camera(src)
     
     def getImage(self):
-<<<<<<< HEAD
         img = None
         
         if self._source_type == 'stream':
@@ -65,16 +64,3 @@ class VirtualDevice(object):
             img = self.getImage()
         
         return img
-=======
-        if self._source_type in ('video', 'stream'):
-            img = QueryFrame(self._device)
-            if img:
-                if not(img.width < img.height):
-                    return Image(img)
-
-        else:
-            if self._frames:
-                return Image(self._frames.pop())
-            else:
-                return False
->>>>>>> 56a7609b5c48142f8ab6d0ea0cd78058a4280b71

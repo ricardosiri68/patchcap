@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class Ocr(object):
 
-    def __init__(self, lang = "eng"):
+    def __init__(self, lang = "spa"):
         self.api = tesseract.TessBaseAPI()
         self.api.Init(".",lang,tesseract.OEM_DEFAULT)
         self.api.SetVariable("tessedit_char_whitelist", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
