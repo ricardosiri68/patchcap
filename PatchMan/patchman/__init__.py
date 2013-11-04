@@ -3,6 +3,7 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from patchman.models import initialize_sql
 from patchman.utils.subscribers import add_renderer_globals
 from patchman.utils.subscribers import csrf_validation
+from patchman.utils.routes import MyRoutes
 from pyramid.config import Configurator
 from pyramid.events import BeforeRender
 from pyramid.events import NewRequest
@@ -35,52 +36,7 @@ def main(global_config, **settings):
 
     config.add_static_view("static", "patchman:static", cache_max_age=3600)
     
-    # home 
-    config.add_route("home", "/")
-    config.add_route("home_dashboard", "/home/dashboard")
-    
-    # country routes
-    config.add_route("brand_list", "/brands/list")
-    config.add_route("brand_search", "/brands/search")
-    config.add_route("brand_new", "/brands/new",
-                     factory='patchman.security.EntryFactory'
-)
-    config.add_route("brand_edit", "/brands/{id}/edit",
-                     factory='patchman.security.EntryFactory'
-)
-    config.add_route("brand_delete", "/brands/{id}/delete",
-                     factory='patchman.security.EntryFactory'
-)
-    
-   # devices 
-    config.add_route("device_list", "/devices/list")
-    config.add_route("device_search", "/devices/search")
-    config.add_route("device_new", "/devices/new",
-                     factory='patchman.security.EntryFactory'
-)
-    config.add_route("device_view", "/devices/{id}/view")
-    config.add_route("device_edit", "/devices/{id}/edit",
-                     factory='patchman.security.EntryFactory'
-)
-    config.add_route("device_delete", "/devices/{id}/delete",
-                     factory='patchman.security.EntryFactory'
-)
-
-    # patentes routes
-    config.add_route("plate_list", "/plates/list")
-    config.add_route("plate_search", "/plates/search")
-    config.add_route("plate_new", "/plates/new",
-                     factory='patchman.security.EntryFactory'
-)
-    config.add_route("plate_edit", "/plates/{id}/edit",
-                     factory='patchman.security.EntryFactory'
-)
-    config.add_route("plate_delete", "/plates/{id}/delete",
-                     factory='patchman.security.EntryFactory'
-)
-    config.add_route("log_get", "/logs/get")
-    
-    config.add_route('auth', '/sign/{action}')
+    MyRoutes(config)
     
     config.scan()
     return config.make_wsgi_app()

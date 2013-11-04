@@ -22,8 +22,7 @@ $(document).ready(function(){
                 logs.prepend(items.join( "" ));
             }
         };
-        var logFrame = function() {
-            console.log("load");
+        var logFrame = function(){
             $.getJSON( "${request.route_url('log_get')}", logResponse);    
         };
 

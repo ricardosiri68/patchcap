@@ -33,6 +33,7 @@ class PatchFinder(Daemon):
         self.js = JpegStreamer()
         detected = 0
         total = 0
+        print dir(self.env)
         while True:
             img = self.device.getImage()
             if img is False: 
