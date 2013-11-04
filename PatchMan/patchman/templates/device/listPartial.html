@@ -72,9 +72,11 @@
 		<% direction = "desc" %>
 	% endif
 
+	% if column == "name":
 		<a href="${request.route_url('device_list')}?sort=${column}&direction=${direction}" 
             class="${css_class}">Nombre</a>
+   % else: 
         <a href="${request.route_url('device_list')}?sort=${column}&direction=${direction}" 
-			class="${css_class}">IP</a>
-
+			class="${css_class}">URI</a>
+    % endif
 </%def>

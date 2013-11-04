@@ -5,14 +5,14 @@ ${form.csrf_token()}
 <div class="${'clearfix error' if form.errors_for('name') else 'clearfix'}">
 	<label for="name">Nombre</label>
 	<div class="input">
-		${form.text("name", class_="large", maxlength="100")}
+		${form.text("name", class_="small", maxlength="20")}
 		${validate_errors("name")}
 	</div>
 </div>
 <div class="${'clearfix error' if form.errors_for('ip') else 'clearfix'}">
-	<label for="name">IP</label>
+	<label for="name">URI</label>
 	<div class="input">
-		${form.text("ip", class_="small", maxlength="16")}
+		${form.text("ip", class_="large", maxlength="100")}
 		${validate_errors("ip")}
 	</div>
 </div><div class="${'clearfix error' if form.errors_for('username') else 'clearfix'}">

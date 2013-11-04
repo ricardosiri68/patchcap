@@ -1,21 +1,33 @@
 import os
+import logging
+import cv
 from SimpleCV import Image, JpegStreamCamera, VirtualCamera
-from cv import CreateFileCapture, QueryFrame
+import time
+
+logger = logging.getLogger(__name__)
 
 class VirtualDevice(object):
-        
+    MAX_RETRIES = 30
+
     _device = None
     _frames = []
     _source_type = None
     _src = None
+    _fps = 15
+
+    _errorCount = 0
 
     def __init__(self,src):
     
         self._src = src
 
-        if src.startswith('http://') or src.startswith('rstp://') or src.startswith('rtp://'):
+        if src.startswith('http://') :
             self._source_type = 'stream'
             self._device = JpegStreamCamera(src)
+        elif src.startswith('rtsp://') or src.startswith('rtp://'):
+            self._source_type = 'h264'
+            self._device = cv.CaptureFromFile(src)
+            self._fps = cv.GetCaptureProperty(self._device, cv.CV_CAP_PROP_FPS )
         elif os.path.isdir(src):
             self._source_type = 'imageset'
             for imgfile in os.listdir(src):
@@ -27,11 +39,33 @@ class VirtualDevice(object):
             self._frames.append(src) 
         else:
             self._source_type = 'video'
-            self._device = CreateFileCapture(src)
+            self._device = cv.CreateFileCapture(src)
         #else: #stream
         #    self._device = Camera(src)
-
+    
     def getImage(self):
+<<<<<<< HEAD
+        img = None
+        
+        if self._source_type == 'stream':
+            img = self._device.getImage()
+        
+        elif self._source_type in ('h264','video'):
+            frame = cv.QueryFrame(self._device)
+            if frame:
+                img = Image(frame, cv2image=True) 
+            
+        else: #image,imageset
+            if len(self._frames):
+                img = Image(self._frames.pop())
+
+        if img is None and self._errorCount< VirtualDevice.MAX_RETRIES:
+            time.sleep(1)
+            self._errorCount +=1
+            img = self.getImage()
+        
+        return img
+=======
         if self._source_type in ('video', 'stream'):
             img = QueryFrame(self._device)
             if img:
@@ -43,3 +77,4 @@ class VirtualDevice(object):
                 return Image(self._frames.pop())
             else:
                 return False
+>>>>>>> 56a7609b5c48142f8ab6d0ea0cd78058a4280b71

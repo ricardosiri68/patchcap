@@ -10,11 +10,6 @@ from datetime import datetime
 
 log = logging.getLogger(__name__)
 
-class Log(object):
-    def __init__(self, t, p):
-        self.t = t.isoformat()
-        self.p = p
-    
 @view_config(route_name="log_get", renderer='json')
 def list(request):
     s=request.session

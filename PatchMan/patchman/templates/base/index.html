@@ -7,22 +7,14 @@
     <meta name="description" content="">
     <meta name="author" content="">
     
-    <script src="${request.static_url('patchman:static/js/jquery-1.7.min.js')}"></script>
+   
+	<link rel="stylesheet" href="${request.static_url('patchman:static/css/bootstrap.css')}">    
+	<link rel="stylesheet" href="${request.static_url('patchman:static/css/main.css')}">    
+	<script src="${request.static_url('patchman:static/js/jquery-1.7.min.js')}"></script>
     <script src="${request.static_url('patchman:static/js/bootstrap-alerts.js')}"></script>
     <script src="${request.static_url('patchman:static/js/bootstrap-modal.js')}"></script>
     <script src="${request.static_url('patchman:static/js/bootstrap-tabs.js')}"></script>
-    
-    <!-- not used 
-    <script src="/static/js/bootstrap-twipsy.js"></script>
-    <script src="/static/js/bootstrap-popover.js"></script>
-    <script src="/static/js/bootstrap-dropdown.js"></script>
-    <script src="/static/js/bootstrap-scrollspy.js"></script>
-    <script src="/static/js/bootstrap-buttons.js"></script>
-    -->
-    
-	<link rel="stylesheet" href="${request.static_url('patchman:static/css/bootstrap.css')}">    
-	<link rel="stylesheet" href="${request.static_url('patchman:static/css/main.css')}">    
-
+ 
     <%block name="head"/>    
 </head>
 <%
@@ -37,8 +29,11 @@ user_id = authenticated_userid(request)
           <ul class="nav">
             <li class="active"><a href="${request.route_url('home')}">Home</a></li>
             <li><a href="${request.route_url('device_view',id=0)}">Monitor</a></li>
-            <li><a href="${request.route_url('plate_list')}">Patentes</a></li>
-            <li><a href="${request.route_url('brand_list')}">Marcas</a></li>
+            % if user_id:
+                <li><a href="${request.route_url('plate_list')}">Patentes</a></li>
+                <li><a href="${request.route_url('device_list')}">Dispositivos</a></li>
+                <li><a href="${request.route_url('brand_list')}">Marcas</a></li>
+            % endif
           </ul>
           <p class="pull-right">
             % if user_id:
@@ -71,7 +66,7 @@ user_id = authenticated_userid(request)
       </footer>
 
     </div> <!-- /container -->
-	
+
 </body>
 </html>
 
