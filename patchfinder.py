@@ -22,13 +22,13 @@ class PatchFinder(Daemon):
         self.env = None
         super(PatchFinder,self).__init__("/tmp/patchfinder.pid",stdin='/dev/stdin', stderr='/dev/stderr',stdout='/dev/stdout')
         self.device = VirtualDevice(src)
-        self.logEnabled = str(logEnabled) in ('True','1')
+        self.capEnabled = str(logEnabled) in ('True','1')
         
-        if self.logEnabled:
+        if self.capEnabled:
             logger.debug("Se escribiran los logs a la base")
         
     def run(self):
-        if self.logEnabled:
+        if self.capEnabled:
             self.env = bootstrap('PatchMan/development.ini')
             initialize_sql(self.env['registry'].settings)
         
