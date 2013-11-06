@@ -22,22 +22,14 @@ $(document).ready(function(){
             }
         };
 
-        var insertLog = function(i, l) {
-                    var fmt = new DateFmt("%d/%m/%y %H:%M");
-                    var css = (l.e)?'new':'new-disabled';
-                    var element = 
-                    "<li class='"+css+"'>"+
-                    l.p+": " +fmt.format(new Date(l.t))+ 
-                    "</li>" ;
-                    items.push(element);
-            }
 
         var logFrame = function() {
             $.getJSON( "${request.route_url('log_get')}", logResponse);
             setTimeout(logFrame, 3 * 1000)
+
         };
 
-        setTimeout(logFrame, 3 * 1000)
+        logFrame();
         //$('.stream').bind('load', logFrame);
 });
 

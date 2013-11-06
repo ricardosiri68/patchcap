@@ -64,4 +64,3 @@ class VirtualDevice(object):
             img = self.getImage()
         
         return img
-

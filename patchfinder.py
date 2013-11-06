@@ -56,9 +56,9 @@ class PatchFinder(Daemon):
             dt =datetime.now().strftime("%Y-%m-%d %H:%M")
             transaction.begin()
             p= DBSession.query(Plate).filter_by(code=plate).first()
-            if p is None:
-                p=Plate(plate, active=False, notes="Agregada automaticamente...")
-                DBSession.add(p)
+            # if p is None:
+            #     p=Plate(plate, active=False, notes="Agregada automaticamente...")
+            #     DBSession.add(p)
 
             log = PlateLog()
             log.plate = p

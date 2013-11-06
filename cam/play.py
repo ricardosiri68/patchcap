@@ -5,7 +5,7 @@ from  SimpleCV import Display, Image
 import sys
 
 if len(sys.argv)!=2:
-    uri = "rtsp://root:root@192.168.3.20:554/cam1/onvif-h264"
+    uri = "rtsp://root:root@192.168.0.33:554/cam1/onvif-h264"
 else:
     uri = sys.argv[1]
 
@@ -23,6 +23,6 @@ while True:
     if not frame: continue
     i = Image(frame)
     i.save(d)
-    ch = 0xFF & cv.WaitKey(1)
+    ch = 0xFF & cv.WaitKey(waitm)
     if ch == 27:
         break

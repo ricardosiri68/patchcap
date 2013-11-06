@@ -13,7 +13,7 @@ video = cv.CaptureFromFile(uri)
 fps = cv.GetCaptureProperty(video, cv.CV_CAP_PROP_FPS )
 w = (int)(cv.GetCaptureProperty(video, cv.CV_CAP_PROP_FRAME_WIDTH ))
 h = (int)(cv.GetCaptureProperty(video, cv.CV_CAP_PROP_FRAME_HEIGHT ))
-writer = cv.CreateVideoWriter(filename="out.avi",fourcc=cv.CV_FOURCC('F','M','P','4'),fps=25, frame_size=(w,h),is_color=True)
+writer = cv.CreateVideoWriter(filename="out.avi",fourcc=cv.CV_FOURCC('F','M','P','4'),fps=fps, frame_size=(w,h),is_color=True)
 
 print "fps: "+str(fps)
 print "w: "+str(w)

@@ -60,9 +60,9 @@ class PlateFinder(object):
             img = img.crop(3,3,img.width-6,img.height-6).resize(h=50)
             img.save(imgpath) 
 
-        text = self.ocr.readWord(img.dilate().getBitmap())
+        #text = self.ocr.readWord(img.dilate().getBitmap())
 
-        #text = self.findChars(img.dilate(), img_name)
+        text = self.findChars(img.dilate(), img_name)
 
         if text:
             return text
