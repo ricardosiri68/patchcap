@@ -29,7 +29,7 @@ class PatchFinder(Daemon):
         
     def run(self):
         if self.logEnabled:
-            self.env = bootstrap('PatchMan/development.ini')
+            self.env = bootstrap('../PatchMan/development.ini')
             initialize_sql(self.env['registry'].settings)
         
         stats = PatchStat()
