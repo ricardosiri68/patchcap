@@ -21,21 +21,21 @@ logging.getLogger('suds.transport').setLevel(logging.WARNING)
 logging.getLogger('suds.xsd.schema').setLevel(logging.WARNING)
 logging.getLogger('suds.wsdl').setLevel(logging.WARNING)
 
-'''
 wsd = WSDiscovery()
 wsd.start()
-typeNVT = QName("http://www.onvif.org/ver10/network/wsdl","NetworkVideoTransmitter");
-ret = wsd.searchServices(types=[typeNVT])
+#typeNVT = QName("http://www.onvif.org/ver10/network/wsdl","NetworkVideoTransmitter");
+#ret = wsd.searchServices(types=[typeNVT])
+ret = wsd.searchServices()
 for service in ret:
     print "Device: " + service.getEPR() + ":"
     print "Address information: " + str(service.getXAddrs())
     print "Scopes: " + str(service.getScopes())
 
+exit(1)
 service = ret[0]
 uri =  service.getXAddrs()[0]
 urn = service.getEPR()
 wsd.stop()
-'''
 
 uri = 'http://192.168.3.20/onvif/services'
 urn = 'uuid:76931fac-9dab-2b36-c248-a8556a00bec4'
