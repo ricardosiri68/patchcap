@@ -16,7 +16,7 @@ logger = log.setup()
 
 class PatchFinder(Daemon):
 
-    logEnabled = True
+    capEnabled = True
     
     def __init__(self,src, logEnabled = True):
         self.env = None
@@ -51,11 +51,11 @@ class PatchFinder(Daemon):
 
     def log(self, img, plate, stats):
 
-        if self.logEnabled:
+        if self.capEnabled:
             logger.debug("loging capture to db")
             dt =datetime.now().strftime("%Y-%m-%d %H:%M")
             transaction.begin()
-            p= DBSession.query(Plate).filter_by(code=plate).first()
+            p = DBSession.query(Plate).filter_by(code=plate).first()
             # if p is None:
             #     p=Plate(plate, active=False, notes="Agregada automaticamente...")
             #     DBSession.add(p)
@@ -65,14 +65,7 @@ class PatchFinder(Daemon):
             DBSession.add(log)
             transaction.commit()
        
-        if img.filename:
-            real = path.splitext(path.basename(img.filename))[0].upper()
-            output = plate.upper().replace(" ","")[:6]
-            if output == real[:6]:
-                logger.debug("\033[92m"+output+": OK \033[0m")
-            else:
-                logger.debug(real[:6]+": "+output)
-
+        
     def __del__(self):
         self.device = None
         if self.env:

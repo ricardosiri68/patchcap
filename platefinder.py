@@ -3,9 +3,9 @@ import logging
 from os import path, mkdir, listdir
 from stats import PatchStat
 import cv2.cv as cv
-from cv2 import copyMakeBorder, BORDER_CONSTANT 
+from cv2 import copyMakeBorder, BORDER_CONSTANT, getPerspectiveTransform 
 from SimpleCV import Color, Image, Camera,JpegStreamer, JpegStreamCamera, VirtualCamera
-
+import numpy as np
 logger = logging.getLogger(__name__)
 
 class PlateFinder(object):
@@ -20,6 +20,13 @@ class PlateFinder(object):
             self.stats.detected()
             if self.isPlate(plate):
                 self.stats.found()
+                if img.filename:
+                    real = path.splitext(path.basename(img.filename))[0].upper()
+                    output = plate.upper().replace(" ","")[:6]
+                    if output == real[:6]:
+                        logger.debug("\033[92m"+output+": OK \033[0m")
+                    else:
+                        logger.debug(real[:6]+": "+output)
         return plate
        
     def isPlate(self, plate):
@@ -28,7 +35,7 @@ class PlateFinder(object):
 
     def findPlate(self, img):
         bin = self.prepare(img)
-        blobs = bin.findBlobs(minsize=1000)
+        blobs = bin.findBlobs(minsize=2000)
        
         if blobs:
             blobs = list((b for b in blobs 
@@ -46,18 +53,68 @@ class PlateFinder(object):
         if blob.angle()!=0:
             cropImg = cropImg.rotate(blob.angle())
         
+        try:
+            corner_count = 0
+            corners=blob.minRect()
+            center = blob.centroid()
+            r = []
+            t = []
+            b = []
+            src = []
+            dst = []
+            if corners:
+                corner_count = len(corners)
+            if corner_count == 4:
+
+                for i in range(len(corners)):
+                    c = corners[i]
+                    if (c[1] < center[1]):
+                        t.append(((float)(c[0]),(float)(c[1])))
+                    else:
+                        b.append(((float)(c[0]),(float)(c[1])))
+                
+                r.append(t[0] if t[0][0]>t[1][0] else t[1])
+                r.append(t[1] if t[0][0]>t[1][0] else t[0])
+                r.append(b[1] if b[0][0]>b[1][0] else b[0])
+                r.append(b[0] if b[0][0]>b[1][0] else b[1])
+
+                src = np.array(r, np.float32)
+                w= blob.minRectWidth()
+                h= blob.minRectHeight()
+                dst = np.array([(0,0), (w,0),(h, w),(0,h)],np.float32)
+                #cropImg = cropImg.transformPerspective(getPerspectiveTransform(src,dst))
+            
+        except:
+            print "r"
+            print r
+            print "t"
+            print t
+            print "src"
+            print src
+            print "dst"
+            print dst
+            print r
+            print corners
+
+
         return self.findSimbols(cropImg, img.filename)
 
-    def findSimbols(self, img, imgname):
-
-        img_name = path.splitext(path.basename(imgname))[0].upper()
        
-        logger.debug("guardando %s",img_name)
+    def findSimbols(self, img, imgname):
+            
+        img = img.crop(3,3,img.width-6,img.height-6).resize(h=60)
+        img_name = path.splitext(path.basename(imgname))[0].upper()
         if logger.isEnabledFor(logging.DEBUG):
-            if not path.isdir("blobsChars/%s" % img_name):
-                mkdir("blobsChars/%s" % img_name)
-            imgpath = "blobsChars/%s/%s.jpg"%(img_name,img_name)
-            img = img.crop(3,3,img.width-6,img.height-6).resize(h=50)
+            blobs_folder =  "blobsChars/%s" % img_name
+            if not path.isdir(blobs_folder):
+                mkdir(blobs_folder)
+            imgpath = path.join(blobs_folder,"%s.jpg"%(img_name))
+            if path.isfile(imgpath):
+                i = 1
+                imgpath = path.join(blobs_folder,"%s-%s.jpg"%(img_name,i))
+                while path.isfile(imgpath):
+                    i += 1
+                    imgpath = path.join(blobs_folder,"%s-%s.jpg"%(img_name,i))
             img.save(imgpath) 
 
         #text = self.ocr.readWord(img.dilate().getBitmap())
@@ -101,7 +158,7 @@ class PlateFinder(object):
     def cropInnerChar(self,blob, img):
         '''
         corta los blobs que se encuentran dentro del blob de la patente
-        con un padding de 20px alrededor
+        con un padding de 5px alrededor
         '''
 
         blobCroped = blob.crop()
@@ -116,6 +173,9 @@ class PlateFinder(object):
         return new_img.invert()
 
     def prepare(self, img):
-        return (img - img.binarize().morphOpen()).gaussianBlur().binarize()
+        #89/94
+        img = (img/3)
+        #return (img - img.binarize().morphOpen()).gaussianBlur().binarize()
+        return img.binarize().gaussianBlur()
 
 
