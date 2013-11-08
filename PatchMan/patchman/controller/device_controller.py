@@ -77,7 +77,7 @@ def new(request):
         device = form.bind(Device())
         # TODO: db error control?
         dbsession.add(device)
-        request.session.flash("warning;New Device is saved!")
+        request.session.flash("warning;Se agrego el dispositivo!")
         return HTTPFound(location = request.route_url("device_list"))
         
     return dict(form=FormRenderer(form), 
@@ -90,7 +90,7 @@ def edit(request):
     dbsession = DBSession()
     device = dbsession.query(Device).filter_by(id=id).one()
     if device is None:
-        request.session.flash("error;Device not found!")
+        request.session.flash("error;No se encontro el dispositivo!")
         return HTTPFound(location=request.route_url("device_list"))        
     
 
@@ -98,7 +98,7 @@ def edit(request):
     if "form_submitted" in request.POST and form.validate():
         form.bind(device)
         dbsession.add(device)
-        request.session.flash("warning;The Device is saved!")
+        request.session.flash("warning;Se guardo el dispositivo!")
         return HTTPFound(location = request.route_url("device_list"))
 
     action_url = request.route_url("device_edit", id=id)
@@ -121,17 +121,17 @@ def delete(request):
     dbsession = DBSession()
     device = dbsession.query(Device).filter_by(id=id).first()
     if device is None:
-        request.session.flash("error;Device not found!")
+        request.session.flash("error;No se encontro el dispositivo!")
         return HTTPFound(location=request.route_url("device_list"))        
     
     try:
         transaction.begin()
         dbsession.delete(device);
         transaction.commit()
-        request.session.flash("warning;The device is deleted!")
+        request.session.flash("warning;Se elimino el dispositivo!")
     except IntegrityError:
         # delete error
         transaction.abort()
-        request.session.flash("error;The device could not be deleted!")
+        request.session.flash("error;No se pudo eliminar el dispositivo!")
     
     return HTTPFound(location=request.route_url("device_list"))
