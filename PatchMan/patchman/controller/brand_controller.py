@@ -74,7 +74,7 @@ def new(request):
         brand = form.bind(Brand())
         # TODO: db error control?
         dbsession.add(brand)
-        request.session.flash("warning;New Brand is saved!")
+        request.session.flash("warning;Se guardo la marca!")
         return HTTPFound(location = request.route_url("brand_list"))
         
     return dict(form=FormRenderer(form), 
@@ -87,7 +87,7 @@ def edit(request):
     dbsession = DBSession()
     brand = dbsession.query(Brand).filter_by(id=id).one()
     if brand is None:
-        request.session.flash("error;Brand not found!")
+        request.session.flash("error;No se encontro la marca!")
         return HTTPFound(location=request.route_url("brand_list"))        
     
 
@@ -95,7 +95,7 @@ def edit(request):
     if "form_submitted" in request.POST and form.validate():
         form.bind(brand)
         dbsession.add(brand)
-        request.session.flash("warning;The Brand is saved!")
+        request.session.flash("warning;Se guardo la marca!")
         return HTTPFound(location = request.route_url("brand_list"))
 
     action_url = request.route_url("brand_edit", id=id)
@@ -109,17 +109,17 @@ def delete(request):
     dbsession = DBSession()
     brand = dbsession.query(Brand).filter_by(id=id).first()
     if brand is None:
-        request.session.flash("error;Brand not found!")
+        request.session.flash("error;Marca inexistente!")
         return HTTPFound(location=request.route_url("brand_list"))        
     
     try:
         transaction.begin()
         dbsession.delete(brand);
         transaction.commit()
-        request.session.flash("warning;The brand is deleted!")
+        request.session.flash("warning;Marca inexistente!")
     except IntegrityError:
         # delete error
         transaction.abort()
-        request.session.flash("error;The brand could not be deleted!")
+        request.session.flash("error;No se pudo eliminar la marca. Verifique que no este siendo usada por ningun registro!")
     
     return HTTPFound(location=request.route_url("brand_list"))
