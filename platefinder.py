@@ -10,30 +10,10 @@ logger = logging.getLogger(__name__)
 
 class PlateFinder(object):
 
-    def __init__(self, stats):
+    def __init__(self):
         self.ocr = Ocr('spa')
-        self.stats = stats
 
     def find(self,img):
-        plate = self.findPlate(img)
-        if plate:
-            self.stats.detected()
-            if self.isPlate(plate):
-                self.stats.found()
-                if img.filename:
-                    real = path.splitext(path.basename(img.filename))[0].upper()
-                    output = plate.upper().replace(" ","")[:6]
-                    if output == real[:6]:
-                        logger.debug("\033[92m"+output+": OK \033[0m")
-                    else:
-                        logger.debug(real[:6]+": "+output)
-        return plate
-       
-    def isPlate(self, plate):
-        return len(plate)==6 and \
-                len(filter(lambda x: x in '1234567890', list(plate[3:])))==3
-
-    def findPlate(self, img):
         bin = self.prepare(img)
         blobs = bin.findBlobs(minsize=2000)
        
@@ -48,6 +28,12 @@ class PlateFinder(object):
                     return plate
         return None 
 
+       
+    def isPlate(self, plate):
+        return len(plate)==6 and \
+                len(filter(lambda x: x in '1234567890', list(plate[3:])))==3
+
+        
     def checkBlob(self,img, blob):
         cropImg = blob.crop()
         if blob.angle()!=0:
