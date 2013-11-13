@@ -99,7 +99,7 @@ class Plate(Base, BaseEntity):
 
     @classmethod
     def isPlate(cls, code):
-        return len(code)==6 and \
+        return code and len(code)==6 and \
                 len(filter(lambda x: x in '1234567890', list(code[3:])))==3
 
     @classmethod
