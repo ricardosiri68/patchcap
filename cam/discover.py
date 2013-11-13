@@ -13,10 +13,8 @@ def toascii(p):
     return p.encode('hex').upper()#''.join(str(ord(c)) for c in p)
 
 
-
-
 logging.basicConfig(level=logging.INFO)
-logging.getLogger('suds.client').setLevel(logging.DEBUG)
+logging.getLogger('suds.client').setLevel(logging.INFO)
 logging.getLogger('suds.transport').setLevel(logging.WARNING)
 logging.getLogger('suds.xsd.schema').setLevel(logging.WARNING)
 logging.getLogger('suds.wsdl').setLevel(logging.WARNING)
@@ -31,7 +29,6 @@ for service in ret:
     print "Address information: " + str(service.getXAddrs())
     print "Scopes: " + str(service.getScopes())
 
-exit(1)
 service = ret[0]
 uri =  service.getXAddrs()[0]
 urn = service.getEPR()
@@ -64,13 +61,21 @@ token = UsernameDigestToken(u, p)
 security.tokens.append(token) 
 #client.set_options(wsse=security)
 
-client = Client('file:///home/hernando/proyectos/patchcap/cam/onvif/devicemgmt_1.wsdl',location=uri, wsse=security)
-#client = Client('http://www.onvif.org/onvif/ver10/device/wsdl/devicemgmt.wsdl',location=uri)#, wsse=security)
-#client = Client(uri)
-#print client.service.GetWsdlUrl()
-print client.GetSystemDateAndTime()
-client.last_sent()
-client.last_received()
+
+from suds.bindings import binding
+binding.envns=('SOAP-ENV', 'http://www.w3.org/2003/05/soap-envelope')
+
+wsdl_url = 'file:///home/hernando/proyectos/patchcap/cam/onvif/def/devicemgmt_1.wsdl'
+#wsdl_url ='http://www.onvif.org/onvif/ver10/device/wsdl/devicemgmt.wsdl' 
+client = Client(wsdl_url,location=uri, wsse=security)
+#print client
+#print client.service.GetHostname()
+#print client.service.GetSystemDateAndTime()
+print client.service.GetDeviceInformation()
+print client.service.GetRelayOutputs()
+#print client.service.GetCapabilities('All')
+#client.last_sent()
+#client.last_received()
 
 
 

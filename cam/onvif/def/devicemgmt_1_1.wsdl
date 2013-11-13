@@ -3739,9 +3739,11 @@ IN NO EVENT WILL THE CORPORATION OR ITS MEMBERS OR THEIR AFFILIATES BE LIABLE FO
       </wsdl:output>
     </wsdl:operation>
   </wsdl:binding>
-    <wsdl:service name="DeviceService">
-                     <wsdl:port name="DevicePort" binding="tds:DeviceBinding">
-                                        <soap:address location="http://192.168.3.20/onvif/device_service"/>
-                                                     </wsdl:port>
-                                                                </wsdl:service>
+  <!--===============================-->
+  <wsdl:service name="DeviceService">
+    <wsdl:port name="DevicePort" binding="tds:DeviceBinding">
+      <soap:address location="http://192.168.3.20/onvif/device_service"/>
+    </wsdl:port>
+  </wsdl:service>
+  <!--===============================-->
 </wsdl:definitions>
