@@ -88,14 +88,31 @@ class Plate(Base, BaseEntity):
     updated_at = Column(DateTime)  
     logs  = relationship("PlateLog", order_by="desc(PlateLog.id)", backref="plate")
     
-    def __init__(self, code="", brand_id=0, active=True, notes=""):
+    def __init__(self, code="", brand_id=0, active=False, notes=""):
         self.code = code
         self.brand_id = brand_id
         self.active = active
-        self.notes = notes
+        self.notes = "Agregada automaticamente..."
 
     def __repr__(self):
         return "<Plate('%s - %i')>" % (self.code, int(self.active))
+
+    @classmethod
+    def isPlate(cls, code):
+        return len(code)==6 and \
+                len(filter(lambda x: x in '1234567890', list(code[3:])))==3
+
+    @classmethod
+    def findBy(class_, code):
+        p = DBSession.query(class_).filter_by(code=code).first()
+        if p is None:
+            p = Plate(code)
+        return p
+
+    def log(self):
+        l = PlateLog()
+        l.plate = self
+        self.logs.append(l)
 
 class PlateLog(Base, BaseEntity):
     __tablename__ = 'logs'

@@ -18,7 +18,7 @@ class PatchFinder(Daemon):
 
     capEnabled = True
     
-    def __init__(self,src, logEnabled = True):
+    def __init__(self,src, logEnabled = 'True'):
         self.env = None
         super(PatchFinder,self).__init__("/tmp/patchfinder.pid",stdin='/dev/stdin', stderr='/dev/stderr',stdout='/dev/stdout')
         self.device = VirtualDevice(src)
@@ -42,13 +42,24 @@ class PatchFinder(Daemon):
                 stats.error()
                 break;
             stats.count()
-            plate = finder.find(img)
-            if plate:
-                self.log(img, plate, stats)
-            output.write(img, plate)
+            code = finder.find(img)
+            if Plate.isPlate(code):
+                if self.capEnabled:
+                    logger.debug("loging capture to db")
+                    transaction.begin()
+                    plate = Plate.findBy(code)
+                    if plate.active:
+                        self.device.alarm()
+                    plate.log()
+                    transaction.commit()
+                self.log(img, code, stats)
+            else:
+                code = ''
+            output.write(img, code)
 
         stats.show()
 
+    
     def log(self, img, plate, stats):
         stats.detected()
         if img.filename:
@@ -59,22 +70,8 @@ class PatchFinder(Daemon):
                 stats.found()
             else:
                 logger.debug(real[:6]+": "+output)
- 
-        if self.capEnabled:
-            logger.debug("loging capture to db")
-            dt =datetime.now().strftime("%Y-%m-%d %H:%M")
-            transaction.begin()
-            p = DBSession.query(Plate).filter_by(code=plate).first()
-            if p is None:
-                p=Plate(plate, active=False, notes="Agregada automaticamente...")
-                DBSession.add(p)
-
-            log = PlateLog()
-            log.plate = p
-            DBSession.add(log)
-            transaction.commit()
-       
-        
+            
+    
     def __del__(self):
         self.device = None
         if self.env:
