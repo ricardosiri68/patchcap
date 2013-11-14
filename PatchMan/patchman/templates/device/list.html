@@ -5,6 +5,8 @@
 	<h1 class="pull-left">Camaras</h1>
   	<div class="pull-right">
 		<a class="btn primary" style="margin-right:10px; height:15px;" 
+			href="${request.route_url('device_discover')}">Descubrir Camara</a>
+<a class="btn primary" style="margin-right:10px; height:15px;" 
 			href="${request.route_url('device_new')}">Agregar Camara</a>
 		<div id="quicksearch" class="search-box">
 			<form method="get" action="${request.route_url('device_list')}">

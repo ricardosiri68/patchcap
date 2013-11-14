@@ -60,6 +60,8 @@ class Device(Base, BaseEntity):
     ip = Column(String(100), nullable=False, unique=True)
     username = Column(String(55), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
+    instream = Column(String(100), nullable=True)
+    outstream = Column(String(100), nullable=True)
     created_at = Column(DateTime)  
     updated_at = Column(DateTime)  
   

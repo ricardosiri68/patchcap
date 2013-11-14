@@ -13,6 +13,7 @@ class MyRoutes:
 			("brand_delete","/brands/{id}/delete",__security),
 
 			# camaras y dispositivos
+			("device_discover","/devices/discover"),
 			("device_list","/devices/list"),
 			("device_search","/devices/search"),
 			("device_new","/devices/new", __security),

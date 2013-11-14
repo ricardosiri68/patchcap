@@ -21,10 +21,26 @@ ${form.csrf_token()}
 		${form.text("username", class_="small", maxlength="30")}
 		${validate_errors("username")}
 	</div>
-</div><div class="${'clearfix error' if form.errors_for('password') else 'clearfix'}">
+</div>
+<div class="${'clearfix error' if form.errors_for('password') else 'clearfix'}">
 	<label for="name">Clave</label>
 	<div class="input">
 		${form.password("password", class_="small", maxlength="16")}
 		${validate_errors("password")}
+	</div>
+</div>
+
+<div class="${'clearfix error' if form.errors_for('instream') else 'clearfix'}">
+	<label for="name">Input Stream</label>
+	<div class="input">
+		${form.text("instream", class_="large", maxlength="100")}
+		${validate_errors("instream")}
+	</div>
+</div>
+<div class="${'clearfix error' if form.errors_for('outstream') else 'clearfix'}">
+	<label for="name">Output Stream</label>
+	<div class="input">
+		${form.text("outstream", class_="large", maxlength="100")}
+		${validate_errors("outstream")}
 	</div>
 </div>

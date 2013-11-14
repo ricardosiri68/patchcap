@@ -1,7 +1,7 @@
 from suds.client import Client
 import hmac, hashlib
 import base64
-from wsdiscovery import *
+from patchman.utils.wsdiscovery import *
 import binascii
 import logging
 
@@ -13,7 +13,7 @@ def toascii(p):
     return p.encode('hex').upper()#''.join(str(ord(c)) for c in p)
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(filename="suds.log", level=logging.DEBUG)
 logging.getLogger('suds.client').setLevel(logging.INFO)
 logging.getLogger('suds.transport').setLevel(logging.WARNING)
 logging.getLogger('suds.xsd.schema').setLevel(logging.WARNING)
@@ -70,9 +70,9 @@ wsdl_url = 'file:///home/hernando/proyectos/patchcap/cam/onvif/def/devicemgmt_1.
 client = Client(wsdl_url,location=uri, wsse=security)
 #print client
 #print client.service.GetHostname()
-#print client.service.GetSystemDateAndTime()
-print client.service.GetDeviceInformation()
-print client.service.GetRelayOutputs()
+print client.service.GetSystemDateAndTime()
+#print client.service.GetDeviceInformation()
+#print client.service.GetRelayOutputs()
 #print client.service.GetCapabilities('All')
 #client.last_sent()
 #client.last_received()
