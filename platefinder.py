@@ -52,7 +52,7 @@ class PlateFinder(object):
                 corner_count = len(corners)
             if corner_count == 4:
 
-                for i in range(len(corners)):
+                for i in xrange(len(corners)):
                     c = corners[i]
                     if (c[1] < center[1]):
                         t.append(((float)(c[0]),(float)(c[1])))
