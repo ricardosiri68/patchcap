@@ -6,6 +6,7 @@ import cv2.cv as cv
 from cv2 import copyMakeBorder, BORDER_CONSTANT, getPerspectiveTransform 
 from SimpleCV import Color, Image, Camera,JpegStreamer, JpegStreamCamera, VirtualCamera
 import numpy as np
+from warping import ImageBlobWarping
 logger = logging.getLogger(__name__)
 
 class PlateFinder(object):
@@ -15,12 +16,10 @@ class PlateFinder(object):
 
     def find(self,img):
         bin = self.prepare(img)
-        blobs = bin.findBlobs(minsize=2000)
+        blobs = bin.findBlobs(minsize=1000)
        
         if blobs:
-            blobs = list((b for b in blobs 
-                     if b.isRectangle() and 
-                        3 < b.aspectRatio() < 4))
+            blobs = list((b for b in blobs if 3 < b.aspectRatio() < 4))
         if blobs:
             for b in blobs:
                 plate = self.checkBlob(img,b)
@@ -31,6 +30,15 @@ class PlateFinder(object):
        
     def checkBlob(self, img, blob):
         cropImg = blob.crop()
+        (x,y), w,h = blob.topLeftCorner(),blob.minRectWidth(),blob.minRectHeight()
+        margin = 30
+        x,y,w,h = x - margin, y - margin,x + w + margin,y + h + margin
+        x = x if x > 0 else 0
+        y = y if y > 0 else 0
+        w = w if w < img.width else img.width
+        h = h if h < img.height else img.height
+        print (x,y, w,h)
+        img.crop(x,y, w,h).show()
         cropImg = self.fixOrientation(cropImg, blob)
         return self.findSimbols(cropImg, img.filename)
 
@@ -62,16 +70,16 @@ class PlateFinder(object):
                         b.append(((float)(c[0]),(float)(c[1])))
 
                 
-                    r.append(t[0] if t[0][0]>t[1][0] else t[1])
-                    r.append(t[1] if t[0][0]>t[1][0] else t[0])
-                    r.append(b[1] if b[0][0]>b[1][0] else b[0])
-                    r.append(b[0] if b[0][0]>b[1][0] else b[1])
+                r.append(t[0] if t[0][0]>t[1][0] else t[1])
+                r.append(t[1] if t[0][0]>t[1][0] else t[0])
+                r.append(b[1] if b[0][0]>b[1][0] else b[0])
+                r.append(b[0] if b[0][0]>b[1][0] else b[1])
 
-                    src = np.array(r, np.float32)
-                    w= blob.minRectWidth()
-                    h= blob.minRectHeight()
-                    dst = np.array([(0,0), (w,0),(h, w),(0,h)],np.float32)
-  #                  cropImg = cropImg.transformPerspective(getPerspectiveTransform(src,dst))
+                src = np.array(r, np.float32)
+                w= blob.minRectWidth()
+                h= blob.minRectHeight()
+                dst = np.array([(0,0), (w,0),(h, w),(0,h)],np.float32)
+#                  cropImg = cropImg.transformPerspective(getPerspectiveTransform(src,dst))
 
           
         except:
@@ -164,7 +172,7 @@ class PlateFinder(object):
 
     def prepare(self, img):
         #89/94
-        img = (img/3)
+        img = (img)
         #return (img - img.binarize().morphOpen()).gaussianBlur().binarize()
         return img.binarize().gaussianBlur()
 
