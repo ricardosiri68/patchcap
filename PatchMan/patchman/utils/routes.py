@@ -17,9 +17,9 @@ class MyRoutes:
 			("device_list","/devices/list"),
 			("device_search","/devices/search"),
 			("device_new","/devices/new", __security),
-			("device_view","/device/{id}/view",__security),
-			("device_edit","/device/{id}/edit",__security),
-			("device_delete","/device/{id}/delete",__security),
+			("device_view","/devices/{id}/view",__security),
+			("device_edit","/devices/{id}/edit",__security),
+			("device_delete","/devices/{id}/delete",__security),
 
 			# patentes registradas
 			("plate_list", "/plates/list"),

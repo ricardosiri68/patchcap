@@ -1,7 +1,8 @@
 import os
 import logging
-import cv
-from SimpleCV import Image, JpegStreamCamera, VirtualCamera
+import cv2
+import cv2.cv as cv
+from SimpleCV import Image, VirtualCamera
 import time
 import urllib2
 import logging
@@ -27,13 +28,10 @@ class VirtualDevice(object):
         
         
         self._src = src
-        if src.startswith('http://') :
+        if src.startswith('http://') or  src.startswith('rtsp://') or src.startswith('rtp://'):
             self._source_type = 'stream'
-            self._device = JpegStreamCamera(src)
-        elif src.startswith('rtsp://') or src.startswith('rtp://'):
-            self._source_type = 'h264'
-            self._device = cv.CaptureFromFile(src)
-            self._fps = cv.GetCaptureProperty(self._device, cv.CV_CAP_PROP_FPS )
+            self._device = cv2.VideoCapture(src)
+            self._fps = self._device.get(cv.CV_CAP_PROP_FPS )
         elif os.path.isdir(src):
             self._source_type = 'imageset'
             for imgfile in os.listdir(src):
@@ -52,12 +50,9 @@ class VirtualDevice(object):
     def getImage(self):
         img = None
         
-        if self._source_type == 'stream':
-            img = self._device.getImage()
-        
-        elif self._source_type in ('h264','video'):
-            frame = cv.QueryFrame(self._device)
-            if frame:
+        if self._source_type in ('stream','video'):
+            f, frame = self._device.read()
+            if f:
                 img = Image(frame, cv2image=True) 
             
         else: #image,imageset
