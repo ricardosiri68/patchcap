@@ -29,13 +29,14 @@ class PlateFinder(object):
         return None 
 
        
-    def isPlate(self, plate):
-        return len(plate)==6 and \
-                len(filter(lambda x: x in '1234567890', list(plate[3:])))==3
+    def checkBlob(self, img, blob):
+        cropImg = blob.crop()
+        cropImg = self.fixOrientation(cropImg, blob)
+        return self.findSimbols(cropImg, img.filename)
 
         
-    def checkBlob(self,img, blob):
-        cropImg = blob.crop()
+    def fixOrientation(self,cropImg, blob):
+        
         if blob.angle()!=0:
             cropImg = cropImg.rotate(blob.angle())
         
@@ -50,26 +51,29 @@ class PlateFinder(object):
             dst = []
             if corners:
                 corner_count = len(corners)
+
             if corner_count == 4:
 
-                for i in xrange(len(corners)):
+                for i in range(len(corners)):
                     c = corners[i]
                     if (c[1] < center[1]):
                         t.append(((float)(c[0]),(float)(c[1])))
                     else:
                         b.append(((float)(c[0]),(float)(c[1])))
-                
-                r.append(t[0] if t[0][0]>t[1][0] else t[1])
-                r.append(t[1] if t[0][0]>t[1][0] else t[0])
-                r.append(b[1] if b[0][0]>b[1][0] else b[0])
-                r.append(b[0] if b[0][0]>b[1][0] else b[1])
 
-                src = np.array(r, np.float32)
-                w= blob.minRectWidth()
-                h= blob.minRectHeight()
-                dst = np.array([(0,0), (w,0),(h, w),(0,h)],np.float32)
-                #cropImg = cropImg.transformPerspective(getPerspectiveTransform(src,dst))
-            
+                
+                    r.append(t[0] if t[0][0]>t[1][0] else t[1])
+                    r.append(t[1] if t[0][0]>t[1][0] else t[0])
+                    r.append(b[1] if b[0][0]>b[1][0] else b[0])
+                    r.append(b[0] if b[0][0]>b[1][0] else b[1])
+
+                    src = np.array(r, np.float32)
+                    w= blob.minRectWidth()
+                    h= blob.minRectHeight()
+                    dst = np.array([(0,0), (w,0),(h, w),(0,h)],np.float32)
+  #                  cropImg = cropImg.transformPerspective(getPerspectiveTransform(src,dst))
+
+          
         except:
             print "r"
             print r
@@ -81,14 +85,14 @@ class PlateFinder(object):
             print dst
             print r
             print corners
-
-
-        return self.findSimbols(cropImg, img.filename)
+        
+        return cropImg        
+   
 
        
     def findSimbols(self, img, imgname):
             
-        img = img.crop(3,3,img.width-6,img.height-6).resize(h=60)
+        img = img.crop(3,3,img.width-6,img.height-6).resize(h=50)
         img_name = path.splitext(path.basename(imgname))[0].upper()
         if logger.isEnabledFor(logging.DEBUG):
             blobs_folder =  "blobsChars/%s" % img_name

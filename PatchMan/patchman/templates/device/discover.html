@@ -1,0 +1,47 @@
+<%inherit file="/base/index.html" />
+<%namespace file="listPartial.html" name="listPartial" import="*"/>
+
+<div class="page-header">
+	<h1 class="pull-left">Camaras en la Red</h1>
+  	</div>
+
+<div class="row">
+	<div class="span14">
+ 	% if len(devices):
+		<table class="condensed-table zebra-striped sortable">
+			<thead>
+				<tr>
+                    <th>Nombre
+					</th>
+				    <th>Uri
+					</th>
+					<th style="width: 130px;"></th>
+				</tr>
+			</thead>
+			<tbody>
+				% for item in devices:
+		        <tr>
+			        <td valign="top">	${item.name}
+                    </td>
+                    <td valign="top">
+			        		${item.ip}
+			        </td>
+			        <td valign="top">
+			        	<a class="btn" href="/devices/${item.name}/add" style="height: 14px;">
+			        	Agregar	
+			        	</a>
+			        </td>
+				</tr>
+				% endfor
+			</tbody>
+		</table>
+	% else:
+	<p>
+		No se encontraron Camaras!
+	</p>
+	% endif
+</div>
+
+    </div>
+</div>
+

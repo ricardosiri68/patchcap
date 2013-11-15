@@ -1,28 +1,23 @@
 #!/usr/bin/env python
-import cv
-
-from  SimpleCV import Display, Image
 import sys
+import cv2
+import cv2
 
-if len(sys.argv)!=2:
-    uri = "rtsp://root:root@192.168.0.33:554/cam1/onvif-h264"
-else:
+uri = 0
+if len(sys.argv)==2:
     uri = sys.argv[1]
+c = cv2.VideoCapture(uri)
 
-video = cv.CaptureFromFile(uri)
-fps = cv.GetCaptureProperty(video, cv.CV_CAP_PROP_FPS )
-print fps
-waitm = int( 1000/fps )
-print waitm
-d=Display()
-while True:
-    #    cv.GrabFrame(video)
-    #frame = cv.RetrieveFrame(video)
-    frame = cv.QueryFrame(video)
-#    cv.ShowImage("IP Camera", frame)
-    if not frame: continue
-    i = Image(frame)
-    i.save(d)
-    ch = 0xFF & cv.WaitKey(waitm)
-    if ch == 27:
-        break
+
+    
+
+while(1):
+    _,f = c.read()
+    k = cv2.waitKey(5)
+    print k
+    if not _ or k>0:
+        break;
+    cv2.imshow('e2',f)
+cv2.destroyAllWindows()
+
+

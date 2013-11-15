@@ -9,16 +9,27 @@ from pyramid_simpleform.renderers import FormRenderer
 from sqlalchemy.exc import IntegrityError
 from webhelpers import paginate
 from webhelpers.paginate import Page
+
+from patchman.utils.wsdiscovery import *
+
 import logging
 import transaction
 
 log = logging.getLogger(__name__)
+
+class OnvifDevice(object):
+    def __init__(self, name, ip, scope):
+        self.name = name
+        self.ip = ip
+        self.scope = scope
 
 class DeviceForm(Schema):
     filter_extra_fields = True
     allow_extra_fields = True
     name = validators.String(not_empty=True)
     ip = validators.String(not_empty=True)
+    instream = validators.String(not_empty=True)
+    outstream = validators.String(not_empty=True)
     username = validators.String(not_empty=True)
     password = validators.String(not_empty=True)
 
@@ -59,6 +70,21 @@ def list(request):
                                   {"devices": devices},
                                   request=request)
 
+@view_config(route_name="device_discover")
+def discover(request):
+    wsd = WSDiscovery()
+    wsd.start()
+    #typeNVT = QName("http://www.onvif.org/ver10/network/wsdl","NetworkVideoTransmitter");
+    #ret = wsd.searchServices(types=[typeNVT])
+    ret = wsd.searchServices()
+    devices = []
+    for service in ret:
+        devices.append(OnvifDevice(name=service.getEPR(),
+            ip = service.getXAddrs(),
+            scope= service.getScopes()))
+    return render_to_response("device/discover.html",
+                                  {"devices": devices},
+                                  request=request)
 @view_config(route_name="device_search")
 def search(request):
     """devices list searching """

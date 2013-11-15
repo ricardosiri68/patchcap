@@ -1,0 +1,73 @@
+<%inherit file="/base/index.html" />
+<%block name="head">
+<script src="${request.static_url('patchman:static/js/datefmt.js')}"></script>
+<script src="${request.static_url('patchman:static/js/ocket.io.js')}"></script>
+
+  <script>
+    var socket = null;
+    $(document).ready(function() {
+      socket = new io.Socket(null, {});
+
+      socket.on('connect', function() {
+        console.log("Connected");
+        socket.send({type: "connect", userid: 123});
+      });
+      socket.on('message', function(obj) {
+        console.log("Message", JSON.stringify(obj));
+        if (obj.type == "some") {
+          console.log("do some");
+        }
+      });
+      socket.on('error', function(obj) {
+        console.log("Error", JSON.stringify(obj));
+      });
+      socket.on('disconnect', function() {
+        console.log("Disconnected");
+      });
+
+      console.log("Connecting...");
+      socket.connect();
+    });
+  </script>
+
+<script type="text/javascript">
+
+$(document).ready(function(){
+        
+        $('.stream').bind('load', function() {
+            $.getJSON( "${request.route_url('log_get')}", function( data ) {
+                var items = [];
+                fmt = new DateFmt("%d/%m/%y %H:%M")
+                if (data.length) {
+                    $.each( data, function(i, l ) {
+                        css = (l.e)?'new':'new-disabled';
+                        items.push( "<li class='"+css+"'>" +l.p+": " +fmt.format(new Date(l.t))+ "</li>" );
+                    });
+//                  $("#logs li").removeClass("new").removeClass('new-disabled'); 
+                    $( "#logs").prepend(items.join( "" ));
+                }
+            });    
+        });  
+});    
+
+</script>
+
+</%block>
+
+<div class="page-header">
+  	<h1>${device.name}</h1>
+</div>
+
+<div class="row show-grid">
+	<div class="span6">
+		<h4>Monitor</h4>
+<!--        <img src="http://192.168.0.33/axis-cgi/mjpg/video.cgi" width="320"
+alt="cam" class="stream" />-->
+        <img src="http://localhost:8080/stream" width="320" alt="cam"
+class="stream" />
+</div>
+	<div class="span6">
+		<h4>Historial</h4>
+        <div id="logs"></div>
+    </div>
+</div>
