@@ -109,7 +109,7 @@ def new(request):
     return dict(form=FormRenderer(form), 
                 action_url=request.route_url("device_new"))
 
-@view_config(route_name="device_edit", renderer="device/edit.html", permission="edit")
+@view_config(route_name="device_edit", renderer="device/edit.html", permission="add")
 def edit(request):
     """device edit """
     id = request.matchdict['id']
@@ -134,7 +134,7 @@ def edit(request):
 @view_config(route_name='device_view', renderer="device/mon.html")
 def view(request):
     id = int(request.matchdict.get('id', -1))
-    device = Device.by_id(id) if id>0 else  Device.first()
+    device = Device.findBy(id) if id>0 else  Device.first()
     if not device:
         return HTTPNotFound()
     return {'device':device}

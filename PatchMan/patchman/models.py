@@ -58,7 +58,7 @@ class Device(Base, BaseEntity):
     id = Column(Integer, primary_key=True)  
     name = Column(String(100), nullable=False, unique=True)
     ip = Column(String(100), nullable=False, unique=True)
-    username = Column(String(55), unique=True, nullable=False)
+    username = Column(String(55), unique=False, nullable=False)
     password = Column(String(255), nullable=False)
     instream = Column(String(100), nullable=True)
     outstream = Column(String(100), nullable=True)
@@ -68,6 +68,11 @@ class Device(Base, BaseEntity):
     def __init__(self,  name=""):  
         self.name = name
       
+    @classmethod
+    def findBy(class_, id):
+        return DBSession.query(class_).filter_by(id=id).first()
+
+
     @classmethod
     def first(cls):
         return DBSession.query(Device).first()

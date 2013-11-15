@@ -31,7 +31,9 @@ class PlateFinder(object):
        
     def checkBlob(self, img, blob):
         cropImg = blob.crop()
+        cropImg.save("/home/hernando/Downloads/orig.jpg")
         cropImg = self.fixOrientation(cropImg, blob)
+        cropImg.save("/home/hernando/Downloads/warpe.jpg")
         return self.findSimbols(cropImg, img.filename)
 
         
@@ -69,7 +71,7 @@ class PlateFinder(object):
                     w= blob.minRectWidth()
                     h= blob.minRectHeight()
                     dst = np.array([(0,0), (w,0),(h, w),(0,h)],np.float32)
-  #                  cropImg = cropImg.transformPerspective(getPerspectiveTransform(src,dst))
+                    cropImg = cropImg.transformPerspective(getPerspectiveTransform(src,dst))
 
           
         except:
@@ -164,6 +166,7 @@ class PlateFinder(object):
         #89/94
         img = (img/3)
         #return (img - img.binarize().morphOpen()).gaussianBlur().binarize()
+        #return img.grayscale().gaussianBlur(window=(5,5),grayscale=True).sobel(1,0,True,3).binarize(10)
         return img.binarize().gaussianBlur()
 
 
