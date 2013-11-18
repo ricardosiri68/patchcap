@@ -29,74 +29,27 @@ class PlateFinder(object):
 
        
     def checkBlob(self, img, blob):
-        cropImg = blob.crop()
+        # cropImg = blob.crop()
         (x,y), w,h = blob.topLeftCorner(),blob.minRectWidth(),blob.minRectHeight()
-        margin = 30
-        x,y,w,h = x - margin, y - margin,x + w + margin,y + h + margin
+        margin = 0
+        x,y,w,h = x - margin, y - margin, w + (margin*2) , h + (margin*2)
         x = x if x > 0 else 0
         y = y if y > 0 else 0
         w = w if w < img.width else img.width
         h = h if h < img.height else img.height
-        print (x,y, w,h)
-        img.crop(x,y, w,h).show()
+        
+        cropImg = img.crop(x,y, w,h)
         cropImg = self.fixOrientation(cropImg, blob)
-        return self.findSimbols(cropImg, img.filename)
 
+        return self.findSimbols(cropImg, img.filename)
         
     def fixOrientation(self,cropImg, blob):
-        
-        if blob.angle()!=0:
-            cropImg = cropImg.rotate(blob.angle())
-        
-        try:
-            corner_count = 0
-            corners=blob.minRect()
-            center = blob.centroid()
-            r = []
-            t = []
-            b = []
-            src = []
-            dst = []
-            if corners:
-                corner_count = len(corners)
-
-            if corner_count == 4:
-
-                for i in range(len(corners)):
-                    c = corners[i]
-                    if (c[1] < center[1]):
-                        t.append(((float)(c[0]),(float)(c[1])))
-                    else:
-                        b.append(((float)(c[0]),(float)(c[1])))
-
-                
-                r.append(t[0] if t[0][0]>t[1][0] else t[1])
-                r.append(t[1] if t[0][0]>t[1][0] else t[0])
-                r.append(b[1] if b[0][0]>b[1][0] else b[0])
-                r.append(b[0] if b[0][0]>b[1][0] else b[1])
-
-                src = np.array(r, np.float32)
-                w= blob.minRectWidth()
-                h= blob.minRectHeight()
-                dst = np.array([(0,0), (w,0),(h, w),(0,h)],np.float32)
-#                  cropImg = cropImg.transformPerspective(getPerspectiveTransform(src,dst))
-
-          
-        except:
-            print "r"
-            print r
-            print "t"
-            print t
-            print "src"
-            print src
-            print "dst"
-            print dst
-            print r
-            print corners
-        
-        return cropImg        
-   
-
+        fixed = ImageBlobWarping(cropImg,50,154).warped()
+        if fixed:
+            fixed.show()
+            return fixed
+        else:
+            return cropImg
        
     def findSimbols(self, img, imgname):
             
