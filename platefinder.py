@@ -31,7 +31,7 @@ class PlateFinder(object):
     def checkBlob(self, img, blob):
         # cropImg = blob.crop()
         (x,y), w,h = blob.topLeftCorner(),blob.minRectWidth(),blob.minRectHeight()
-        margin = 0
+        margin = 20
         x,y,w,h = x - margin, y - margin, w + (margin*2) , h + (margin*2)
         x = x if x > 0 else 0
         y = y if y > 0 else 0
@@ -39,12 +39,12 @@ class PlateFinder(object):
         h = h if h < img.height else img.height
         
         cropImg = img.crop(x,y, w,h)
-        cropImg = self.fixOrientation(cropImg, blob)
+        cropImg = self.fixOrientation(cropImg,x ,y ,blob)
 
         return self.findSimbols(cropImg, img.filename)
         
-    def fixOrientation(self,cropImg, blob):
-        fixed = ImageBlobWarping(cropImg,50,154).warped()
+    def fixOrientation(self,cropImg, x, y ,blob):
+        fixed = ImageBlobWarping(cropImg,blob,x,y,50,154).warped()
         if fixed:
             fixed.show()
             return fixed
