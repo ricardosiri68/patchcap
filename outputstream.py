@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 class OutputStream(object):
     
     def __init__(self):
-        self.out =  JpegStreamer()
+        self.out =  JpegStreamer(hostandport="localhost:8000")
 
     def write(self, img, plate):
         try:
