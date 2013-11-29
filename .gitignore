@@ -42,7 +42,7 @@ nosetests.xml
 *.swp
 *.mpeg
 *.mjpg
-
+warpped/*
 videos/*
 logs/*
 blobsChars/*

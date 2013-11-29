@@ -34,7 +34,8 @@ class ImageBlobWarping(object):
 		dst = np.float32(((0,0),(w,0),(w,h),(0,h)))
 		matrix = getPerspectiveTransform(src,dst)
 		out = self.__image.transformPerspective(matrix)
-		return out
+
+		return out.crop(0,0,w,h)
 
 if __name__ == "__main__":
 
