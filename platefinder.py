@@ -39,14 +39,15 @@ class PlateFinder(object):
         h = h if h < img.height else img.height
         
         cropImg = img.crop(x,y, w,h)
-        cropImg = self.fixOrientation(cropImg,x ,y ,blob)
+        cropImg = self.fixOrientation(cropImg, img.filename, x ,y ,blob)
 
         return self.findSimbols(cropImg, img.filename)
         
-    def fixOrientation(self,cropImg, x, y ,blob):
-        fixed = ImageBlobWarping(cropImg,blob,x,y,50,154).warped()
+    def fixOrientation(self,cropImg, name, x, y ,blob):
+        fixed = ImageBlobWarping(cropImg,blob,x,y,154,50).warped()
         if fixed:
-            fixed.show()
+            name = path.splitext(path.basename(name))[0].upper()
+            fixed.save("warpped/%s.jpg" % name )
             return fixed
         else:
             return cropImg
@@ -125,7 +126,7 @@ class PlateFinder(object):
 
     def prepare(self, img):
         #89/94
-        img = (img)
+        img = (img/3)
         #return (img - img.binarize().morphOpen()).gaussianBlur().binarize()
         return img.binarize().gaussianBlur()
 
