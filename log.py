@@ -1,6 +1,7 @@
 import logging, logging.handlers
 import math
-
+import uuid
+from os import path, mkdir
 def setup():
 
     formatter = logging.Formatter(fmt='%(asctime)s - %(module)s - %(levelname)s - %(message)s')
@@ -20,3 +21,29 @@ def setup():
 
     return logger
 
+def save_image(img, name =''):
+
+    filename = None
+    images_path =  "blobsChars/" 
+    if not path.isdir(images_path):
+        mkdir(images_path)
+
+    if img.filename:
+        filename = path.splitext(path.basename(img.filename))[0].upper()
+        images_path += filename 
+        if not path.isdir(images_path):
+            mkdir(images_path)
+
+    if not name:
+        if filename is None:        
+            filename = str(uuid.uuid4()) 
+        name = filename
+    
+    imgpath = path.join(images_path,"%s.png"%(name))
+    if path.isfile(imgpath):
+        i = 1
+        imgpath = path.join(images_path,"%s-%s.png"%(name,i))
+        while path.isfile(imgpath):
+            i += 1
+            imgpath = path.join(images_path,"%s-%s.png"%(name,i))
+    img.save(imgpath) 

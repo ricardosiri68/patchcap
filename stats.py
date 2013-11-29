@@ -1,10 +1,11 @@
+import time
 import logging
 
 logger = logging.getLogger(__name__)
 
 class PatchStat(object):
 
-    MAX_FAILURES = 1000
+    MAX_FAILURES = 100
     _found = 0
     _total = 0
     _detected = 0
@@ -22,10 +23,12 @@ class PatchStat(object):
 
     def error(self):
         self._failures += 1
+        if self._failures == 1:
+            logger.error("No se pudo obtener la imagen")
         if self._failures > PatchStat.MAX_FAILURES: 
-            logger.fatal("No se pueden obtener imagenes (repetido 1000 veces)")
+            logger.fatal("No se pueden obtener imagenes (repetido %s veces)"%(self.MAX_FAILURES))
             self._failures = 0
-    
+        time.sleep(1)
     def found(self):
         self._found +=1
 

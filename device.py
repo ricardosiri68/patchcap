@@ -11,7 +11,6 @@ import base64
 logger = logging.getLogger(__name__)
 
 class VirtualDevice(object):
-    MAX_RETRIES = 3
 
     _device = None
     _frames = []
@@ -21,6 +20,8 @@ class VirtualDevice(object):
     _onvif = False
     _errorCount = 0
 
+    MAX_RETRIES = 5
+    
     def __init__(self,src):
     
         #TODO: from config
@@ -59,10 +60,11 @@ class VirtualDevice(object):
             if len(self._frames):
                 img = Image(self._frames.pop())
 
-        if img is None and self._errorCount< VirtualDevice.MAX_RETRIES:
-            time.sleep(0.5)
+        if img is None:
+            time.sleep(1)
             self._errorCount +=1
-            img = self.getImage()
+            if self._errorCount < self.MAX_RETRIES:
+                img = self.getImage()
         
         return img
     

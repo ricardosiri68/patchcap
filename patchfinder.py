@@ -40,7 +40,10 @@ class PatchFinder(Daemon):
             img = self.device.getImage()
             if not img:
                 stats.error()
-                break;
+                if logger.isEnabledFor(logging.DEBUG):
+                    break;
+                else:
+                    continue;
             stats.count()
             code = finder.find(img)
             if Plate.isPlate(code):

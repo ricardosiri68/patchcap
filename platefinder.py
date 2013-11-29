@@ -1,5 +1,6 @@
 from ocr import Ocr
 import logging
+from log import save_image
 from os import path, mkdir, listdir
 from stats import PatchStat
 import cv2.cv as cv
@@ -27,20 +28,16 @@ class PlateFinder(object):
                     return plate
         return None 
 
-       
     def checkBlob(self, img, blob):
         cropImg = blob.crop()
-        cropImg.save("/home/hernando/Downloads/orig.jpg")
+        save_image(cropImg, "antes-orienta")
         cropImg = self.fixOrientation(cropImg, blob)
-        cropImg.save("/home/hernando/Downloads/warpe.jpg")
-        return self.findSimbols(cropImg, img.filename)
+        save_image(cropImg, "desp-orienta")
+        return self.findSimbols(cropImg)
 
-        
     def fixOrientation(self,cropImg, blob):
-        
         if blob.angle()!=0:
             cropImg = cropImg.rotate(blob.angle())
-        
         try:
             corner_count = 0
             corners=blob.minRect()
@@ -62,7 +59,6 @@ class PlateFinder(object):
                     else:
                         b.append(((float)(c[0]),(float)(c[1])))
 
-                
                 r.append(t[0] if t[0][0]>t[1][0] else t[1])
                 r.append(t[1] if t[0][0]>t[1][0] else t[0])
                 r.append(b[1] if b[0][0]>b[1][0] else b[0])
@@ -72,10 +68,9 @@ class PlateFinder(object):
                 w= blob.minRectWidth()
                 h= blob.minRectHeight()
                 dst = np.array([(0,0), (w,0),(h, w),(0,h)],np.float32)
-#                  cropImg = cropImg.transformPerspective(getPerspectiveTransform(src,dst))
+            #    cropImg = cropImg.transformPerspective(getPerspectiveTransform(src,dst))
+                logger.save(cropImg,  "desp-transf") 
 
-
-          
         except:
             print "r"
             print r
@@ -92,32 +87,17 @@ class PlateFinder(object):
    
 
        
-    def findSimbols(self, img, imgname):
-            
+    def findSimbols(self, img):
         img = img.crop(3,3,img.width-6,img.height-6).resize(h=50)
-        img_name = path.splitext(path.basename(imgname))[0].upper()
         if logger.isEnabledFor(logging.DEBUG):
-            blobs_folder =  "blobsChars/%s" % img_name
-            if not path.isdir(blobs_folder):
-                mkdir(blobs_folder)
-            imgpath = path.join(blobs_folder,"%s.jpg"%(img_name))
-            if path.isfile(imgpath):
-                i = 1
-                imgpath = path.join(blobs_folder,"%s-%s.jpg"%(img_name,i))
-                while path.isfile(imgpath):
-                    i += 1
-                    imgpath = path.join(blobs_folder,"%s-%s.jpg"%(img_name,i))
-            img.save(imgpath) 
-
+            save_image(img)
         #text = self.ocr.readWord(img.dilate().getBitmap())
-
-        text = self.findChars(img.dilate(), img_name)
-
+        text = self.findChars(img.dilate())
         if text:
             return text
         return None
 
-    def findChars(self,img, imgname):
+    def findChars(self,img):
 
         # busca 6 o mas blobs dentro de la patente y evalua sus caracteres uno por uno
         # los genera y luego findSimbols los lista y los agrupa en un string
@@ -137,12 +117,10 @@ class PlateFinder(object):
                     readed = self.ocr.readDigit(ipl_img)
                 else:
                     readed = self.ocr.readText(ipl_img)
-                if readed and logger.isEnabledFor(logging.DEBUG):
-                    path = "blobsChars/%s/%s-%s.png" % (imgname,readed,i)
-                    croped.save(path)
-                else:
-                    path = "blobsChars/%s/NaN-%s.png" % (imgname,i)
-                    croped.save(path)
+                if logger.isEnabledFor(logging.DEBUG):
+                    if not readed:
+                        readed = 'NaN' 
+                    save_image(croped,"%s-%i" % (readed,i))
                 i += 1
             return self.ocr.text()
         
