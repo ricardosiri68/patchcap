@@ -3,8 +3,12 @@ patchcap
 
 capturador de patentes basado en SimpleCV
 
+Instalacion
+
 
 1) Demonio PatchFinder
+
+1.1)
 
 
 2)Herramienta de configuracion y consulta patchup
