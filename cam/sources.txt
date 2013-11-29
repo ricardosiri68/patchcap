@@ -1,8 +1,14 @@
-rtsp://root:root@192.168.0.33:554/cam1/onvif-h264
-http://192.168.0.33/axis-cgi/mjpg/video.cgi
+rtsp://root:root@192.168.3.20:554/cam1/onvif-h264
+http://root:root@192.168.3.20/axis-cgi/mjpg/video.cgi
+rtsp://root:root@192.168.38.4:554/cam1/onvif-h264
+http://root:root@192.168.38.4/axis-cgi/mjpg/video.cgi
 crear mpeg-4 desde jpgs
 mencoder mf://*.jpg -mf w=800:h=600:fps=25:type=jpg -ovc lavc \
     -lavcopts vcodec=mpeg4:mbd=2:trell -oac copy -o output.avi
 
 crear mjpeg desde jpgs
 mencoder mf://*.jpg -mf w=800:h=600:fps=25:type=jpg -ovc copy -oac copy -o output.avi
+
+
+prop stream
+Video: mpeg4 (FMP4 / 0x34504D46), yuv420p, 1280x720, 12/593, q=2-31, 200 kb/s, 49.42 tbn, 49.42 tbc

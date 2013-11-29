@@ -14,3 +14,6 @@
 #gst-launch rtspsrc location=`head -n 1 sources.txt` ! decodebin ! mpegtsmux ! filesink location=$1
 #ffmpeg -i `head -n 1 sources.txt` -vcodec copy -t 30 -y -r 15 $1
 gst-launch-0.10 rtspsrc location=`head -n 1 sources.txt` !  rtph264depay  ! capsfilter caps="video/x-h264,width=640,height=480,framerate=(fraction)15/1" !  mp4mux ! filesink location=dump.mp4
+
+#save jpegs
+#gst-launch souphttpsrc location="http://[ip]:[port]/[dir]/xxx.cgi" do-timestamp=true is_live=true ! multipartdemux ! jpegdec !  videoflip method=vertical-flip ! jpegenc !  multifilesink location=image-out-%05d.jpg

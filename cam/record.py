@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-import cv
-
-from  SimpleCV import Display, Image
+import cv2
+import cv2.cv as cv
 import sys
 
 if len(sys.argv)!=2:
@@ -9,26 +8,26 @@ if len(sys.argv)!=2:
 else:
     uri = sys.argv[1]
 
-video = cv.CaptureFromFile(uri)
-fps = cv.GetCaptureProperty(video, cv.CV_CAP_PROP_FPS )
-w = (int)(cv.GetCaptureProperty(video, cv.CV_CAP_PROP_FRAME_WIDTH ))
-h = (int)(cv.GetCaptureProperty(video, cv.CV_CAP_PROP_FRAME_HEIGHT ))
-writer = cv.CreateVideoWriter(filename="out.avi",fourcc=cv.CV_FOURCC('F','M','P','4'),fps=fps, frame_size=(w,h),is_color=True)
 
-print "fps: "+str(fps)
-print "w: "+str(w)
-print "h: "+str(h)
+video = cv2.VideoCapture(uri)
+w = (int)(video.get( cv.CV_CAP_PROP_FRAME_WIDTH ))
+h = (int)(video.get( cv.CV_CAP_PROP_FRAME_HEIGHT ))
+_fps = video.get(cv.CV_CAP_PROP_FPS)
+if not _fps: _fps = 25   
+writer = cv2.VideoWriter(filename="out.avi",  #Provide a file to write the video to
+                         fourcc=cv.CV_FOURCC('X','2', '6', '4'),            #Use whichever codec works for you...
+                         fps = _fps,
+                         frameSize=(w, h))
 
-waitm = int( 1000/fps )
-print waitm
-d=Display()
+cv2.namedWindow("Camera")
 while True:
-    frame = cv.QueryFrame(video)
+    flag, frame = video.read()
     if not frame: continue
-    cv.WriteFrame(writer, frame)
-    i = Image(frame)
-    i.save(d)
-    ch = 0xFF & cv.WaitKey(waitm)
-    if ch == 27:
+    cv2.imshow("Camera", frame)
+    key_pressed = cv2.waitKey(10)
+    if key_pressed == 27:                           #Escape key
         break
-del writer
+    writer.write(frame)
+
+writer.release()
+video.release()
