@@ -1,0 +1,13 @@
+patchcap.db
+*.pyc
+videos
+images
+cvwarpin
+.git
+blobsChars
+*.avi
+ocr
+morp
+logs
+sync-exclude.txt
+*.pdf
