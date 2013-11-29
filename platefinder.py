@@ -40,7 +40,7 @@ class PlateFinder(object):
         
         cropImg = img.crop(x,y, w,h)
         cropImg = self.fixOrientation(cropImg, img.filename, x ,y ,blob)
-
+        cropImg = self.prepare(cropImg, False)
         return self.findSimbols(cropImg, img.filename)
         
     def fixOrientation(self,cropImg, name, x, y ,blob):
@@ -124,9 +124,11 @@ class PlateFinder(object):
 
         return new_img.invert()
 
-    def prepare(self, img):
+    def prepare(self, img , scale = True):
         #89/94
-        img = (img/3)
+        if(scale):
+            img = (img/3)
+
         #return (img - img.binarize().morphOpen()).gaussianBlur().binarize()
         return img.binarize().gaussianBlur()
 
