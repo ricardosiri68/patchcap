@@ -7,6 +7,7 @@ import time
 import urllib2
 import logging
 import base64
+from motion import Motion
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ class VirtualDevice(object):
     _fps = 15
     _onvif = False
     _errorCount = 0
+    __motion = Motion()
 
     def __init__(self,src):
     
@@ -51,9 +53,16 @@ class VirtualDevice(object):
         img = None
         
         if self._source_type in ('stream','video'):
-            f, frame = self._device.read()
-            if f:
-                img = Image(frame, cv2image=True) 
+            if self._source_type == 'video':
+                frame = cv.QueryFrame(self._device)
+                img = Image(frame, cv2image=True)
+                self.__motion.detect(img);
+            else:
+                f, frame = self._device.read()
+                if f:
+                    img = Image(frame, cv2image=True)
+                    self.__motion.detect(img);
+
             
         else: #image,imageset
             if len(self._frames):
