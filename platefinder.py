@@ -39,11 +39,13 @@ class PlateFinder(object):
         h = h if h < img.height else img.height
         
         cropImg = img.crop(x,y, w,h)
+        cropImg.filename = img.filename
         save_image(cropImg, "antes-orienta")
         cropImg = self.fixOrientation(cropImg, x ,y ,blob)
+        cropImg.filename = img.filename
         save_image(cropImg, "desp-orienta")
         cropImg = self.prepare(cropImg, False)
-
+        cropImg.filename = img.filename
         return self.findSimbols(cropImg)
 
 
@@ -52,17 +54,18 @@ class PlateFinder(object):
         if fixed:
             if blob.angle()!=0:
                 fixed = fixed.rotate(blob.angle())
-            save_image(fixed, "warped")
             return fixed
         else:
             return cropImg
        
-    def findSimbols(self, img):
-        img = img.crop(3,3,img.width-6,img.height-6).resize(h=50)
+    def findSimbols(self, srcimg):
+        img = srcimg.crop(3,3,srcimg.width-6,srcimg.height-6).resize(h=50).dilate()
+        img.filename = srcimg.filename
         if logger.isEnabledFor(logging.DEBUG):
-            save_image(img)
+            save_image(img,'antes-findChars')
         #text = self.ocr.readWord(img.dilate().getBitmap())
-        text = self.findChars(img.dilate())
+        img.filename = srcimg.filename
+        text = self.findChars(img)
         if text:
             return text
         return None
@@ -90,6 +93,7 @@ class PlateFinder(object):
                 if logger.isEnabledFor(logging.DEBUG):
                     if not readed:
                         readed = 'NaN' 
+                    croped.filename = img.filename
                     save_image(croped,"%s-%i" % (readed,i))
                 i += 1
             return self.ocr.text()
