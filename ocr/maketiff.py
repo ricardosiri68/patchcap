@@ -32,10 +32,8 @@ class MakeTiff:
 
 	def getPNGs(self):
 		for d in self.__dirs:
-			directory = os.path.join(self.__blobsChars,d)
-			for f in os.listdir(directory):
-				if self.isPNG(f):
-					yield "%s/%s" % (directory,f)
+			f = os.path.join(self.__blobsChars,d)
+			yield f
 
 	def getWidths(self):
 		for png in self.getPNGs():
