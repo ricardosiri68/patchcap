@@ -1,1 +1,1 @@
-rsync  -avz --exclude-from 'sync-exclude.txt' -e ssh ./ root@192.168.38.3:/usr/local/patchfinder/
+rsync  -avz --exclude-from 'sync-exclude.txt' -e ssh ./ root@192.168.4.3:/usr/local/patchfinder/
