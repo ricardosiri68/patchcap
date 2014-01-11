@@ -124,5 +124,3 @@ class PlateFinder(object):
         #return (img - img.binarize().morphOpen()).gaussianBlur().binarize()
         #return img.grayscale().gaussianBlur(window=(5,5),grayscale=True).sobel(1,0,True,3).binarize(10)
         return img.binarize().gaussianBlur()
-
-

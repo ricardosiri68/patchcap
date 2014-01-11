@@ -12,5 +12,4 @@ class OutputStream(object):
         try:
             img.save(self.out)
         except:
-            logger.error("sending stream...")
-
+            logger.error("sending stream...")         
