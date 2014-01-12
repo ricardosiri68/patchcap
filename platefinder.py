@@ -106,6 +106,7 @@ class PlateFinder(object):
         '''
 
         blobCroped = blob.crop()
+        blobCroped = blobCroped.resize(h=50)
          
         new_img = Image(
             copyMakeBorder(
