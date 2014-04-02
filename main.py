@@ -15,18 +15,21 @@ from patchfinder import PatchFinder
             time.sleep(timeout)
 
     def saveImage(self,i):
-        poc_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),"test")
+        poc_dir = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        "test"
+        )
         name = os.path.basename(i.filename)
         if not os.path.exists(poc_dir):
             os.makedirs(poc_dir)
         i.save(os.path.join(poc_dir, name))
 '''
-if len(sys.argv)>=2:
+if len(sys.argv) >= 2:
     i = sys.argv[1]
 else:
     i = "images/"
 
-log = len(sys.argv)==3 and sys.argv[2]
+log = len(sys.argv) == 3 and sys.argv[2]
 
 pf = PatchFinder(i, log)
 pf.run()
