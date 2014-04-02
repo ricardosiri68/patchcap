@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-import log, sys, datetime
+import log
+import sys
 from os import path
-import logging, logging.config
+import logging
+import logging.config
 import transaction
-from SimpleCV import Image
 from daemon import Daemon
 from pyramid.paster import bootstrap
-from patchman.models import * 
+from patchman.models import Plate, initialize_sql
 from device import VirtualDevice
 from platefinder import PlateFinder
 from outputstream import OutputStream
@@ -14,24 +15,30 @@ from stats import PatchStat
 
 logger = log.setup()
 
+
 class PatchFinder(Daemon):
 
     capEnabled = True
-    
-    def __init__(self,src, logEnabled = 'True'):
+
+    def __init__(self, src, logEnabled='True'):
         self.env = None
-        super(PatchFinder,self).__init__("/tmp/patchfinder.pid",stdin='/dev/stdin', stderr='/dev/stderr',stdout='/dev/stdout')
+        super(PatchFinder, self).__init__(
+            "/tmp/patchfinder.pid",
+            stdin='/dev/stdin',
+            stderr='/dev/stderr',
+            stdout='/dev/stdout'
+        )
         self.device = VirtualDevice(src)
-        self.capEnabled = str(logEnabled) in ('True','1')
-        
+        self.capEnabled = str(logEnabled) in ('True', '1')
+
         if self.capEnabled:
             logger.debug("Se escribiran los logs a la base")
-        
+
     def run(self):
         if self.capEnabled:
             self.env = bootstrap('PatchMan/development.ini')
             initialize_sql(self.env['registry'].settings)
-        
+
         stats = PatchStat()
         output = OutputStream()
         finder = PlateFinder()
@@ -41,9 +48,9 @@ class PatchFinder(Daemon):
             if not img:
                 stats.error()
                 if logger.isEnabledFor(logging.DEBUG):
-                    break;
+                    break
                 else:
-                    continue;
+                    continue
             stats.count()
             code = finder.find(img)
             if Plate.isPlate(code):
@@ -62,19 +69,17 @@ class PatchFinder(Daemon):
 
         stats.show()
 
-    
     def log(self, img, plate, stats):
         stats.detected()
         if img.filename:
             real = path.splitext(path.basename(img.filename))[0].upper()
-            output = plate.upper().replace(" ","")[:6]
+            output = plate.upper().replace(" ", "")[:6]
             if output == real[:6]:
-                logger.debug("\033[92m"+output+": OK \033[0m")
+                logger.debug("\033[92m" + output + ": OK \033[0m")
                 stats.found()
             else:
-                logger.debug(real[:6]+": "+output)
-            
-    
+                logger.debug(real[:6] + ": " + output)
+
     def __del__(self):
         self.device = None
         if self.env:
@@ -84,7 +89,7 @@ class PatchFinder(Daemon):
 
 if __name__ == "__main__":
     daemon = PatchFinder("images/")
-    
+
     if len(sys.argv) == 2:
         if 'start' == sys.argv[1]:
                 daemon.start()
