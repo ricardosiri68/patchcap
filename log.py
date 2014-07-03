@@ -21,10 +21,9 @@ def setup():
 
     return logger
 
-def save_image(img, name =''):
+def save_image(img, name ='', images_path= 'blobsChars/'):
 
     filename = None
-    images_path =  "blobsChars/" 
     if not path.isdir(images_path):
         mkdir(images_path)
 

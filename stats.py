@@ -27,7 +27,7 @@ class PatchStat(object):
             logger.error("No se pudo obtener la imagen")
         if self._failures > PatchStat.MAX_FAILURES: 
             logger.fatal("No se pueden obtener imagenes (repetido %s veces)"%(self.MAX_FAILURES))
-            self._failures = 0
+            return false
         time.sleep(1)
     def found(self):
         self._found +=1

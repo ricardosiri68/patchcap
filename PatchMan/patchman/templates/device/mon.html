@@ -44,12 +44,12 @@ $(document).ready(function(){
 <div class="row show-grid">
 	<div class="span6">
 		<h4>Monitor</h4>
-        <applet code="com.charliemouse.cambozola.Viewer" archive="/static/cambozola.jar" width="320" height="240">
+        <!--applet code="com.charliemouse.cambozola.Viewer" archive="/static/cambozola.jar" width="320" height="240">
             <param name="url" value="${device.outstream}"/>
             <param name="profile" value="Axis_M1031"/>
-</applet>
-        <!--img src="${device.outstream}" width="320" alt="cam" class="stream"
-            /-->
+</applet-->
+        <img src="${device.outstream}" width="320" alt="cam" class="stream"
+            />
 </div>
 	<div class="span6">
 		<h4>Historial</h4>

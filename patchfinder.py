@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-import log, sys, datetime
+import log, sys
 from os import path
-import logging, logging.config
 import transaction
 from SimpleCV import Image
 from daemon import Daemon
@@ -11,7 +10,7 @@ from device import VirtualDevice
 from platefinder import PlateFinder
 from outputstream import OutputStream
 from stats import PatchStat
-
+from datetime import datetime
 logger = log.setup()
 
 class PatchFinder(Daemon):
@@ -39,22 +38,14 @@ class PatchFinder(Daemon):
         while True:
             img = self.device.getImage()
             if not img:
-                stats.error()
-                if logger.isEnabledFor(logging.DEBUG):
-                    break;
-                else:
-                    continue;
+                if not stats.error():
+                    break
+                continue
             stats.count()
+            
             code = finder.find(img)
+            
             if Plate.isPlate(code):
-                if self.capEnabled:
-                    logger.debug("loging capture to db")
-                    transaction.begin()
-                    plate = Plate.findBy(code)
-                    if plate.active:
-                        self.device.alarm()
-                    plate.log()
-                    transaction.commit()
                 self.log(img, code, stats)
             else:
                 code = ''
@@ -63,11 +54,21 @@ class PatchFinder(Daemon):
         stats.show()
 
     
-    def log(self, img, plate, stats):
+    def log(self, img, code, stats):
         stats.detected()
+        if self.capEnabled:
+            logger.debug("loging capture to db")
+            transaction.begin()
+            plate = Plate.findBy(code)
+            if plate.active:
+                self.device.alarm()
+            plate.log()
+            transaction.commit()
+        ts=datetime.now().strftime("%Y%m%d-%H%M%S")
+        log.save_image(img,code+ts,'log/')
         if img.filename:
             real = path.splitext(path.basename(img.filename))[0].upper()
-            output = plate.upper().replace(" ","")[:6]
+            output = code.upper().replace(" ","")[:6]
             if output == real[:6]:
                 logger.debug("\033[92m"+output+": OK \033[0m")
                 stats.found()

@@ -1,38 +1,34 @@
 #!/usr/bin/env python 
 import sys, getopt
-from models import *
+from PatchMan.patchman.models import *
 
 def main(argv):
     try:
-        opts, args = getopt.getopt(argv[1:],"b:a:d:l",["generate-db=","add-plate=",'list-all','delete-plate'])
+        opts, args = getopt.getopt(argv[1:],"h:a:d:l",["add-plate=",'help','list-all','delete-plate'])
+        if not opts:
+            raise getopt.GetoptError("Se esperaba un parametro")
+        for opt, arg in opts:
+            if opt in ('-a','--add-plate'):
+                plate = Plate()
+                plate.code = arg
+                existing = DBSession.query(Plate).filter_by(code=arg).count()
+                if not existing:
+                    DBSession.add(plate)
+                    DBSession.commit()
+                else:
+                    print "Ya existe esa placa en la base"
+            elif opt in ('-d','--delete-plate'):
+                DBSession.query(Plate).filter_by(code=arg).delete()
+                DBSession.commit()
+            elif opt in ('-l','--list-all'):
+                plates = DBSession.query(Plate).all()
+                for p in plates:
+                    print p
     except getopt.GetoptError:
-        usage()
+        print usage()
         sys.exit(2)
-    for opt, arg in opts:
-        if opt in ('-h','--help'):
-            print usage()
-        elif opt in ('-b','--generate-db'):
-            dbname = 'sqlite:///'+arg
-            print "Generando db %s"%(arg)
-            init_db(dbname)
-            sys.exit()
-        elif opt in ('-a','--add-plate'):
-            plate = Plate()
-            plate.code = arg
-            existing = Session.query(Plate).filter_by(code=arg).count()
-            if not existing:
-                Session.add(plate)
-                Session.commit()
-            else:
-                print "Ya existe esa placa en la base"
-        elif opt in ('-d','--delete-plate'):
-            Session.query(Plate).filter_by(code=arg).delete()
-            Session.commit()
-        elif opt in ('-l','--list-all'):
-            plates = Session.query(Plate).all()
-            for p in plates:
-                print p
-    
+   
+
         
 def usage():
     msg = sys.argv[0]
