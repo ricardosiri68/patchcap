@@ -1,14 +1,6 @@
 #!/usr/bin/env python
-<<<<<<< HEAD
 import log, sys
 from os import path
-=======
-import log
-import sys
-from os import path
-import logging
-import logging.config
->>>>>>> 34c450442c652c9aa0faf01933c78cb2ec65e70b
 import transaction
 from daemon import Daemon
 from pyramid.paster import bootstrap
@@ -51,17 +43,9 @@ class PatchFinder(Daemon):
         while True:
             img = self.device.getImage()
             if not img:
-<<<<<<< HEAD
                 if not stats.error():
                     break
                 continue
-=======
-                stats.error()
-                if logger.isEnabledFor(logging.DEBUG):
-                    break
-                else:
-                    continue
->>>>>>> 34c450442c652c9aa0faf01933c78cb2ec65e70b
             stats.count()
             
             code = finder.find(img)
@@ -74,12 +58,7 @@ class PatchFinder(Daemon):
 
         stats.show()
 
-<<<<<<< HEAD
-    
     def log(self, img, code, stats):
-=======
-    def log(self, img, plate, stats):
->>>>>>> 34c450442c652c9aa0faf01933c78cb2ec65e70b
         stats.detected()
         if self.capEnabled:
             logger.debug("loging capture to db")
@@ -93,11 +72,7 @@ class PatchFinder(Daemon):
         log.save_image(img,code+ts,'log/')
         if img.filename:
             real = path.splitext(path.basename(img.filename))[0].upper()
-<<<<<<< HEAD
             output = code.upper().replace(" ","")[:6]
-=======
-            output = plate.upper().replace(" ", "")[:6]
->>>>>>> 34c450442c652c9aa0faf01933c78cb2ec65e70b
             if output == real[:6]:
                 logger.debug("\033[92m" + output + ": OK \033[0m")
                 stats.found()
