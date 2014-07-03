@@ -33,7 +33,10 @@ class MakeTiff:
 	def getPNGs(self):
 		for d in self.__dirs:
 			f = os.path.join(self.__blobsChars,d)
-			yield f
+			if os.path.isdir(f):
+				for i in os.listdir(f):
+					if len(i) == 7:
+						yield f + "/" + i
 
 	def getWidths(self):
 		for png in self.getPNGs():
