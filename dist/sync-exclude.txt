@@ -4,10 +4,9 @@ videos
 images
 cvwarpin
 .git
-blobsChars
 *.avi
 ocr
 morp
-logs
+log
 sync-exclude.txt
 *.pdf

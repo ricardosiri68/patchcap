@@ -4,7 +4,7 @@ import re
 
 class MakeTiff:
 	
-	__blobsChars = "../blobsChars"
+	__blobsChars = "../log"
 
 	__dirs = os.listdir(__blobsChars)
 	__widths = set()
