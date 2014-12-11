@@ -19,6 +19,10 @@ lib64
 
 base.db
 
+#environment
+env
+log
+
 # Installer logs
 pip-log.txt
 
@@ -53,6 +57,7 @@ logs/*.log.*
 
 #PatchMan
 PatchMan/data/*
+PatchMan/*.log
 
 #rope
 .ropeproject/
