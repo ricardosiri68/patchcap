@@ -58,6 +58,8 @@ logs/*.log.*
 #PatchMan
 PatchMan/data/*
 PatchMan/*.log
+PatchMan/development.ini
+PatchMan/production.ini
 
 #rope
 .ropeproject/
