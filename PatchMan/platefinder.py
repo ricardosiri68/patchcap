@@ -3,7 +3,7 @@ import logging
 from log import save_image
 from cv2 import copyMakeBorder, BORDER_CONSTANT
 from SimpleCV import Color, Image
-from warping import ImageBlobWarping
+from lib.warping import ImageBlobWarping
 logger = logging.getLogger(__name__)
 
 
