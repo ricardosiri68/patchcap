@@ -1,5 +1,5 @@
 *.py[cod]
-
+*~
 # C extensions
 *.so
 
@@ -46,7 +46,8 @@ nosetests.xml
 *.swp
 *.mpeg
 *.mjpg
-warpped/*
+cam/dahua
+warped/*
 videos/*
 logs/*
 blobsChars/*
@@ -54,6 +55,8 @@ jTessBoxEditor
 ocr/pruebas
 patchcap.db
 logs/*.log.*
+disenio
+samples/pre
 
 #PatchMan
 PatchMan/data/*
