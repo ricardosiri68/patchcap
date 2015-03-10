@@ -1,8 +1,9 @@
+http://localhost:8080
+rtsp://192.168.2.50:554/cam/realmonitor?channel=1&subtype=0&authbasic=YWRtaW46YWRtaW4=
 rtsp://root:root@192.168.3.20:554/cam1/onvif-h264
-http://root:root@192.168.3.20/axis-cgi/mjpg/video.cgi
-rtsp://root:root@192.168.38.4:554/cam1/onvif-h264
 http://root:root@192.168.38.4/axis-cgi/mjpg/video.cgi
 crear mpeg-4 desde jpgs
+
 mencoder mf://*.jpg -mf w=800:h=600:fps=25:type=jpg -ovc lavc \
     -lavcopts vcodec=mpeg4:mbd=2:trell -oac copy -o output.avi
 
