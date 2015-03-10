@@ -1,0 +1,27 @@
+  "application/x-rtp",
+      "media", G_TYPE_STRING, "audio",		-.
+      "payload", G_TYPE_INT, 96,                 | - required
+      "clock-rate", G_TYPE_INT, 8000,           -'
+      "encoding-name", G_TYPE_STRING, "AMR",    -. - required since payload >= 96
+      "encoding-params", G_TYPE_STRING, "1",	-' - optional param for AMR
+      "octet-align", G_TYPE_STRING, "1",	-.
+      "crc", G_TYPE_STRING, "0",                 |
+      "robust-sorting", G_TYPE_STRING, "0",      |  AMR specific params.
+      "interleaving", G_TYPE_STRING, "0",       -'
+  
+ Mapping of caps to and from SDP fields:
+
+   m=<media> <udp port> RTP/AVP <payload>       -] media and payload from caps
+   a=rtpmap:<payload> <encoding-name>/<clock-rate>[/<encoding-params>]
+              -> when <payload> >= 96
+   a=fmtp:<payload> <param>=<value>;...
+
+ For above caps:
+
+   m=audio <udp port> RTP/AVP 96
+   a=rtpmap:96 AMR/8000/1
+   a=fmtp:96 octet-align=	1;crc=0;robust-sorting=0;interleaving=0
+
+
+dahua
+application/x-rtp\,\ media\=\(string\)video\,\ payload\=\(int\)96\,\ clock-rate\=\(int\)90000\,\ encoding-name\=\(string\)H264\,\ packetization-mode\=\(string\)1\,\ profile-level-id\=\(string\)4D0029\,\ sprop-parameter-sets\=\(string\)\"Z00AKZpmA8ARPy4C1AQEBQAAAwPoAADDUOhgAGGpAABhqCu8uNDAAMNSAADDUFd5cKA\\\=\\\,aO48gA\\\=\\\=\"\,\ a-packetization-supported\=\(string\)DH\,\ a-framerate\=\(string\)25.000000\,\ a-recvonly\=\(string\)\"\"\,\ ssrc\=\(uint\)4294953117\,\ clock-base\=\(uint\)519362929\,\ seqnum-base\=\(uint\)31467\,\ npt-start\=\(guint64\)0\,\ play-speed\=\(double\)1\,\ play-scale\=\(double\)1
