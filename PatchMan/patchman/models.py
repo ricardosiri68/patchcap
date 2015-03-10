@@ -74,6 +74,7 @@ class Device(Base, BaseEntity):
     password = Column(String(255), nullable=False)
     instream = Column(String(100), nullable=True)
     outstream = Column(String(100), nullable=True)
+    logging = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
 
@@ -124,7 +125,7 @@ class Plate(Base, BaseEntity):
         self.notes = "Agregada automaticamente..."
 
     def __repr__(self):
-        return "<Plate('%s - %i')>" % (self.code, int(self.active))
+        return "<Patente('%s - %i')>" % (self.code, int(self.active))
 
     @classmethod
     def isPlate(cls, code):

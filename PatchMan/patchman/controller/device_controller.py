@@ -1,3 +1,4 @@
+from patchfinder import PatchFinder 
 from patchman.models import Device, DBSession
 from formencode import validators
 from formencode.schema import Schema
@@ -85,6 +86,7 @@ def discover(request):
     return render_to_response("device/discover.html",
                                   {"devices": devices},
                                   request=request)
+
 @view_config(route_name="device_search")
 def search(request):
     """devices list searching """
@@ -133,12 +135,25 @@ def edit(request):
    
 @view_config(route_name='device_view', renderer="device/mon.html")
 def view(request):
-    id = int(request.matchdict.get('id', -1))
-    device = Device.findBy(id) if id>0 else  Device.first()
+    device_id = int(request.matchdict.get('id', -1))
+    device = Device.findBy(device_id) if device_id>0 else  Device.first()
     if not device:
         return HTTPNotFound()
     return {'device':device}
 
+
+def capture_cam(device):
+    daemon = PatchFinder(device.id)
+    daemon.start()
+
+
+
+@view_config(route_name='device_run', renderer="device/mon.html")
+def start(request):
+    device_id  = int(request.matchdict.get('id', -1))
+    device = Device.findBy(device_id) if device_id>0 else  Device.first()    
+    request.registry.scheduler.add_async_job(capture_cam, args=(device))
+  
  
 @view_config(route_name="device_delete", permission="delete")
 def delete(request):
