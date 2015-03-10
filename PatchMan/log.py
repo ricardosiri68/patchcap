@@ -15,7 +15,7 @@ def setup():
     console.setLevel(logging.DEBUG)
 
     rotating_file = logging.handlers.RotatingFileHandler(
-        "../log/patchcap.log",
+        path.dirname(path.dirname(path.realpath(__file__)))+"/log/patchcap.log",
         mode='a',
         maxBytes=10 * math.pow(1024, 3),
         backupCount=45
