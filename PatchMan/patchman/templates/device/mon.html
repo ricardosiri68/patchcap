@@ -30,9 +30,92 @@ $(document).ready(function(){
         };
 
         logFrame();
-        //$('.stream').bind('load', logFrame);
+    var vlc = document.getElementById("vlc");
+    var options = new Array(":aspect-ratio=4:3", "--rtsp-tcp");
+//    var id = vlc.playlist.add("${device.outstream}", "${device.name}", options);
+//    vlc.playlist.playItem(id);
 });
 
+<!--
+
+function registerVLCEvent(event, handler) {
+    var vlc = document.getElementById("vlc");
+    if (vlc) {
+        if (vlc.attachEvent) {
+            // Microsoft
+            vlc.attachEvent (event, handler);
+    } else if (vlc.addEventListener) {
+        // Mozilla: DOM level 2
+        vlc.addEventListener (event, handler, false);
+    } else {
+        // DOM level 0
+        vlc["on" + event] = handler;
+    }
+}
+}
+// stop listening to event
+function unregisterVLCEvent(event, handler) {
+    var vlc = getVLC("vlc");
+
+    if (vlc) {
+        if (vlc.detachEvent) {
+            // Microsoft
+            vlc.detachEvent (event, handler);
+    } else if (vlc.removeEventListener) {
+        // Mozilla: DOM level 2
+        vlc.removeEventListener (event, handler, false);
+    } else {
+        // DOM level 0
+        vlc["on" + event] = null;
+    }
+}
+}
+// event callback function for testing
+
+function handleEvents(event) {
+    if (!event)
+        event = window.event; // IE
+    if (event.target) {
+        // Netscape based browser
+        targ = event.target;
+} else if (event.srcElement) {
+    // ActiveX
+    targ = event.srcElement;
+} else {
+    // No event object, just the value
+    alert("Event value" + event);
+    return;
+}
+if (targ.nodeType == 3) // defeat Safari bug
+    targ = targ.parentNode;
+    alert("Event " + event.type + " has fired from " + targ );
+}
+
+// handle mouse grab event from video filter
+function handleMouseGrab(event,X,Y) {
+    if (!event)
+        event = window.event; // IE
+        alert("new position (" + X + "," + Y + ")");
+}
+
+// Register a bunch of callbacks.
+registerVLCEvent('MediaPlayerNothingSpecial', handleEvents);
+registerVLCEvent('MediaPlayerOpening', handleEvents);
+registerVLCEvent('MediaPlayerBuffering', handleEvents);
+registerVLCEvent('MediaPlayerPlaying', handleEvents);
+registerVLCEvent('MediaPlayerPaused', handleEvents);
+registerVLCEvent('MediaPlayerStopped', handleEvents);
+registerVLCEvent('MediaPlayerForward', handleEvents);
+registerVLCEvent('MediaPlayerBackward', handleEvents);
+registerVLCEvent('MediaPlayerEncounteredError', handleEvents);
+registerVLCEvent('MediaPlayerEndReached', handleEvents);
+registerVLCEvent('MediaPlayerTimeChanged', handleEvents);
+registerVLCEvent('MediaPlayerPositionChanged', handleEvents);
+registerVLCEvent('MediaPlayerSeekableChanged', handleEvents);
+registerVLCEvent('MediaPlayerPausableChanged', handleEvents);
+registerVLCEvent('MediaPlayerMediaChanged', handleEvents);
+registerVLCEvent('MediaPlayerTitleChanged', handleEvents);
+registerVLCEvent('MediaPlayerLengthChanged', handleEvents);
 </script>
 
 </%block>
@@ -44,12 +127,17 @@ $(document).ready(function(){
 <div class="row show-grid">
 	<div class="span6">
 		<h4>Monitor</h4>
-        <!--applet code="com.charliemouse.cambozola.Viewer" archive="/static/cambozola.jar" width="320" height="240">
-            <param name="url" value="${device.outstream}"/>
-            <param name="profile" value="Axis_M1031"/>
-</applet-->
-        <img src="${device.outstream}" width="320" alt="cam" class="stream"
-            />
+<object classid="clsid:9BE31822-FDAD-461B-AD51-BE1D1C159921" codebase="http://download.videolan.org/pub/videolan/vlc/last/win32/axvlc.cab" id="vlc" width="640" height="480" target="http://${device.outstream}">
+	        <embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" name="vlc"
+		       width="640" height="480"	/>
+<param name="target" value="http://${device.outstream}" />
+<param name="width" value="640" />
+<param name="height" value="480" />
+<param name="showdisplay" value="true" />
+<param name="autoloop" value="false" />
+<param name="autostart" value="false" />
+</object>
+   
 </div>
 	<div class="span6">
 		<h4>Historial</h4>
