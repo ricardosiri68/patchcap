@@ -4,20 +4,27 @@ from os import path
 import transaction
 from daemon import Daemon
 from pyramid.paster import bootstrap
-from patchman.models import Plate, initialize_sql
+from patchman.models import Plate,Device, initialize_sql
 from device import VirtualDevice
-from platefinder import PlateFinder
-from outputstream import OutputStream
+from gstplate import PlateFinder
+from gstoutputstream import GstOutputStream
 from stats import PatchStat
 from datetime import datetime
 logger = log.setup()
 
+import gi
+gi.require_version('Gst', '1.0')
+from gi.repository import GObject, Gst
+
+
+GObject.threads_init()
+Gst.init(None)
 
 class PatchFinder(Daemon):
 
     capEnabled = True
 
-    def __init__(self, src, logEnabled='True'):
+    def __init__(self, device_id):
         self.env = None
         super(PatchFinder, self).__init__(
             "/tmp/patchfinder.pid",
@@ -25,47 +32,70 @@ class PatchFinder(Daemon):
             stderr='/dev/stderr',
             stdout='/dev/stdout'
         )
-        self.device = VirtualDevice(src)
-        self.capEnabled = str(logEnabled) in ('True', '1')
+        
+        self.env = bootstrap(path.dirname(path.realpath(__file__))+'/development.ini')
+        initialize_sql(self.env['registry'].settings)
 
-        if self.capEnabled:
+	self.dev  = Device.findBy(device_id)            
+
+        self.mainloop = GObject.MainLoop()
+        self.pipeline = Gst.Pipeline()
+
+	self.bus = self.pipeline.get_bus()
+        self.bus.add_signal_watch()
+	self.bus.connect("message", self.on_message)
+        
+	self.src = VirtualDevice(self.dev.instream)
+        self.video = PlateFinder()
+	self.sink = GstOutputStream(self.dev.outstream) 
+
+        # Add elements to pipeline      
+        self.pipeline.add(self.src)
+       	self.pipeline.add(self.video)
+        self.pipeline.add(self.sink)
+	
+        # Link elements
+        self.src.link(self.video)
+        self.video.link(self.sink)
+
+        if self.dev.logging:
             logger.debug("Se escribiran los logs a la base")
 
     def run(self):
-        if self.capEnabled:
-            self.env = bootstrap('PatchMan/development.ini')
-            initialize_sql(self.env['registry'].settings)
+        self.pipeline.set_state(Gst.State.PLAYING)
+        self.mainloop.run()
 
-        stats = PatchStat()
-        output = OutputStream()
-        finder = PlateFinder()
+    def kill(self):
+        self.pipeline.set_state(Gst.State.NULL)
+        self.mainloop.quit()
+	self.stop()
 
-        while True:
-            img = self.device.getImage()
-            if not img:
-                if not stats.error():
-                    break
-                continue
-            stats.count()
-            
-            code = finder.find(img)
-            
-            if Plate.isPlate(code):
-                self.log(img, code, stats)
-            else:
-                code = ''
-            output.write(img, code)
+    def on_message(self, bus, message):
+        t = message.type
+	if t == Gst.MessageType.ERROR or t == Gst.MessageType.EOS:
+            self.kill()
+            err, debug = message.parse_error()
+            error = str(err)
+            if debug:
+                error += " (%s)"%debug
+            logger.error("monitor '%s' received error; %s"%(self.dev, error))
+    	elif t == Gst.MessageType.STATE_CHANGED:
+            old, state, pending = message.parse_state_changed()
+            if state == Gst.State.NULL:
+                logger.info("monitor '%s' main pipeline is stopped"% self.dev)                
+                self.kill()
+            elif state == Gst.State.PLAYING:
+              	logger.info("monitor '%s' main pipeline is playing"% self.dev.name)                
 
-        stats.show()
 
     def log(self, img, code, stats):
         stats.detected()
-        if self.capEnabled:
+        if self.dev.logging:
             logger.debug("loging capture to db")
             transaction.begin()
             plate = Plate.findBy(code)
             if plate.active:
-                self.device.alarm()
+                self.src.alarm()
             plate.log()
             transaction.commit()
         ts=datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -80,16 +110,20 @@ class PatchFinder(Daemon):
                 logger.debug(real[:6] + ": " + output)
 
     def __del__(self):
-        self.device = None
+	self.kill()
+	self.src = None
         if self.env:
             self.env['closer']()
             del self.env
+	    
 
 
-if __name__ == "__main__":
-    daemon = PatchFinder("images/")
 
-    if len(sys.argv) == 2:
+
+if __name__ == "__main__": 
+    daemon = PatchFinder(sys.argv[2])
+
+    if len(sys.argv) >= 2:
         if 'start' == sys.argv[1]:
                 daemon.start()
         elif 'stop' == sys.argv[1]:
@@ -98,7 +132,7 @@ if __name__ == "__main__":
                 daemon.restart()
         else:
             print "comando desconocido"
-            sys.exit(2)
+	    sys.exit(2)
         sys.exit(0)
     else:
         print "uso: %s start|stop|restart" % sys.argv[0]

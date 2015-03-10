@@ -1,18 +1,17 @@
 import os
 import logging
-import cv2
-import cv2.cv as cv
-from SimpleCV import Image  # , VirtualCamera
+import stat 
 import time
 import urllib2
 import base64
 from motion import Motion
+from gi.repository import Gst
+import urlparse
 
 logger = logging.getLogger(__name__)
 
 
-class VirtualDevice(object):
-
+class VirtualDevice(Gst.Bin):
     _device = None
     _frames = []
     _source_type = None
@@ -24,63 +23,76 @@ class VirtualDevice(object):
 
     MAX_RETRIES = 5
 
-    def __init__(self, src):
+    __gstdetails__ = (
+        	'Open device based on halcon configuration',
+        	'Video Source',
+        	'quesoy',
+        	'Hernando Rojas <hrojas@lacuatro.com.ar>',
+    )
 
-        #TODO: from config
-        self._onvif = True
-        self._src = src
-        if src.startswith('http://') or\
-                src.startswith('rtsp://') or src.startswith('rtp://'):
-            self._source_type = 'stream'
-            self._device = cv2.VideoCapture(src)
-            self._fps = self._device.get(cv.CV_CAP_PROP_FPS)
-        elif os.path.isdir(src):
-            self._source_type = 'imageset'
-            for imgfile in os.listdir(src):
-                if imgfile.endswith(".jpg"):
-                    self._frames.append(os.path.join(src, imgfile))
 
-        elif src.endswith(('.jpg', '.png')):
-            self._source_type = 'image'
-            self._frames.append(src)
-        else:
-            self._source_type = 'video'
-            self._device = cv.CreateFileCapture(src)
-        #else: #stream
-        #    self._device = Camera(src)
+    def __init__(self, url):
+	res = urlparse.urlparse(url)
+        super(VirtualDevice, self).__init__()
 
-    def getImage(self):
-        img = None
+	#pipeline = gst.parse_launch('rtspsrc name=source latency=0 ! decodebin ! autovideosink')
+	#source = pipeline.get_by_name('source')
+	#source.props.location = 'rtsp://192.168.0.127/axis-media/media.amp'
+	if res.scheme == "http":
+        	self.src = Gst.ElementFactory.make('souphttpsrc', 'source')
+            	self.src.set_property("uri", url)
+    	elif res.scheme == "rtsp":
+        	self.src = Gst.ElementFactory.make('rtspsrc', None)
+            	self.src.set_property("location", url)
+    	elif res.scheme == "file" or not res.scheme:
+        	try:
+            		st = os.stat(res.path)
+        		if stat.S_ISCHR(st.st_mode):
+            			self.src = Gst.ElementFactory.make("v4l2src", "source")
+            			self.src.set_property("device", res.path)
+        		else:
+	    			self.src = Gst.ElementFactory.make("filesrc", "source")
+            			self.src.set_property("location", res.path)
+        	except IOError, e:
+			self.src = Gst.ElementFactory.make("videotestsrc", "source")
+            		logging.error("unable to parse URL '%s': %s"%(url, e))
+	    	
+	self.src.connect('pad-added', self.on_src_pad_added)
+	self.dec = Gst.ElementFactory.make('decodebin', None)
+	self.dec.connect('pad-added', self.on_dec_src_pad_added)
+	self.add(self.src)
+        self.add(self.dec)
 
-        if self._source_type in ('stream', 'video'):
-            if self._source_type == 'video':
-                frame = cv.QueryFrame(self._device)
-                img = Image(frame, cv2image=True)
-                self.__motion.detect(img)
-            else:
-                f, frame = self._device.read()
-                if f:
-                    img = Image(frame, cv2image=True)
-                    self.__motion.detect(img)
-        else:  # image,imageset
-            if len(self._frames):
-                img = Image(self._frames.pop())
+	self.video_pad = Gst.GhostPad.new_no_target("video_pad",  Gst.PadDirection.SRC) 
+	self.add_pad(self.video_pad)
+	 
+	logger.debug('configurando in %s'%url)
+       
+    def on_src_pad_added(self, element, pad):
+	#string = pad.query_caps(None).to_string()
+	caps = pad.get_current_caps()
+        print('on_src_pad_added():', caps.to_string())
+	cap = caps.get_structure(0)
+        if cap.get_string('media')=='video':
+            pad.link(self.dec.get_static_pad('sink'))
+	
 
-        if img is None:
-            time.sleep(1)
-            self._errorCount += 1
-            if self._errorCount < self.MAX_RETRIES:
-                img = self.getImage()
+    def on_dec_src_pad_added(self, element, pad):
+        string = pad.query_caps(None).to_string()
+        print('on_pad_added():', string)
+        if string.startswith('video/'):
+		#pad.link(self.scale.get_static_pad('sink'))
+		#self.scale.link(self.rate)
+		#self.rate.link(self.filter)
+		self.video_pad.set_target(pad)
 
-        return img
 
     def alarm(self):
         if not self._onvif:
             return False
 
-        username = 'root'
-        password = 'root'
-        #http://192.168.3.20/systemlog.cgi
+        username = 'admin'
+        password = 'admin'
         auth = base64.encodestring('%s:%s' % (username, password))[:-1]
         try:
             for i in (1, 0):
@@ -99,3 +111,9 @@ class VirtualDevice(object):
         except IOError, error:
             logger.error(error)
         return False
+
+    def __repr__(self):
+	    return self.__str__()
+
+    def __str__(self):
+	    return self.name + "[%s]"%self.src  
