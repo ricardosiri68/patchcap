@@ -3,8 +3,8 @@ from os import path
 import gi
 import numpy
 import logging
-#from platedetector import PlateDetector
-from stubdetector import PlateDetector
+from platedetector import PlateDetector
+#from stubdetector import PlateDetector
 from gi.repository import GObject, Gst
 
 gi.require_version('Gst', '1.0')
@@ -110,7 +110,7 @@ class PlateFinder(Gst.Bin):
     def on_new_buffer(self, appsink):
             try:
                 self.count = self.count + 1
-                if self.count % 25 <> 0:
+                if self.count % 9 <> 0:
                     return Gst.FlowReturn.OK
                 sample = appsink.emit('pull-sample')
                 img = self.gst_to_opencv(sample)
