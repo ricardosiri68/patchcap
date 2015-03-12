@@ -16,6 +16,7 @@ class MyRoutes:
 			("device_discover","/devices/discover"),
 			("device_list","/devices/list"),
 			("device_search","/devices/search"),
+			("device_run","/devices/run", __security),
 			("device_new","/devices/new", __security),
 			("device_view","/devices/{id}/view",__security),
 			("device_edit","/devices/{id}/edit",__security),
