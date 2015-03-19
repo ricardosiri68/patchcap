@@ -20,17 +20,34 @@ class PlateDetector(object):
         self.image = None
         self.pre = None
         self.edged = None
+        self.lastp = None
 
     def find(self, img):
         self.image = img
         edged= self.prepare(img)
         blobs = self.findBlobs(edged)
-        #logger.debug('%d candidatos', len(blobs))
         for b in blobs:
             plate = self.checkBlob(b)
             if plate:
                 return plate
         return None
+
+    def find2(self, img):
+        self.image = img
+        edged= self.prepare(img)
+        blobs = self.findBlobs(edged)
+       #logger.debug('%d candidatos', len(blobs))
+        if self.lastp is not None:
+            (ww,hh) = self.lastp.shape[:2]
+            img[0:ww,0:hh] =  self.lastp
+        for b in blobs:
+            bb=np.int0(cv2.boxPoints(b))
+            x,y,w,h = cv2.boundingRect(bb)
+            self.lastp = img[y:y+h,x:x+w]
+            plate = self.checkBlob(b)
+            if plate:
+                return plate,img
+        return None, img
 
     def findBlobs(self, img):
         rects = []
@@ -77,7 +94,6 @@ class PlateDetector(object):
         h = roic.shape[:2][0]
         if not cnts or len(cnts) < 6:
             return None
-        conts = []
         for b in cnts:
             c = b.reshape(-1,2)
             if len(b)<3:
@@ -86,9 +102,7 @@ class PlateDetector(object):
             ratio = float(r[3]) / r[2]
             if not 1.5 <= ratio <= 2.5 or r[3] < 0.5*h:
                 continue
-            conts.append(c)
             letters.append(r)
-        cv2.drawContours(self.image,conts,-1, (0,255,0),1)
         return self.findChars(self.prepare2(roi), letters)
 
 
