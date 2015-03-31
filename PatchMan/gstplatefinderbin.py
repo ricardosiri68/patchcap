@@ -1,19 +1,12 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 from os import path
 import gi
 import numpy
 import logging
 from platedetector import PlateDetector
-#from stubdetector import PlateDetector
-from gi.repository import GObject, Gst
+from gi.repository import GObject, Gst, GstVideo
 
-gi.require_version('Gst', '1.0')
-
-GObject.threads_init()
-Gst.init(None)
-
-
-class PlateFinder(Gst.Bin):
+class PlateFinderBin(Gst.Bin):
     __gstdetails__ = (
         'Argentinian Cars License Plate recognizer',
         'Video Filter',
@@ -105,6 +98,7 @@ class PlateFinder(Gst.Bin):
         w = caps.get_structure(0).get_value('width')
         data = buf.extract_dup(0, buf.get_size())
         img = numpy.ndarray((h, w, 3), buffer=data, dtype=numpy.uint8)
+        Glib.free(data)
         return img
 
     def on_new_buffer(self, appsink):
@@ -125,3 +119,13 @@ class PlateFinder(Gst.Bin):
                 return Gst.FlowReturn.OK
             except IOError:
                 pass
+
+if __name__ == "__main__": 
+    loop = GObject.MainLoop()
+    GObject.threads_init()
+    Gst.init(None)
+    Gst.segtrap_set_enabled(False)
+
+
+
+
