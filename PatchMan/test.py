@@ -10,7 +10,13 @@ if __name__ == "__main__":
     s = timer()
     finder = PlateDetector()
     p = '../samples/images/'
-    files = os.listdir(p)
+    
+
+    if len(sys.argv)!=2:
+        files = os.listdir(p)
+    else:
+        files = []
+        files.append(sys.argv[1])
     count = 0
     for f in files:
         img = cv2.imread(p+f)
