@@ -1,6 +1,6 @@
 import os
 import logging
-import stat 
+import stat
 import time
 import urllib2
 import base64
@@ -24,7 +24,7 @@ class VirtualDevice(Gst.Bin):
     MAX_RETRIES = 5
 
     __gstdetails__ = (
-        	'Open device based on halcon configuration',
+            'Open device based on halcon configuration',
         	'Video Source',
         	'quesoy',
         	'Hernando Rojas <hrojas@lacuatro.com.ar>',
@@ -32,59 +32,62 @@ class VirtualDevice(Gst.Bin):
 
 
     def __init__(self, url):
-	res = urlparse.urlparse(url)
+        res = urlparse.urlparse(url)
         super(VirtualDevice, self).__init__()
 
-	#pipeline = gst.parse_launch('rtspsrc name=source latency=0 ! decodebin ! autovideosink')
-	#source = pipeline.get_by_name('source')
-	#source.props.location = 'rtsp://192.168.0.127/axis-media/media.amp'
-	if res.scheme == "http":
-        	self.src = Gst.ElementFactory.make('souphttpsrc', 'source')
-            	self.src.set_property("uri", url)
-    	elif res.scheme == "rtsp":
-        	self.src = Gst.ElementFactory.make('rtspsrc', None)
-            	self.src.set_property("location", url)
-    	elif res.scheme == "file" or not res.scheme:
-        	try:
-            		st = os.stat(res.path)
-        		if stat.S_ISCHR(st.st_mode):
-            			self.src = Gst.ElementFactory.make("v4l2src", "source")
-            			self.src.set_property("device", res.path)
-        		else:
-	    			self.src = Gst.ElementFactory.make("filesrc", "source")
-            			self.src.set_property("location", res.path)
-        	except IOError, e:
-			self.src = Gst.ElementFactory.make("videotestsrc", "source")
-            		logging.error("unable to parse URL '%s': %s"%(url, e))
-	    	
-	self.src.connect('pad-added', self.on_src_pad_added)
-	self.dec = Gst.ElementFactory.make('decodebin', None)
-	self.dec.connect('pad-added', self.on_dec_src_pad_added)
-	self.add(self.src)
+        # pipeline = gst.parse_launch('rtspsrc name=source latency=0 ! decodebin ! autovideosink')
+        # source = pipeline.get_by_name('source')
+        # source.props.location = 'rtsp://192.168.0.127/axis-media/media.amp'
+        if res.scheme == "http":
+            self.src = Gst.ElementFactory.make('souphttpsrc', 'source')
+            self.src.set_property("uri", url)
+        elif res.scheme == "rtsp":
+            self.src = Gst.ElementFactory.make('rtspsrc', None)
+            self.src.set_property("location", url)
+        elif res.scheme == "file" or not res.scheme:
+            try:
+                if os.path.isfile(res.path):
+                    self.src = Gst.ElementFactory.make("filesrc", "source")
+                    self.src.set_property("location", res.path)
+                else:
+                    st = os.stat(res.path)
+                    if stat.S_ISCHR(st.st_mode):
+                        self.src = Gst.ElementFactory.make("v4l2src", "source")
+                        self.src.set_property("device", res.path)
+            except Exception as e:
+                self.src = Gst.ElementFactory.make("videotestsrc", "source")
+                logging.error("unable to parse URL '%s': %s"%(url, e))
+
+        self.dec = Gst.ElementFactory.make('decodebin', None)
+        self.dec.connect('pad-added', self.on_dec_src_pad_added)
+        self.add(self.src)
         self.add(self.dec)
 
-	self.video_pad = Gst.GhostPad.new_no_target("video_pad",  Gst.PadDirection.SRC) 
-	self.add_pad(self.video_pad)
-	 
-	logger.debug('configurando in %s'%url)
+        if self.src.get_static_pad('src'):
+            self.src.link(self.dec)
+        else:
+            self.src.connect('pad-added', self.on_src_pad_added)
+
+    
+        self.video_pad = Gst.GhostPad.new_no_target("video_pad",  Gst.PadDirection.SRC) 
+        self.add_pad(self.video_pad)
+        
+        logger.debug('configurando in %s'%url)
        
     def on_src_pad_added(self, element, pad):
-	#string = pad.query_caps(None).to_string()
-	caps = pad.get_current_caps()
+        #string = pad.query_caps(None).to_string()
+        caps = pad.get_current_caps()
         print('on_src_pad_added():', caps.to_string())
-	cap = caps.get_structure(0)
+        cap = caps.get_structure(0)
         if cap.get_string('media')=='video':
             pad.link(self.dec.get_static_pad('sink'))
 	
 
     def on_dec_src_pad_added(self, element, pad):
         string = pad.query_caps(None).to_string()
-        print('on_pad_added():', string)
         if string.startswith('video/'):
-		#pad.link(self.scale.get_static_pad('sink'))
-		#self.scale.link(self.rate)
-		#self.rate.link(self.filter)
-		self.video_pad.set_target(pad)
+            print('on_pad_added():', string)
+            self.video_pad.set_target(pad)
 
 
     def alarm(self):
