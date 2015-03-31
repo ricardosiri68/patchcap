@@ -17,13 +17,12 @@ class PlateDetector(object):
     def __init__(self, vdebug = False):
         self.vdebug = vdebug
         self.ocr = Ocr('spa', logger)
-        self.image = None
         self.pre = None
         self.edged = None
-        self.lastp = None
+        logger.debug('cv optimizado: {0}'.format(cv2.useOptimized()))
+
 
     def find(self, img):
-        self.image = img
         edged= self.prepare(img)
         blobs = self.findBlobs(edged)
         for b in blobs:
@@ -33,21 +32,18 @@ class PlateDetector(object):
         return None
 
     def find2(self, img):
-        self.image = img
+        lastp = None
         edged= self.prepare(img)
         blobs = self.findBlobs(edged)
        #logger.debug('%d candidatos', len(blobs))
-        if self.lastp is not None:
-            (ww,hh) = self.lastp.shape[:2]
-            img[0:ww,0:hh] =  self.lastp
         for b in blobs:
             bb=np.int0(cv2.boxPoints(b))
             x,y,w,h = cv2.boundingRect(bb)
-            self.lastp = img[y:y+h,x:x+w]
+            lastp = img[y:y+h,x:x+w]
             plate = self.checkBlob(b)
             if plate:
-                return plate,img
-        return None, img
+                return plate, lastp
+        return None, lastp
 
     def findBlobs(self, img):
         rects = []
@@ -82,9 +78,6 @@ class PlateDetector(object):
         box = cv2.boxPoints(rect)
         box = np.int0(box)
         box = warp.order_points(box)
-        #x,y = box[0]
-        #roi = img[y:y+h, x:x+w]
-        #roi = imutils.rotate(roi, ang)
         roic =warp.transform(self.edged, box)
         roi =warp.transform(self.pre, box)
         if self.vdebug:
@@ -127,7 +120,6 @@ class PlateDetector(object):
     def prepare(self, img, scale=True):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         self.pre = cv2.GaussianBlur(gray, (5, 5), 0)
-        # blur = cv2.adaptiveThreshold(blur, 74, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,11,2)
         self.edged = cv2.Canny(self.pre, 500, 1000, apertureSize=5)
 
         if self.vdebug:
