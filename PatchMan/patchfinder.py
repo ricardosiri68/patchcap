@@ -14,11 +14,39 @@ logger = log.setup()
 
 import gi
 gi.require_version('Gst', '1.0')
-from gi.repository import GObject, Gst
+from gi.repository import GObject, Gst, GstRtspServer
 
 
 GObject.threads_init()
 Gst.init(None)
+
+class MyFactory(GstRtspServer.RTSPMediaFactory):
+    def __init__(self, pads):
+        self.pads = pads
+        GstRtspServer.RTSPMediaFactory.__init__(self)
+        
+    def do_create_pipeline(self, url):
+        print 'create pipe'
+        return self.pipeline
+    
+    def do_create_element(self, url):
+        # return Gst.parse_launch("( intervideosrc ! %s ! x264enc tune=zerolatency byte-stream=true ! rtph264pay name=pay0 pt=96 )"%(self.pads))
+        return Gst.parse_launch("( intervideosrc ! %s ! avenc_mpeg4 ! rtpmp4vpay name=pay0 )"%(self.pads))
+
+
+class StreamServer():
+    def __init__(self, pads):
+        self.server = GstRtspServer.RTSPServer()
+        f = MyFactory(pads)
+        f.set_shared(True)
+        f2 = GstRtspServer.RTSPMediaFactory()
+        f2.set_launch("( intervideosrc ! %s ! x264enc bitrate=500 tune=zerolatency byte-stream=true ! rtph264pay name=pay0 pt=96 )"%(pads))
+        f2.set_shared(True)
+        m = self.server.get_mount_points()
+        m.add_factory("/halcon", f)
+        m.add_factory("/halcon2",f2)
+        self.server.attach(None)
+
 
 class PatchFinder(Daemon):
 
@@ -47,31 +75,42 @@ class PatchFinder(Daemon):
         self.bus.add_signal_watch()
         self.bus.connect("message", self.on_message)
         self.src = VirtualDevice(self.dev.instream)
+        self.src.connect('pad-added', self.on_src_pad_added)
         self.vc = Gst.ElementFactory.make("videoconvert", None)
         self.vc2 = Gst.ElementFactory.make("videoconvert", None)
         self.video = PlateFinder()
 
-        self.sink = GstOutputStream(self.dev.outstream) 
+        self.sink = GstOutputStream(self.dev.outstream)
 
-        # Add elements to pipeline      
+        # Add elements to pipeline
         self.pipeline.add(self.src)
         self.pipeline.add(self.vc)
         self.pipeline.add(self.video)
         self.pipeline.add(self.vc2)
         self.pipeline.add(self.sink)
 
-
         # Link elements
         self.src.link(self.vc)
         self.vc.link(self.video)
         self.video.link(self.vc2)
         self.vc2.link(self.sink)
+        self.vc.link(self.sink)
 
         if self.dev.logging:
             logger.debug("Se escribiran los logs a la base")
 
+    def on_src_pad_added(self, element, pad):
+        print 'src pad'
+        caps = pad.query_caps(None).to_string()
+        print caps
+        print pad.get_direction()
+        if caps.startswith('video/'):
+            print('on_device_src_pad_added():', caps)
+
+
     def run(self):
         self.pipeline.set_state(Gst.State.PLAYING)
+        s = StreamServer('video/x-raw, width=1920, height=1080,interlace-mode=progressive, chroma-site=mpeg2, colorimetry=bt709, framerate=25/1')
         self.mainloop.run()
 
     def kill(self):
