@@ -16,11 +16,30 @@ class GstOutputStream(Gst.Bin):
 
     def __init__(self, src):
         super( GstOutputStream, self).__init__()
-	logger.debug('configurando out %s'%src)
-    	self.sink =  Gst.ElementFactory.make('autovideosink', None)
-        self.add(self.sink)
-	self.add_pad(
-            Gst.GhostPad.new('sink', self.sink.get_static_pad('sink'))
+        logger.debug('configurando out %s'%src)
+
+        tee = Gst.ElementFactory.make('tee', "tee")
+        q1 = Gst.ElementFactory.make('queue', None)
+        xsink =  Gst.ElementFactory.make('autovideosink', None)
+        q2 = Gst.ElementFactory.make('queue', None)
+        vsink = Gst.ElementFactory.make('intervideosink',None)
+       
+
+        # Add elements to Bin
+#        self.add(tee)
+#        self.add(q1)
+#        self.add(xsink)
+#        self.add(q2)
+        self.add(vsink)
+
+        # Link elements
+#        tee.link(q1)
+#        q1.link(xsink)
+#        tee.link(q2)
+#        q2.link(vsink)
+
+        self.add_pad(
+            Gst.GhostPad.new('sink',vsink.get_static_pad('sink'))
         )
 
     def write(self, img, plate):
