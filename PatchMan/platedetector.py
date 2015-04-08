@@ -20,7 +20,7 @@ class PlateDetector(object):
         self.pre = None
         self.edged = None
         logger.debug('cv optimizado: {0}'.format(cv2.useOptimized()))
-
+        self.warp = ImageBlobWarping()
 
     def find(self, img):
         edged= self.prepare(img)
@@ -35,7 +35,6 @@ class PlateDetector(object):
         lastp = None
         edged= self.prepare(img)
         blobs = self.findBlobs(edged)
-       #logger.debug('%d candidatos', len(blobs))
         for b in blobs:
             bb=np.int0(cv2.boxPoints(b))
             x,y,w,h = cv2.boundingRect(bb)
@@ -55,18 +54,18 @@ class PlateDetector(object):
             arcl = cv2.arcLength(c, True)
             approx = cv2.approxPolyDP(c, 0.02 * arcl, True)
             approx = approx.reshape(-1, 2)
-            if len(approx) == 4 and cv2.contourArea(approx) > 1000 and cv2.isContourConvex(approx):
+            if len(approx) == 4 and cv2.contourArea(approx) > 4000 and cv2.isContourConvex(approx):
                 max_cos = np.max([self.angle_cos(approx[i], approx[(i+1) % 4], approx[(i+2) % 4]) for i in xrange(4)])
-                if max_cos < 0.25:
+                if max_cos < 0.20:
                     rect = cv2.minAreaRect(approx)
                     w, h = rect[1]
                     ratio = float(w) / h if w>h else float(h) / w
-                    if 3 < ratio < 4:
+                    if 2.2 < ratio < 4:
                         rects.append(rect)
+                        break
         return rects
 
     def checkBlob(self, rect):
-        warp = ImageBlobWarping()
         ang = rect[2]
         w = rect[1][0]
         h = rect[1][1]
@@ -77,9 +76,10 @@ class PlateDetector(object):
 
         box = cv2.boxPoints(rect)
         box = np.int0(box)
-        box = warp.order_points(box)
-        roic =warp.transform(self.edged, box)
-        roi =warp.transform(self.pre, box)
+        box = self.warp.order_points(box)
+        roic = self.warp.transform(self.edged, box)
+        roi =self.warp.transform(self.pre, box)
+        
         if self.vdebug:
             logger.debug(VisualRecord("roi", [roi], fmt = "jpg"))
         letters = []
@@ -87,6 +87,7 @@ class PlateDetector(object):
         h = roic.shape[:2][0]
         if not cnts or len(cnts) < 6:
             return None
+
         for b in cnts:
             c = b.reshape(-1,2)
             if len(b)<3:
@@ -111,9 +112,9 @@ class PlateDetector(object):
             if self.vdebug:
                 logger.debug(VisualRecord("pate", [l], fmt = "jpg"))
             if i > 2:
-                readed = self.ocr.readDigit(l)
+                readed = self.ocr.read_digit(l)
             else:
-                readed = self.ocr.readText(l)
+                readed = self.ocr.read_text(l)
             i += 1
         return self.ocr.text()
 
