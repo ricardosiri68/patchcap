@@ -20,7 +20,7 @@ if __name__ == "__main__":
     count = 0
     for f in files:
         img = cv2.imread(p+f)
-        txt = finder.find(img)
+        txt,r = finder.find2(img)
         orig = f[:6].upper()
         if orig == txt:
             count = count + 1
