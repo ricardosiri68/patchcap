@@ -1,33 +1,26 @@
-import os
+import sys
+import os 
 import logging
 import stat
 import time
 import urllib2
 import base64
-from motion import Motion
-from gi.repository import Gst
+from gi.repository import Gst, GObject
 import urlparse
 
 logger = logging.getLogger(__name__)
 
+GObject.threads_init()
+Gst.init(None)
+
 
 class VirtualDevice(Gst.Bin):
-    _device = None
-    _frames = []
-    _source_type = None
-    _src = None
-    _fps = 15
-    _onvif = False
-    _errorCount = 0
-    __motion = Motion()
 
-    MAX_RETRIES = 5
-
-    __gstdetails__ = (
+    __gstmetadata__ = (
             'Open device based on halcon configuration',
         	'Video Source',
         	'quesoy',
-        	'Hernando Rojas <hrojas@lacuatro.com.ar>',
+        	'Hernando Rojas <hrojas@lacuatro.com.ar>'
     )
 
 
@@ -35,9 +28,6 @@ class VirtualDevice(Gst.Bin):
         res = urlparse.urlparse(url)
         super(VirtualDevice, self).__init__()
 
-        # pipeline = gst.parse_launch('rtspsrc name=source latency=0 ! decodebin ! autovideosink')
-        # source = pipeline.get_by_name('source')
-        # source.props.location = 'rtsp://192.168.0.127/axis-media/media.amp'
         if res.scheme == "http":
             self.src = Gst.ElementFactory.make('souphttpsrc', 'source')
             self.src.set_property("uri", url)
@@ -75,7 +65,6 @@ class VirtualDevice(Gst.Bin):
         logger.debug('configurando in %s'%url)
        
     def on_src_pad_added(self, element, pad):
-        #string = pad.query_caps(None).to_string()
         caps = pad.get_current_caps()
         print('on_src_pad_added():', caps.to_string())
         cap = caps.get_structure(0)
@@ -84,9 +73,9 @@ class VirtualDevice(Gst.Bin):
 	
 
     def on_dec_src_pad_added(self, element, pad):
-        string = pad.query_caps(None).to_string()
-        if string.startswith('video/'):
-            print('on_pad_added():', string)
+        caps = pad.query_caps(None).to_string()
+        if caps.startswith('video/'):
+            print('on_pad_added():', caps)
             self.video_pad.set_target(pad)
 
 
@@ -119,4 +108,22 @@ class VirtualDevice(Gst.Bin):
 	    return self.__str__()
 
     def __str__(self):
-	    return self.name + "[%s]"%self.src  
+	    return self.name + "[%s]"%self.src 
+
+def get_element_class(klass):
+    element_class = GObject.type_class_peek(klass.__gtype__)
+    element_class.__class__ = Gst.ElementClass
+    return element_class
+
+get_element_class(VirtualDevice).set_metadata('longname', 'classification', 'description', 'author')
+
+
+def plugin_init2(plugin):
+    vdt = GObject.type_register(VirtualDevice)
+    res = Gst.Element.register(plugin, 'virtualdevice', 0, vdt)
+    print('Registered vd?', res)
+    return True
+
+if not Gst.Plugin.register_static(Gst.VERSION_MAJOR, Gst.VERSION_MINOR, "virtualdevice", "virtualdevice src plugin", plugin_init2, '0.02', 'LGPL', 'platefinder', 'patchcap', ''):
+    print "src plugin register failed"
+    sys.exit()
