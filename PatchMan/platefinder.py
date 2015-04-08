@@ -39,24 +39,33 @@ class PlateFinder(GstVideo.VideoFilter):
         GstVideo.VideoFilter.__init__(self)
         self.first = True
         self.analyzer = PlateDetector()
+        self.last = None
+        self.fc = 0
 
     def gst_to_cv(self, f, w, h):
         data = f.buffer.extract_dup(0, f.buffer.get_size())
         return  numpy.ndarray((h, w, f.info.finfo.n_components), buffer=data, dtype=numpy.uint8)
 
-    
+
     def do_transform_frame_ip(self, f):
+        self.fc = self.fc + 1
         c = f.buffer.mini_object.refcount
         f.buffer.mini_object.refcount = 1
         h = f.info.height
         w = f.info.width
         img = self.gst_to_cv(f,w,h)
         img.flags.writeable = True
-       
-        plate, r = self.analyzer.find2(img)
-        if r is not None:
-            rh, rw = r.shape[:2]
-            img[h-rh:h,w-rw:w] = r
+
+        if self.fc == 25:
+            plate, r = self.analyzer.find2(img)
+            if r is not None:
+                self.last = r
+            self.fc = 0
+
+        if self.last is not None:
+            rh, rw = self.last.shape[:2]
+            img[h-rh:h,w-rw:w] = self.last
+
         f.buffer.fill(0, img.tobytes())
         f.buffer.mini_object.refcount = c
         return Gst.FlowReturn.OK
@@ -65,14 +74,6 @@ class PlateFinder(GstVideo.VideoFilter):
         print "incaps:", incaps.to_string()
         print "outcaps:", outcaps.to_string()
         return True
-
-    def do_something(self, img):
-        if img.shape[2]>1:
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        else:
-            gray = img
-        gb = cv2.GaussianBlur(gray, (5, 5), 0)
-        return cv2.Canny(gb, 500, 1000, apertureSize=5)
 
 
 def get_element_class(klass):
