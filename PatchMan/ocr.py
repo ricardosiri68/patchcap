@@ -79,10 +79,10 @@ class Ocr(object):
     def text(self):
         return self.plate
 
-    def readText(self, image):
+    def read_text(self, image):
         return self.__readChar(image, is_digit=False)
 
-    def readDigit(self, image):
+    def read_digit(self, image):
         return self.__readChar(image, is_digit=True)
 
     def __readChar(self, path, is_digit=False):
@@ -111,14 +111,14 @@ class Ocr(object):
             self.plate += c
         return c
 
-    def readWord(self, img):
+    def read_word(self, img):
         self.tesseract.TessBaseAPISetPageSegMode(self.api, PSM_AUTO)
         self.__loadImage(img)
         text_out = self.tesseract.TessBaseAPIGetUTF8Text(self.api)
         text = ctypes.string_at(text_out)
-        return text
+        return text.strip().replace(' ','')
 
-    def getConfidence(self):
+    def confidence(self):
         return self.tesseract.TessBaseAPIMeanTextConf(self.api)
 
     def __fix(self, c, is_digit):
@@ -164,4 +164,4 @@ if __name__ == "__main__":
     print ocr.version()
     if len(sys.argv) >= 2:
     	img_path =  sys.argv[1]
-	print ocr.readWord(img_path)
+	print ocr.read_word(img_path)
