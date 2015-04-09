@@ -5,7 +5,6 @@ from log import save_image
 import cv2
 import numpy as np
 from lib.warping import ImageBlobWarping
-import imutils
 import sys
 
 logger = logging.getLogger(__name__)
