@@ -38,5 +38,3 @@ waitress==0.8.7
 wsgiref==0.1.2
 wstools==0.4.3
 zope.deprecation==4.0.2
-zope.interface==4.0.5
-zope.sqlalchemy==0.7.3
