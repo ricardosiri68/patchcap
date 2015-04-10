@@ -73,7 +73,7 @@ class VirtualDevice(Gst.Bin):
 	
 
     def on_dec_src_pad_added(self, element, pad):
-        caps = pad.query_caps(None).to_string()
+        caps = pad.get_current_caps().to_string()
         if caps.startswith('video/'):
             print('on_pad_added():', caps)
             self.video_pad.set_target(pad)
