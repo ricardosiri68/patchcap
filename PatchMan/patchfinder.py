@@ -21,30 +21,26 @@ GObject.threads_init()
 Gst.init(None)
 
 class MyFactory(GstRtspServer.RTSPMediaFactory):
-    def __init__(self, pads):
+    def __init__(self, pads, fmt):
         self.pads = pads
+        self.fmt = fmt
         GstRtspServer.RTSPMediaFactory.__init__(self)
+        self.set_shared(True)
         
-    def do_create_pipeline(self, url):
-        print 'create pipe'
-        return self.pipeline
-    
     def do_create_element(self, url):
-        # return Gst.parse_launch("( intervideosrc ! %s ! x264enc tune=zerolatency byte-stream=true ! rtph264pay name=pay0 pt=96 )"%(self.pads))
-        return Gst.parse_launch("( intervideosrc ! %s ! avenc_mpeg4 ! rtpmp4vpay name=pay0 )"%(self.pads))
+        if self.fmt == 'mp4':
+            return Gst.parse_launch("( intervideosrc ! %s ! avenc_mpeg4 ! rtpmp4vpay name=pay0 )"%(self.pads))
+        return Gst.parse_launch("( intervideosrc ! %s ! x264enc tune=zerolatency byte-stream=true ! rtph264pay name=pay0 pt=96 )"%(self.pads))
 
 
 class StreamServer():
     def __init__(self, pads):
         self.server = GstRtspServer.RTSPServer()
-        f = MyFactory(pads)
-        f.set_shared(True)
-        f2 = GstRtspServer.RTSPMediaFactory()
-        f2.set_launch("( intervideosrc ! %s ! x264enc bitrate=500 tune=zerolatency byte-stream=true ! rtph264pay name=pay0 pt=96 )"%(pads))
-        f2.set_shared(True)
         m = self.server.get_mount_points()
-        m.add_factory("/halcon", f)
-        m.add_factory("/halcon2",f2)
+        f = MyFactory(pads,'mp4')
+        f2 = MyFactory(pads,'h264')
+        m.add_factory("/mp4", f)
+        m.add_factory("/h264",f2)
         self.server.attach(None)
 
 
