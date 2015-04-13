@@ -29,12 +29,16 @@ class MyFactory(GstRtspServer.RTSPMediaFactory):
         
     def do_create_element(self, url):
         if self.fmt == 'mp4':
-            return Gst.parse_launch("( intervideosrc ! %s ! avenc_mpeg4 ! rtpmp4vpay name=pay0 )"%(self.pads))
-        return Gst.parse_launch("( intervideosrc ! %s ! x264enc tune=zerolatency byte-stream=true ! rtph264pay name=pay0 pt=96 )"%(self.pads))
+            pipe = "( intervideosrc ! %s ! avenc_mpeg4 ! rtpmp4vpay name=pay0 )"%(self.pads)
+        else:
+            pipe = "( intervideosrc ! %s ! x264enc tune=zerolatency byte-stream=true ! rtph264pay name=pay0 pt=96 )"%(self.pads)
+        logger.debug('configuring pipe '+pipe)
+        return Gst.parse_launch(pipe)
 
 
 class StreamServer():
     def __init__(self, pads):
+        logger.debug('starting rtsp server para '+ pads)
         self.server = GstRtspServer.RTSPServer()
         m = self.server.get_mount_points()
         f = MyFactory(pads,'mp4')
@@ -57,7 +61,7 @@ class PatchFinder(Daemon):
 
         self.env = bootstrap(path.dirname(path.realpath(__file__))+'/development.ini')
         initialize_sql(self.env['registry'].settings)
-
+        self.caps = None
         self.dev = Device.findBy(device_id)
         
         if not self.dev:
@@ -71,10 +75,10 @@ class PatchFinder(Daemon):
         self.bus.add_signal_watch()
         self.bus.connect("message", self.on_message)
         self.src = VirtualDevice(self.dev.instream)
-        self.src.connect('pad-added', self.on_src_pad_added)
         self.vc = Gst.ElementFactory.make("videoconvert", None)
         self.vc2 = Gst.ElementFactory.make("videoconvert", None)
         self.video = PlateFinder()
+
 
         self.sink = GstOutputStream(self.dev.outstream)
 
@@ -95,18 +99,9 @@ class PatchFinder(Daemon):
         if self.dev.logging:
             logger.debug("Se escribiran los logs a la base")
 
-    def on_src_pad_added(self, element, pad):
-        print 'src pad'
-        caps = pad.query_caps(None).to_string()
-        print caps
-        print pad.get_direction()
-        if caps.startswith('video/'):
-            print('on_device_src_pad_added():', caps)
-
-
     def run(self):
         self.pipeline.set_state(Gst.State.PLAYING)
-        s = StreamServer('video/x-raw, width=1920, height=1080,interlace-mode=progressive, chroma-site=mpeg2, colorimetry=bt709, framerate=25/1')
+        Gst.debug_bin_to_dot_file_with_ts(self.pipeline, Gst.DebugGraphDetails.ALL, 'halcon')
         self.mainloop.run()
 
     def kill(self):
@@ -126,12 +121,20 @@ class PatchFinder(Daemon):
         elif t == Gst.MessageType.STATE_CHANGED:
             old, state, pending = message.parse_state_changed()
             if state == Gst.State.NULL:
-                logger.info("monitor '%s' main pipeline is stopped"% self.dev)                
+                logger.info("monitor '%s' main pipeline is stopped"% self.dev.name)
                 self.kill()
             elif state == Gst.State.PLAYING:
-                logger.info("monitor '%s' main pipeline is playing"% self.dev.name)                
-
-
+                logger.info("'%s' cambio de %s a %s. Pending: %s"%(self.dev.name, self.get_state(old), self.get_state(state), self.get_state(pending))) 
+                if message.src == self.pipeline:
+                    s = StreamServer(self.caps)
+        elif t == Gst.MessageType.APPLICATION and message.has_name('video/x-raw'):
+            s = message.get_structure()
+            self.caps = s.to_string()
+            if self.caps.endswith(';'):
+                self.caps = self.caps[:-1]
+        elif t == Gst.MessageType.INFO:
+            e, d = message.parse_info()
+            logger.debug("{0}: {1}", e, d)
     def log(self, img, code, stats):
         stats.detected()
         if self.dev.logging:
@@ -152,6 +155,19 @@ class PatchFinder(Daemon):
                 stats.found()
             else:
                 logger.debug(real[:6] + ": " + output)
+
+    def get_state(self, state):
+        if state == Gst.State.PLAYING:
+            return "playing"
+        elif state == Gst.State.READY:
+            return "ready"
+        elif state == Gst.State.PAUSED:
+            return "paused"
+        elif state == Gst.State.VOID_PENDING:
+            return "pending"
+        else:
+            return "null"
+
 
     def __del__(self):
         self.kill()
