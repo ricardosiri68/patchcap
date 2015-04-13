@@ -76,13 +76,6 @@ class PlateFinder(GstVideo.VideoFilter):
         return True
 
 
-def get_element_class(klass):
-    element_class = GObject.type_class_peek(klass.__gtype__)
-    element_class.__class__ = Gst.ElementClass
-    return element_class
-
-get_element_class(PlateFinder).set_metadata('longname', 'classification', 'description', 'author')
-
 def plugin_init(plugin):
     t = GObject.type_register (PlateFinder)
     reg = Gst.Element.register(plugin, "platefinder", 0, t)
