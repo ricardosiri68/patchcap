@@ -73,10 +73,10 @@ class VirtualDevice(Gst.Bin):
 	
 
     def on_dec_src_pad_added(self, element, pad):
-        caps = pad.get_current_caps().to_string()
-        if caps.startswith('video/'):
-            print('on_pad_added():', caps)
+        caps = pad.get_current_caps()
+        if caps.to_string().startswith('video/'):
             self.video_pad.set_target(pad)
+            self.post_message(Gst.Message.new_application(self, caps.get_structure(0)))
 
 
     def alarm(self):
@@ -109,14 +109,6 @@ class VirtualDevice(Gst.Bin):
 
     def __str__(self):
 	    return self.name + "[%s]"%self.src 
-
-def get_element_class(klass):
-    element_class = GObject.type_class_peek(klass.__gtype__)
-    element_class.__class__ = Gst.ElementClass
-    return element_class
-
-get_element_class(VirtualDevice).set_metadata('longname', 'classification', 'description', 'author')
-
 
 def plugin_init2(plugin):
     vdt = GObject.type_register(VirtualDevice)
