@@ -1,12 +1,18 @@
-import sys
-import os 
-import logging
-import stat
-import time
-import urllib2
+from timeit import default_timer as timer
 import base64
+import logging
+import os 
+import stat
+import sys
+import time
+try:
+    import urllib.request as urllib2
+    import urllib.parse as urlparse
+except ImportError:
+    import urllib2
+    import urlparse
+
 from gi.repository import Gst, GObject
-import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +29,8 @@ class VirtualDevice(Gst.Bin):
         	'Hernando Rojas <hrojas@lacuatro.com.ar>'
     )
 
-
+    gt = timer()
+    vd = 0
     def __init__(self, url):
         res = urlparse.urlparse(url)
         super(VirtualDevice, self).__init__()
@@ -60,10 +67,18 @@ class VirtualDevice(Gst.Bin):
 
     
         self.video_pad = Gst.GhostPad.new_no_target("video_pad",  Gst.PadDirection.SRC) 
+        self.video_pad.connect('linked', self.on_deco_pad_linked)
         self.add_pad(self.video_pad)
         
         logger.debug('configurando in %s'%url)
        
+    def on_deco_pad_linked(self, pad, peer):
+        pad.add_probe(Gst.PadProbeType.BUFFER, self.rec_buff, 0)
+
+    def rec_buff(self, pad, info, data):
+        VirtualDevice.gt = timer()
+        return Gst.PadProbeReturn.OK
+
     def on_src_pad_added(self, element, pad):
         caps = pad.get_current_caps()
         print('on_src_pad_added():', caps.to_string())
@@ -100,7 +115,7 @@ class VirtualDevice(Gst.Bin):
                 )
                 time.sleep(1)
             return True
-        except IOError, error:
+        except IOError as error:
             logger.error(error)
         return False
 
@@ -117,5 +132,5 @@ def plugin_init2(plugin):
     return True
 
 if not Gst.Plugin.register_static(Gst.VERSION_MAJOR, Gst.VERSION_MINOR, "virtualdevice", "virtualdevice src plugin", plugin_init2, '0.02', 'LGPL', 'platefinder', 'patchcap', ''):
-    print "src plugin register failed"
+    print ("src plugin register failed")
     sys.exit()

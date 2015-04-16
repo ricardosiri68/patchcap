@@ -1,18 +1,23 @@
 #!/usr/bin/env python
-import log, sys
-from os import path
+import sys
+import logging
+import gi
 import transaction
-from daemon import Daemon
+from os import path
+from datetime import datetime
 from pyramid.paster import bootstrap
+import patchman
 from patchman.models import Plate, Device, initialize_sql
+
+from daemon import Daemon
 from device import VirtualDevice
+import log
 from platefinder import PlateFinder
 from gstoutputstream import GstOutputStream
 from stats import PatchStat
-from datetime import datetime
+
 logger = log.setup()
 
-import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst, GstRtspServer
 
@@ -75,6 +80,10 @@ class PatchFinder(Daemon):
         self.bus.add_signal_watch()
         self.bus.connect("message", self.on_message)
         self.src = VirtualDevice(self.dev.instream)
+        self.id1 = Gst.ElementFactory.make("identity", None)
+        self.id1.set_property('silent', False)
+        self.id2 = Gst.ElementFactory.make("identity", None)
+        self.id2.set_property('silent', False)
         self.vc = Gst.ElementFactory.make("videoconvert", None)
         self.vc2 = Gst.ElementFactory.make("videoconvert", None)
         self.video = PlateFinder()
@@ -83,6 +92,8 @@ class PatchFinder(Daemon):
         self.sink = GstOutputStream(self.dev.outstream)
 
         # Add elements to pipeline
+        self.pipeline.add(self.id1)
+        self.pipeline.add(self.id2)
         self.pipeline.add(self.src)
         self.pipeline.add(self.vc)
         self.pipeline.add(self.video)
@@ -91,17 +102,20 @@ class PatchFinder(Daemon):
 
         # Link elements
         self.src.link(self.vc)
-        self.vc.link(self.video)
+        self.vc.link(self.id1)
+        self.id1.link(self.video)
         self.video.link(self.vc2)
         self.vc2.link(self.sink)
         self.vc.link(self.sink)
+        self.sink.link(self.id2)
 
         if self.dev.logging:
             logger.debug("Se escribiran los logs a la base")
 
     def run(self):
         self.pipeline.set_state(Gst.State.PLAYING)
-        Gst.debug_bin_to_dot_file_with_ts(self.pipeline, Gst.DebugGraphDetails.ALL, 'halcon')
+        if logger.isEnabledFor(logging.DEBUG):
+            Gst.debug_bin_to_dot_file_with_ts(self.pipeline, Gst.DebugGraphDetails.ALL, 'halcon')
         self.mainloop.run()
 
     def kill(self):
@@ -190,9 +204,9 @@ if __name__ == "__main__":
         elif 'restart' == sys.argv[1]:
                 daemon.restart()
         else:
-            print "comando desconocido"
-	    sys.exit(2)
+            print("comando desconocido")
+        sys.exit(2)
         sys.exit(0)
     else:
-        print "uso: %s start|stop|restart" % sys.argv[0]
+        print("uso: %s start|stop|restart" % sys.argv[0])
         sys.exit(2)

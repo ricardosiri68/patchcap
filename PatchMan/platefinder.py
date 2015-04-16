@@ -1,8 +1,10 @@
 #!/usr/bin/env python
-import sys
 import cv2
+import logging
+import sys
 import numpy
 import gi
+from device import VirtualDevice
 from platedetector import PlateDetector
 from timeit import default_timer as timer
 
@@ -49,10 +51,13 @@ class PlateFinder(GstVideo.VideoFilter):
 
     def do_transform_frame_ip(self, f):
         self.fc = self.fc + 1
-        c = f.buffer.mini_object.refcount
-        f.buffer.mini_object.refcount = 1
+        VirtualDevice.vd = timer()-VirtualDevice.gt
+        logging.debug('[%s] vc1: %s',f.buffer.pts, VirtualDevice.vd)
+        if self.fc < 25:
+            return Gst.FlowReturn.OK
         h = f.info.height
         w = f.info.width
+        i = timer()
         img = self.gst_to_cv(f,w,h)
         img.flags.writeable = True
 
@@ -65,23 +70,24 @@ class PlateFinder(GstVideo.VideoFilter):
         if self.last is not None:
             rh, rw = self.last.shape[:2]
             img[h-rh:h,w-rw:w] = self.last
+            f.buffer.fill(0, img.tobytes())
 
-        f.buffer.fill(0, img.tobytes())
-        f.buffer.mini_object.refcount = c
+        pt = timer()-i
+        logging.debug('[%s] ana: %s',f.buffer.pts, pt )
+        VirtualDevice.vd = VirtualDevice.vd + pt
+
         return Gst.FlowReturn.OK
 
     def do_set_info(self, incaps, in_info, outcaps, out_info):
-        print "incaps:", incaps.to_string()
-        print "outcaps:", outcaps.to_string()
         return True
 
 
 def plugin_init(plugin):
     t = GObject.type_register (PlateFinder)
     reg = Gst.Element.register(plugin, "platefinder", 0, t)
-    print ('registered', reg)
+    print('registered', reg)
     return reg
 
 if not Gst.Plugin.register_static(Gst.VERSION_MAJOR, Gst.VERSION_MINOR, "platefinder", "platefinder filter plugin", plugin_init, '0.02', 'LGPL', 'platefinder', 'patchcap', ''):
-    print "plugin register failed"
+    print("plugin register failed")
     sys.exit()

@@ -61,7 +61,6 @@ class PlateDetector(object):
                     ratio = float(w) / h if w>h else float(h) / w
                     if 2.2 < ratio < 4:
                         rects.append(rect)
-                        break
         return rects
 
     def checkBlob(self, rect):
