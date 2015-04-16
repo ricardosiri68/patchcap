@@ -16,16 +16,16 @@ def main(argv):
                     DBSession.add(plate)
                     DBSession.commit()
                 else:
-                    print "Ya existe esa placa en la base"
+                    print("Ya existe esa placa en la base")
             elif opt in ('-d','--delete-plate'):
                 DBSession.query(Plate).filter_by(code=arg).delete()
                 DBSession.commit()
             elif opt in ('-l','--list-all'):
                 plates = DBSession.query(Plate).all()
                 for p in plates:
-                    print p
+                    print(p)
     except getopt.GetoptError:
-        print usage()
+        print(usage())
         sys.exit(2)
    
 
@@ -36,7 +36,7 @@ def usage():
     msg += "\t[-a | --add-plate] <XXXNNN>\n"
     msg += "\t[-d | --delete-plate] <XXXNNN>\n"
     msg += "\t[-l | --list-all] \n"
-    print msg
+    print(msg)
 
 
 def init_db(dbname='sqlite:///patchcap.db'):
