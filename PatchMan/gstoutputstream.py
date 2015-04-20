@@ -17,36 +17,41 @@ class GstOutputStream(Gst.Bin):
 
 
     def __init__(self, src):
+        self.split = False
         super( GstOutputStream, self).__init__()
         logger.debug('configurando out %s'%src)
 
-        tee = Gst.ElementFactory.make('tee', "tee")
-        q1 = Gst.ElementFactory.make('queue', None)
-        xsink =  Gst.ElementFactory.make('autovideosink', None)
-        q2 = Gst.ElementFactory.make('queue', None)
         vsink = Gst.ElementFactory.make('intervideosink',None)
         vsink.get_static_pad('sink').add_probe(Gst.PadProbeType.BUFFER, self.rec_buff, 0)
-
-
-
-        # Add elements to Bin
-        self.add(tee)
-        self.add(q1)
-        self.add(xsink)
-        self.add(q2)
         self.add(vsink)
 
-        # Link elements
-        tee.link(q1)
-        q1.link(xsink)
-        tee.link(q2)
-        q2.link(vsink)
+        if self.split:
+            tee = Gst.ElementFactory.make('tee', "tee")
+            q1 = Gst.ElementFactory.make('queue', None)
+            xsink =  Gst.ElementFactory.make('autovideosink', None)
+            q2 = Gst.ElementFactory.make('queue', None)
 
-        self.add_pad(Gst.GhostPad.new('sink',tee.get_static_pad('sink')))
+            # Add elements to Bin
+            self.add(tee)
+            self.add(q1)
+            self.add(xsink)
+            self.add(q2)
+
+            # Link elements
+            tee.link(q1)
+            q1.link(xsink)
+            tee.link(q2)
+            q2.link(vsink)
+            sink = tee
+        else:
+            sink = vsink
+
+        self.add_pad(Gst.GhostPad.new('sink',sink.get_static_pad('sink')))
 
     def rec_buff(self, pad, info, data):
         t = timer()
-        logger.debug('[%s] out: %s (%s)\n', info.get_buffer().pts,t-VirtualDevice.gt, t- VirtualDevice.gt - VirtualDevice.vd)
+        k = info.get_buffer().pts
+        logger.debug('[%s] out: %s (%s)\n', k ,t-VirtualDevice.gt[k], t-VirtualDevice.gt[k]-VirtualDevice.vd[k])
         return Gst.PadProbeReturn.OK
 
     def write(self, img, plate):
