@@ -29,8 +29,9 @@ class VirtualDevice(Gst.Bin):
         	'Hernando Rojas <hrojas@lacuatro.com.ar>'
     )
 
-    gt = timer()
-    vd = 0
+    gt = {}
+    vd = {}
+
     def __init__(self, url):
         res = urlparse.urlparse(url)
         super(VirtualDevice, self).__init__()
@@ -76,7 +77,7 @@ class VirtualDevice(Gst.Bin):
         pad.add_probe(Gst.PadProbeType.BUFFER, self.rec_buff, 0)
 
     def rec_buff(self, pad, info, data):
-        VirtualDevice.gt = timer()
+        VirtualDevice.gt[info.get_buffer().pts] = timer()
         return Gst.PadProbeReturn.OK
 
     def on_src_pad_added(self, element, pad):

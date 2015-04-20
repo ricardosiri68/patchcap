@@ -80,10 +80,6 @@ class PatchFinder(Daemon):
         self.bus.add_signal_watch()
         self.bus.connect("message", self.on_message)
         self.src = VirtualDevice(self.dev.instream)
-        self.id1 = Gst.ElementFactory.make("identity", None)
-        self.id1.set_property('silent', False)
-        self.id2 = Gst.ElementFactory.make("identity", None)
-        self.id2.set_property('silent', False)
         self.vc = Gst.ElementFactory.make("videoconvert", None)
         self.vc2 = Gst.ElementFactory.make("videoconvert", None)
         self.video = PlateFinder()
@@ -92,22 +88,17 @@ class PatchFinder(Daemon):
         self.sink = GstOutputStream(self.dev.outstream)
 
         # Add elements to pipeline
-        self.pipeline.add(self.id1)
-        self.pipeline.add(self.id2)
         self.pipeline.add(self.src)
         self.pipeline.add(self.vc)
         self.pipeline.add(self.video)
         self.pipeline.add(self.vc2)
         self.pipeline.add(self.sink)
-
         # Link elements
         self.src.link(self.vc)
-        self.vc.link(self.id1)
-        self.id1.link(self.video)
+        self.vc.link(self.video)
         self.video.link(self.vc2)
         self.vc2.link(self.sink)
         self.vc.link(self.sink)
-        self.sink.link(self.id2)
 
         if self.dev.logging:
             logger.debug("Se escribiran los logs a la base")
