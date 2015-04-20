@@ -3,6 +3,7 @@ import logging.handlers
 import math
 import uuid
 from os import path, mkdir
+import cv2
 
 
 def setup():
@@ -30,22 +31,12 @@ def setup():
 
     return logger
 
-def save_image(img, name ='', images_path= '../log/'):
-
-    filename = None
+def log_image(img, name ='', images_path= '../log/'):
     if not path.isdir(images_path):
         mkdir(images_path)
 
-    if img.filename:
-        filename = path.splitext(path.basename(img.filename))[0].upper()
-        images_path += filename
-        if not path.isdir(images_path):
-            mkdir(images_path)
-
     if not name:
-        if filename is None:
-            filename = str(uuid.uuid4())
-        name = filename
+        name = str(uuid.uuid4())
 
     imgpath = path.join(images_path, "%s.png" % (name))
     if path.isfile(imgpath):
@@ -54,4 +45,4 @@ def save_image(img, name ='', images_path= '../log/'):
         while path.isfile(imgpath):
             i += 1
             imgpath = path.join(images_path, "%s-%s.png" % (name, i))
-    img.save(imgpath)
+    cv2.imwrite(imgpath,img)

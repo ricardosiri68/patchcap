@@ -1,7 +1,6 @@
 from timeit import default_timer as timer
 from ocr import Ocr
 import logging
-from log import save_image
 import cv2
 import numpy as np
 from lib.warping import ImageBlobWarping
