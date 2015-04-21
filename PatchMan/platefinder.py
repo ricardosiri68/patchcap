@@ -64,26 +64,15 @@ class PlateFinder(GstVideo.VideoFilter):
         return numpy.ndarray((h, w, f.info.finfo.n_components), buffer=data, dtype=numpy.uint8)
 
     def cv_to_i420(self,img):
-        yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
-        (y,u,v) = cv2.split(yuv)
-        udown = cv2.pyrDown(u)
-        vdown = cv2.pyrDown(v)
-        return numpy.concatenate((y,u,v))
+        yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV_I420)
+        return yuv
 
         
     def i420_to_cv(self, f, w, h):
         data = f.buffer.extract_dup(0, f.buffer.get_size())
-        stream = numpy.fromstring(data,numpy.uint8)
-        size = w*h
-        print stream.size
-        y = stream[0:size].reshape(h,w)
-        u = stream[size:(size+(size/4))].reshape((h/2),(w/2))# create the u channel its size=framesize/4
-        u_upsize = cv2.pyrUp(u)
-        v = stream[(size+(size/4)):].reshape((h/2),(w/2))
-        v_upsize= cv2.pyrUp(v)
-        yuv = cv2.merge((y,v_upsize,u_upsize))
-        bgr = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR)
-        return bgr
+        yuv = numpy.ndarray((h*3/2,w,1), buffer=data, dtype=numpy.uint8)
+        st = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR_IYUV)
+        return st
 
 
     def do_transform_frame_ip(self, f):
@@ -95,7 +84,7 @@ class PlateFinder(GstVideo.VideoFilter):
         w = f.info.width
         img = self.gst_to_cv(f,w,h)
         img.flags.writeable = True
-
+        
         plate, r = self.analyzer.find2(img)
         if r is not None:
             self.last = r
@@ -104,7 +93,7 @@ class PlateFinder(GstVideo.VideoFilter):
         if self.last is not None:
             rh, rw = self.last.shape[:2]
             img[h-rh:h,w-rw:w] = self.last
-
+        
         f.buffer.fill(0, self.cv_to_gst(img).tobytes())
 
         pt = timer()-i
