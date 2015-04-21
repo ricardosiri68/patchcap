@@ -78,8 +78,16 @@ class Device(Base, BaseEntity):
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
 
-    def __init__(self,  name=""):
-        self.name = name
+    def __init__(self, name=None, src=None, sink=None):
+        if not name:
+            name = src
+        else:
+            self.name = name
+        self.ip = '0.0.0.0'
+        self.username= 'admin'
+        self.password='admin'
+        self.instream = src
+        self.outstream = sink
 
     @classmethod
     def findBy(class_, id):
@@ -88,6 +96,10 @@ class Device(Base, BaseEntity):
     @classmethod
     def first(cls):
         return DBSession.query(Device).first()
+
+    def __repr__(self):
+        return "[%i]: %s" % (self.id,self.instream)
+
 
 
 class Plate(Base, BaseEntity):
@@ -118,7 +130,7 @@ class Plate(Base, BaseEntity):
         backref="plate"
     )
 
-    def __init__(self, code="", brand_id=0, active=False, notes=""):
+    def __init__(self, code="", brand_id=None, active=False, notes=""):
         self.code = code
         self.brand_id = brand_id
         self.active = active
