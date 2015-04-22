@@ -98,7 +98,7 @@ class Device(Base, BaseEntity):
         return DBSession.query(Device).first()
 
     def __repr__(self):
-        return "[%i]: %s" % (self.id,self.instream)
+        return "[%i]: in-> %s. out->%s" % (self.id,self.instream, self.outstream)
 
 
 
