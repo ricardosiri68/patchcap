@@ -128,9 +128,7 @@ class VirtualDevice(Gst.Bin):
 
 def plugin_init2(plugin):
     vdt = GObject.type_register(VirtualDevice)
-    res = Gst.Element.register(plugin, 'virtualdevice', 0, vdt)
-    print('Registered vd?', res)
-    return True
+    return Gst.Element.register(plugin, 'virtualdevice', 0, vdt)
 
 if not Gst.Plugin.register_static(Gst.VERSION_MAJOR, Gst.VERSION_MINOR, "virtualdevice", "virtualdevice src plugin", plugin_init2, '0.02', 'LGPL', 'platefinder', 'patchcap', ''):
     print ("src plugin register failed")
