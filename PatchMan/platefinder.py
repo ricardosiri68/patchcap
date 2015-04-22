@@ -105,9 +105,7 @@ class PlateFinder(GstVideo.VideoFilter):
 
 def plugin_init(plugin):
     t = GObject.type_register (PlateFinder)
-    reg = Gst.Element.register(plugin, "platefinder", 0, t)
-    print('registered', reg)
-    return reg
+    return Gst.Element.register(plugin, "platefinder", 0, t)
 
 if not Gst.Plugin.register_static(Gst.VERSION_MAJOR, Gst.VERSION_MINOR, "platefinder", "platefinder filter plugin", plugin_init, '0.02', 'LGPL', 'platefinder', 'patchcap', ''):
     print("plugin register failed")
