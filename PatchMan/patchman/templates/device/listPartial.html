@@ -12,6 +12,7 @@
 				    <th>
 						${self.sortable('ip')}
 					</th>
+				    <th>salida</th>
 					<th style="width: 130px;"></th>
 				</tr>
 			</thead>
@@ -23,11 +24,8 @@
 			        		${item.name}
 			        	</a>
                     </td>
-                    <td valign="top">
-						<a href="/devices/${item.id}/edit">       	
-			        		${item.ip}
-			        	</a>
-			        </td>
+                    <td valign="top"><a href="/devices/${item.id}/edit">${item.ip}</a></td>
+                    <td valign="top">${item.outstream}</td>
 			        <td valign="top">
 			        	<a class="btn" href="/devices/${item.id}/edit" style="height: 14px;">
 			        		Editar
