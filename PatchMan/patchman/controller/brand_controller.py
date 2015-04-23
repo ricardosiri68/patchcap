@@ -4,8 +4,7 @@ from formencode.schema import Schema
 from pyramid.httpexceptions import HTTPFound
 from pyramid.renderers import render_to_response
 from pyramid.view import view_config
-from pyramid_simpleform import Form
-from pyramid_simpleform.renderers import FormRenderer
+from pyramid_uniform import Form, FormRenderer
 from sqlalchemy.exc import IntegrityError
 from webhelpers import paginate
 from webhelpers.paginate import Page

@@ -5,8 +5,8 @@ from formencode.schema import Schema
 from pyramid.httpexceptions import (HTTPFound, HTTPNotFound)
 from pyramid.renderers import render_to_response
 from pyramid.view import view_config
-from pyramid_simpleform import Form
-from pyramid_simpleform.renderers import FormRenderer
+from pyramid_uniform import Form
+from pyramid_uniform import Form, FormRenderer
 from sqlalchemy.exc import IntegrityError
 from webhelpers import paginate
 from webhelpers.paginate import Page
@@ -122,7 +122,7 @@ def edit(request):
         return HTTPFound(location=request.route_url("device_list"))        
     
 
-    form = Form(request, schema=DeviceForm, obj=device)    
+    form = Form(request, schema=DeviceForm)    
     if "form_submitted" in request.POST and form.validate():
         form.bind(device)
         dbsession.add(device)
@@ -131,7 +131,7 @@ def edit(request):
 
     action_url = request.route_url("device_edit", id=id)
     return dict(form=FormRenderer(form), 
-                action_url=action_url)
+                action_url=action_url, obj=device)
    
 @view_config(route_name='device_view', renderer="device/mon.html")
 def view(request):

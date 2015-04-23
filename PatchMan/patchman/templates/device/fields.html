@@ -5,27 +5,27 @@ ${form.csrf_token()}
 <div class="${'clearfix error' if form.errors_for('name') else 'clearfix'}">
 	<label for="name">Nombre</label>
 	<div class="input">
-		${form.text("name", class_="small", maxlength="20")}
+		${form.text("name", obj.name, class_="small", maxlength="20")}
 		${validate_errors("name")}
 	</div>
 </div>
 <div class="${'clearfix error' if form.errors_for('ip') else 'clearfix'}">
 	<label for="name">URI</label>
 	<div class="input">
-		${form.text("ip", class_="large", maxlength="100")}
+		${form.text("ip", obj.ip, class_="large", maxlength="100")}
 		${validate_errors("ip")}
 	</div>
 </div><div class="${'clearfix error' if form.errors_for('username') else 'clearfix'}">
 	<label for="name">Usuario</label>
 	<div class="input">
-		${form.text("username", class_="small", maxlength="30")}
+		${form.text("username", obj.username, class_="small", maxlength="30")}
 		${validate_errors("username")}
 	</div>
 </div>
 <div class="${'clearfix error' if form.errors_for('password') else 'clearfix'}">
 	<label for="name">Clave</label>
 	<div class="input">
-		${form.password("password", class_="small", maxlength="16")}
+		${form.password("password", obj.password, class_="small", maxlength="16")}
 		${validate_errors("password")}
 	</div>
 </div>
@@ -33,14 +33,14 @@ ${form.csrf_token()}
 <div class="${'clearfix error' if form.errors_for('instream') else 'clearfix'}">
 	<label for="name">Input Stream</label>
 	<div class="input">
-		${form.text("instream", class_="large", maxlength="100")}
+		${form.text("instream", obj.instream, class_="large", maxlength="100")}
 		${validate_errors("instream")}
 	</div>
 </div>
 <div class="${'clearfix error' if form.errors_for('outstream') else 'clearfix'}">
 	<label for="name">Output Stream</label>
 	<div class="input">
-		${form.text("outstream", class_="large", maxlength="100")}
+		${form.text("outstream", obj.outstream, class_="large", maxlength="100")}
 		${validate_errors("outstream")}
 	</div>
 </div>

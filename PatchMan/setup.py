@@ -18,8 +18,8 @@ requires = [
     'zope.sqlalchemy',
     'waitress',
     'pyramid_beaker',
-    'WebHelpers==1.3',
-    'pyramid_simpleform',
+    'webhelpers2',
+    'pyramid_uniform',
     ]
 
 setup(name='PatchMan',
