@@ -4,16 +4,33 @@ import logging
 import sys
 import numpy
 import gi
+import time
+import datetime
 from device import VirtualDevice
 from platedetector import PlateDetector
 from timeit import default_timer as timer
+
 from log import log_image
+import multiprocessing
+from multiprocessing import Manager, Process, Queue
+from Queue import Empty
 
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GObject, GstVideo, GLib
 
 GObject.threads_init()
 Gst.init(None)
+
+def analyze(src, dst):
+    detector  = PlateDetector()
+    while True:
+        img, ts = src.get()
+        if img is None: return
+        plate, r = detector.find2(img)
+        if r is not None:
+            dst.put((plate,r, img, ts))
+
+
 
 class PlateFinder(GstVideo.VideoFilter):
     __gstmetadata__ = (
@@ -37,12 +54,26 @@ class PlateFinder(GstVideo.VideoFilter):
 
     __gsttemplates__ = (_sinktemplate, _srctemplate)
 
+   
     def __init__(self):
         GstVideo.VideoFilter.__init__(self)
-        self.first = True
-        self.analyzer = PlateDetector()
         self.last = None
-            
+        manager = Manager()
+        self.procs = multiprocessing.cpu_count() * 2
+        self.src = multiprocessing.Queue()
+        self.dst = multiprocessing.Queue()
+
+    def do_start(self):
+        print 'starting videofilter'
+        for _ in range(self.procs): multiprocessing.Process(target=analyze, args=(self.src, self.dst)).start()
+        return True
+
+    def do_stop(self):
+        print 'stopping videofilter'
+        for _ in range(self.procs):
+            self.src.put((None, None))
+        return True
+
     def do_set_info(self, incaps, in_info, outcaps, out_info):
         if in_info.finfo.format == GstVideo.VideoFormat.I420:
             self.gst_to_cv = self.i420_to_cv
@@ -52,8 +83,6 @@ class PlateFinder(GstVideo.VideoFilter):
             self.cv_to_gst = self.cv_to_bgr
         else:
             return False
-        logging.debug('in c ' + incaps.to_string()) 
-        logging.debug('out c ' + outcaps.to_string()) 
         return True
 
     def cv_to_bgr(self, img):
@@ -76,31 +105,35 @@ class PlateFinder(GstVideo.VideoFilter):
 
 
     def do_transform_frame_ip(self, f):
+        
         VirtualDevice.vd[f.buffer.pts] = timer()-VirtualDevice.gt[f.buffer.pts]
-        logging.debug('[%s] vc1: %s',f.buffer.pts, VirtualDevice.vd[f.buffer.pts])
+        #logging.debug('[%s] vc1: %s',f.buffer.pts, VirtualDevice.vd[f.buffer.pts])
+        
         i = timer()
 
         h = f.info.height
         w = f.info.width
         img = self.gst_to_cv(f,w,h)
-        img.flags.writeable = True
-        
-        plate, r = self.analyzer.find2(img)
-        if r is not None:
-            self.last = r
-            log_image(img, f.buffer.pts)
+        self.src.put((img, time.time()))
+
+        while not self.dst.empty():
+            (plate, (x,y,w,h), orig_img, ts)  = self.dst.get()
+            self.last  = orig_img[y:y+h,x:x+w]
+            log_image(orig_img, datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d%H%M%S'))
 
         if self.last is not None:
+            img.flags.writeable = True
             rh, rw = self.last.shape[:2]
             img[h-rh:h,w-rw:w] = self.last
         
-        f.buffer.fill(0, self.cv_to_gst(img).tobytes())
+            f.buffer.fill(0, self.cv_to_gst(img).tobytes())
 
         pt = timer()-i
-        logging.debug('[%s] ana: %s',f.buffer.pts, pt )
+        #logging.debug('[%s] ana: %s',f.buffer.pts, pt )
         VirtualDevice.vd[f.buffer.pts] = VirtualDevice.vd[f.buffer.pts] + pt
 
         return Gst.FlowReturn.OK
+
 
 
 def plugin_init(plugin):

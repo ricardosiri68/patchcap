@@ -5,20 +5,36 @@ import cv2
 import numpy as np
 from lib.warping import ImageBlobWarping
 import sys
+from multiprocessing import Pool
 
 logger = logging.getLogger(__name__)
 from logging import FileHandler, StreamHandler
 from vlogging import VisualRecord
 
 
+ocr = Ocr('spa', logger)
+
+def get_start(args):
+    (img, b, i) = args
+    x,y,w,h = b
+    l = cv2.copyMakeBorder(
+            img[y:y+h, x:x+w],
+            5, 5, 5, 5, cv2.BORDER_CONSTANT,
+            value=255)
+    if i > 2:
+        return ocr.read_digit(l)
+    return ocr.read_text(l)
+
+
 class PlateDetector(object):
     def __init__(self, vdebug = False):
         self.vdebug = vdebug
-        self.ocr = Ocr('spa', logger)
         self.pre = None
         self.edged = None
         logger.debug('cv optimizado: {0}'.format(cv2.useOptimized()))
         self.warp = ImageBlobWarping()
+        self.p  = Pool(processes = 6)
+
 
     def find(self, img):
         edged= self.prepare(img)
@@ -35,8 +51,7 @@ class PlateDetector(object):
         blobs = self.findBlobs(edged)
         for b in blobs:
             bb=np.int0(cv2.boxPoints(b))
-            x,y,w,h = cv2.boundingRect(bb)
-            lastp = img[y:y+h,x:x+w]
+            lastp = cv2.boundingRect(bb)
             plate = self.checkBlob(b)
             if plate:
                 return plate, lastp
@@ -99,21 +114,9 @@ class PlateDetector(object):
 
     def findChars(self, img, blobs):
         i = 0
-        self.ocr.reset()
-        for b in sorted(blobs, key=lambda b:b[0]):
-            x,y,w,h = b
-            l = cv2.copyMakeBorder(
-                    img[y:y+h, x:x+w],
-                    5, 5, 5, 5, cv2.BORDER_CONSTANT,
-                    value=255)
-            if self.vdebug:
-                logger.debug(VisualRecord("pate", [l], fmt = "jpg"))
-            if i > 2:
-                readed = self.ocr.read_digit(l)
-            else:
-                readed = self.ocr.read_text(l)
-            i += 1
-        return self.ocr.text()
+        letters = [(img,p[1], p[0]) for p in sorted(enumerate(blobs), key=lambda b:b[1][0])]
+        plate = self.p.map(get_start, letters)
+        return ''.join(filter(None,plate))
 
     def prepare(self, img, scale=True):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
