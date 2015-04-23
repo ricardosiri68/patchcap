@@ -83,7 +83,7 @@ class Device(Base, BaseEntity):
             name = src
         else:
             self.name = name
-        self.ip = '0.0.0.0'
+        self.ip = name
         self.username= 'admin'
         self.password='admin'
         self.instream = src
