@@ -16,52 +16,38 @@ class GstOutputStream(Gst.Bin):
     )
 
 
-    def __init__(self, src):
-        self.split = False
+    def __init__(self, src, split = False):
         super( GstOutputStream, self).__init__()
-        logger.debug('configurando out %s'%src)
-
         vsink = Gst.ElementFactory.make('intervideosink',None)
-        vsink.get_static_pad('sink').add_probe(Gst.PadProbeType.BUFFER, self.rec_buff, 0)
         self.add(vsink)
-
-        if self.split:
-            tee = Gst.ElementFactory.make('tee', "tee")
-            q1 = Gst.ElementFactory.make('queue', None)
-            xsink =  Gst.ElementFactory.make('autovideosink', None)
-            q2 = Gst.ElementFactory.make('queue', None)
-
-            # Add elements to Bin
-            self.add(tee)
-            self.add(q1)
-            self.add(xsink)
-            self.add(q2)
-
-            # Link elements
-            tee.link(q1)
-            q1.link(xsink)
-            tee.link(q2)
-            q2.link(vsink)
-            sink = tee
+        if split:
+            sink = self.add_tee()
         else:
             sink = vsink
-
         self.add_pad(Gst.GhostPad.new('sink',sink.get_static_pad('sink')))
+        #vsink.get_static_pad('sink').add_probe(Gst.PadProbeType.BUFFER, self.rec_buff, 0)
 
-    def rec_buff(self, pad, info, data):
-        t = timer()
-        k = info.get_buffer().pts
-        logger.debug('[%s] out: %s (%s)\n', k ,t-VirtualDevice.gt[k], t-VirtualDevice.gt[k]-VirtualDevice.vd[k])
-        return Gst.PadProbeReturn.OK
+    #def rec_buff(self, pad, info, data):
+    #    t = timer()
+    #    k = info.get_buffer().pts
+    #    return Gst.PadProbeReturn.OK
 
-    def write(self, img, plate):
-        try:
-		if plate:
-			img.drawText(plate)
-        	img.save(self.out)
-        except:
-        	logger.error("sending stream...", exc_info=True)
+    def add_tee(self):
+        tee = Gst.ElementFactory.make('tee', "tee")
+        q1 = Gst.ElementFactory.make('queue', None)
+        xsink =  Gst.ElementFactory.make('autovideosink', None)
+        q2 = Gst.ElementFactory.make('queue', None)
+        self.add(tee)
+        self.add(q1)
+        self.add(xsink)
+        self.add(q2)
+        tee.link(q1)
+        q1.link(xsink)
+        tee.link(q2)
+        q2.link(vsink)  
+        return tee
 
+    '''
     def start_recording(self):
         if (self.get_setting("record-events")
             and self.get_has_valid_event_path()):
@@ -101,5 +87,6 @@ class GstOutputStream(Gst.Bin):
             else:
                 logging.warning("monitor '%s' recording pipeline is missing element source")
             self._recording_pipeline = None
+    '''
 
 

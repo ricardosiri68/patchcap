@@ -29,9 +29,6 @@ class VirtualDevice(Gst.Bin):
         	'Hernando Rojas <hrojas@lacuatro.com.ar>'
     )
 
-    gt = {}
-    vd = {}
-
     def __init__(self, url):
         res = urlparse.urlparse(url)
         super(VirtualDevice, self).__init__()
@@ -66,23 +63,20 @@ class VirtualDevice(Gst.Bin):
         else:
             self.src.connect('pad-added', self.on_src_pad_added)
 
-    
         self.video_pad = Gst.GhostPad.new_no_target("video_pad",  Gst.PadDirection.SRC) 
-        self.video_pad.connect('linked', self.on_deco_pad_linked)
         self.add_pad(self.video_pad)
-        
-        logger.debug('configurando in %s'%url)
+        #self.video_pad.connect('linked', self.on_deco_pad_linked)
        
-    def on_deco_pad_linked(self, pad, peer):
-        pad.add_probe(Gst.PadProbeType.BUFFER, self.rec_buff, 0)
+    #def on_deco_pad_linked(self, pad, peer):
+    #    pad.add_probe(Gst.PadProbeType.BUFFER, self.rec_buff, 0)
 
-    def rec_buff(self, pad, info, data):
-        VirtualDevice.gt[info.get_buffer().pts] = timer()
-        return Gst.PadProbeReturn.OK
+    # used to log buffer timestamps
+    # def rec_buff(self, pad, info, data):
+    #    VirtualDevice.gt[info.get_buffer().pts] = timer()
+    #    return Gst.PadProbeReturn.OK
 
     def on_src_pad_added(self, element, pad):
         caps = pad.get_current_caps()
-        print('on_src_pad_added():', caps.to_string())
         cap = caps.get_structure(0)
         if cap.get_string('media')=='video':
             pad.link(self.dec.get_static_pad('sink'))
@@ -94,31 +88,6 @@ class VirtualDevice(Gst.Bin):
             self.video_pad.set_target(pad)
             self.post_message(Gst.Message.new_application(self, caps.get_structure(0)))
 
-
-    def alarm(self):
-        if not self._onvif:
-            return False
-
-        username = 'admin'
-        password = 'admin'
-        auth = base64.encodestring('%s:%s' % (username, password))[:-1]
-        try:
-            for i in (1, 0):
-                req = urllib2.Request(
-                    "http://192.168.3.20/portctrl.cgi&action=update&out1=%s" %
-                    i
-                )
-                req.add_header("Authorization", "Basic %s" % auth)
-                resp = urllib2.urlopen(req)
-                req.add_header("Authorization", "Basic %s" % auth)
-                logger.debug(
-                    "se disparo alarma con codigo %s y param %s", resp.code, i
-                )
-                time.sleep(1)
-            return True
-        except IOError as error:
-            logger.error(error)
-        return False
 
     def __repr__(self):
 	    return self.__str__()
