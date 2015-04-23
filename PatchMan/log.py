@@ -4,7 +4,8 @@ import math
 import uuid
 from os import path, mkdir
 import cv2
-
+import ConfigParser
+from multiprocessing import Lock
 
 def setup():
 
@@ -31,18 +32,29 @@ def setup():
 
     return logger
 
-def log_image(img, name ='', images_path= '../log/'):
-    if not path.isdir(images_path):
-        mkdir(images_path)
+class ImageLogger(object):
 
-    if not name:
-        name = str(uuid.uuid4())
+    def __init__(self, dev_id):
+        config = ConfigParser.ConfigParser()
+        config.read('halcon.ini')
+        storage_root = config.get('halcon', 'storage')
+        self.storage = path.join(storage_root, str(dev_id))
+        if not path.isdir(self.storage):
+            mkdir(self.storage)
+        self.l = Lock()
+        logging.debug('configurando storage para las imagenes en %s', self.storage)
 
-    imgpath = path.join(images_path, "%s.png" % (name))
-    if path.isfile(imgpath):
-        i = 1
-        imgpath = path.join(images_path, "%s-%s.png" % (name, i))
-        while path.isfile(imgpath):
-            i += 1
-            imgpath = path.join(images_path, "%s-%s.png" % (name, i))
-    cv2.imwrite(imgpath,img)
+    def image(self, img, name =''):
+        self.l.acquire()
+        if not name:
+            name = str(uuid.uuid4())
+        
+        imgpath = path.join(self.storage, "%s.png" % (name))
+        if path.isfile(imgpath):
+            i = 1
+            imgpath = path.join(self.storage, "%s-%s.png" % (name, i))
+            while path.isfile(imgpath):
+                i += 1
+                imgpath = path.join(storage, "%s-%s.png" % (name, i))
+        cv2.imwrite(imgpath,img)
+        self.l.release()

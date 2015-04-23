@@ -10,7 +10,7 @@ from device import VirtualDevice
 from platedetector import PlateDetector
 from timeit import default_timer as timer
 
-from log import log_image
+from log import ImageLogger
 import multiprocessing
 from multiprocessing import Manager, Process, Queue
 from Queue import Empty
@@ -21,7 +21,7 @@ from gi.repository import Gst, GObject, GstVideo, GLib
 GObject.threads_init()
 Gst.init(None)
 
-def analyze(src, dst):
+def analyze(src, dst, log):
     detector  = PlateDetector()
     while True:
         img, ts = src.get()
@@ -29,6 +29,7 @@ def analyze(src, dst):
         plate, r = detector.find2(img)
         if r is not None:
             dst.put((plate,r, img, ts))
+            log.image(img, datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d%H%M%S'))
 
 
 
@@ -54,22 +55,19 @@ class PlateFinder(GstVideo.VideoFilter):
 
     __gsttemplates__ = (_sinktemplate, _srctemplate)
 
-   
-    def __init__(self):
+    def __init__(self, dev_id):
         GstVideo.VideoFilter.__init__(self)
         self.last = None
         manager = Manager()
         self.procs = multiprocessing.cpu_count() * 2
         self.src = multiprocessing.Queue()
         self.dst = multiprocessing.Queue()
-
+        self.log = ImageLogger(dev_id)
     def do_start(self):
-        print 'starting videofilter'
-        for _ in range(self.procs): multiprocessing.Process(target=analyze, args=(self.src, self.dst)).start()
+        for _ in range(self.procs): multiprocessing.Process(target=analyze, args=(self.src, self.dst, self.log)).start()
         return True
 
     def do_stop(self):
-        print 'stopping videofilter'
         for _ in range(self.procs):
             self.src.put((None, None))
         return True
@@ -96,21 +94,13 @@ class PlateFinder(GstVideo.VideoFilter):
         yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV_I420)
         return yuv
 
-        
     def i420_to_cv(self, f, w, h):
         data = f.buffer.extract_dup(0, f.buffer.get_size())
         yuv = numpy.ndarray((h*3/2,w,1), buffer=data, dtype=numpy.uint8)
         st = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR_IYUV)
         return st
 
-
     def do_transform_frame_ip(self, f):
-        
-        VirtualDevice.vd[f.buffer.pts] = timer()-VirtualDevice.gt[f.buffer.pts]
-        #logging.debug('[%s] vc1: %s',f.buffer.pts, VirtualDevice.vd[f.buffer.pts])
-        
-        i = timer()
-
         h = f.info.height
         w = f.info.width
         img = self.gst_to_cv(f,w,h)
@@ -118,20 +108,13 @@ class PlateFinder(GstVideo.VideoFilter):
 
         while not self.dst.empty():
             (plate, (x,y,w,h), orig_img, ts)  = self.dst.get()
-            self.last  = orig_img[y:y+h,x:x+w]
-            log_image(orig_img, datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d%H%M%S'))
+            self.last = orig_img[y:y+h,x:x+w]
 
         if self.last is not None:
             img.flags.writeable = True
             rh, rw = self.last.shape[:2]
             img[h-rh:h,w-rw:w] = self.last
-        
             f.buffer.fill(0, self.cv_to_gst(img).tobytes())
-
-        pt = timer()-i
-        #logging.debug('[%s] ana: %s',f.buffer.pts, pt )
-        VirtualDevice.vd[f.buffer.pts] = VirtualDevice.vd[f.buffer.pts] + pt
-
         return Gst.FlowReturn.OK
 
 
