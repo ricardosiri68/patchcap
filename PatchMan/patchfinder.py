@@ -42,14 +42,14 @@ class MyFactory(GstRtspServer.RTSPMediaFactory):
 
 
 class StreamServer():
-    def __init__(self, pads):
+    def __init__(self, pads, name):
         logger.debug('starting rtsp server para '+ pads)
         self.server = GstRtspServer.RTSPServer()
         m = self.server.get_mount_points()
         f = MyFactory(pads,'mp4')
         f2 = MyFactory(pads,'h264')
-        m.add_factory("/mp4", f)
-        m.add_factory("/h264",f2)
+        m.add_factory("/{0}/mp4".format(name), f)
+        m.add_factory("/{0}/h264".format(name),f2)
         self.server.attach(None)
 
 
@@ -80,33 +80,30 @@ class PatchFinder(Daemon):
         self.bus.add_signal_watch()
         self.bus.connect("message", self.on_message)
         self.src = VirtualDevice(self.dev.instream)
-        #self.vc = Gst.ElementFactory.make("videoconvert", None)
-        #self.vc2 = Gst.ElementFactory.make("videoconvert", None)
         self.video = PlateFinder()
 
 
         self.sink = GstOutputStream(self.dev.outstream)
 
-        # Add elements to pipeline
         self.pipeline.add(self.src)
-        #self.pipeline.add(self.vc)
-        #self.pipeline.add(self.vc2)
         self.pipeline.add(self.video)
         self.pipeline.add(self.sink)
-        # Link elements
-        #self.src.link(self.vc)
         self.src.link(self.video)
         self.video.link(self.sink)
-        #self.vc2.link(self.sink)
 
         if self.dev.logging:
             logger.debug("Se escribiran los logs a la base")
 
     def run(self):
-        self.pipeline.set_state(Gst.State.PLAYING)
         if logger.isEnabledFor(logging.DEBUG):
             Gst.debug_bin_to_dot_file_with_ts(self.pipeline, Gst.DebugGraphDetails.ALL, 'halcon')
-        self.mainloop.run()
+        try:
+            self.pipeline.set_state(Gst.State.PLAYING)
+            self.mainloop.run()
+        except KeyboardInterrupt:
+            logger.warning("Cancelando por Ctrl-C")
+            self.kill()
+            raise KeyboardInterrupt
 
     def kill(self):
         self.pipeline.set_state(Gst.State.NULL)
@@ -130,7 +127,7 @@ class PatchFinder(Daemon):
             elif state == Gst.State.PLAYING:
                 logger.info("'%s' cambio de %s a %s. Pending: %s"%(self.dev.name, self.get_state(old), self.get_state(state), self.get_state(pending))) 
                 if message.src == self.pipeline:
-                    s = StreamServer(self.caps)
+                    s = StreamServer(self.caps, self.dev.outstream)
         elif t == Gst.MessageType.APPLICATION and message.has_name('video/x-raw'):
             s = message.get_structure()
             self.caps = s.to_string()
@@ -139,6 +136,7 @@ class PatchFinder(Daemon):
         elif t == Gst.MessageType.INFO:
             e, d = message.parse_info()
             logger.debug("{0}: {1}", e, d)
+
     def log(self, img, code, stats):
         stats.detected()
         if self.dev.logging:
