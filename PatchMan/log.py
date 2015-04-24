@@ -55,6 +55,6 @@ class ImageLogger(object):
             imgpath = path.join(self.storage, "%s-%s.png" % (name, i))
             while path.isfile(imgpath):
                 i += 1
-                imgpath = path.join(storage, "%s-%s.png" % (name, i))
+                imgpath = path.join(self.storage, "%s-%s.png" % (name, i))
         cv2.imwrite(imgpath,img)
         self.l.release()
