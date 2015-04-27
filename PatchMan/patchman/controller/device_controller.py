@@ -12,7 +12,8 @@ from webhelpers import paginate
 from webhelpers.paginate import Page
 
 from patchman.utils.wsdiscovery import *
-
+from os import path
+import glob
 import logging
 import transaction
 
@@ -28,11 +29,13 @@ class DeviceForm(Schema):
     filter_extra_fields = True
     allow_extra_fields = True
     name = validators.String(not_empty=True)
-    ip = validators.String(not_empty=True)
+    ip = validators.String(not_empty=False)
     instream = validators.String(not_empty=True)
     outstream = validators.String(not_empty=True)
-    username = validators.String(not_empty=True)
-    password = validators.String(not_empty=True)
+    username = validators.String(not_empty=False)
+    password = validators.String(not_empty=False)
+    roi = validators.String(not_empty=False)
+
 
 @view_config(route_name="device_list")
 def list(request):
@@ -129,9 +132,13 @@ def edit(request):
         request.session.flash("warning;Se guardo el dispositivo!")
         return HTTPFound(location = request.route_url("device_list"))
 
+    storage = request.registry.settings['storage']
+    sp = path.join(storage, str(device.id))
+    last = max(glob.iglob(path.join(sp, '*.png')), key=path.getctime)
+    sample = '/storage/{0}/{1}'.format(device.id, path.split(last)[1])
     action_url = request.route_url("device_edit", id=id)
     return dict(form=FormRenderer(form), 
-                action_url=action_url, obj=device)
+                action_url=action_url, obj=device,sample = sample )
    
 @view_config(route_name='device_view', renderer="device/mon.html")
 def view(request):

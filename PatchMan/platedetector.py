@@ -96,7 +96,7 @@ class PlateDetector(object):
             logger.debug(VisualRecord("roi", [roi], fmt = "jpg"))
         letters = []
         i, cnts, _ = cv2.findContours(roic, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        h = roic.shape[:2][0]
+        h = roic.shape[0]
         if not cnts or len(cnts) < 6:
             return None
 

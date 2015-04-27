@@ -1,12 +1,39 @@
 <%inherit file="/base/index.html" />
 <%namespace file="fields.html" name="fields" import="*"/>
 
+<%block name="head">
+<link rel="stylesheet" type="text/css" href="${request.static_url('patchman:static/css/imgareaselect-default.css')}" />
+<script type="text/javascript" src="${request.static_url('patchman:static/js/jquery.imgareaselect.min.js')}"></script>
+<script type="text/javascript">
+$(document).ready(function () {
+    $('img#sample').imgAreaSelect({
+            handles: true,
+            persistent: true,
+            imageWidth:1920,
+            imageHeight:1080,
+            minHeight:100,
+            show:true,
+            onSelectEnd: function (img, s) {
+                    $('#roi').val(s.x1+','+s.y1+','+s.x2+','+s.y2);
+            }
+    });
+    if ($('#roi').val()!= '') {
+        values = $('#roi').val().split(',');
+        var ias = $('#sample').imgAreaSelect({ instance: true });
+        ias.setSelection(values[0], values[1], values[2], values[3], false);
+        ias.update();
+    }
+});
+</script>
+<style type="text/css">
+#sample{width:480px; height:270px}
+</style>
+</%block>
+
 <div class="page-header">
 	<h1 class="pull-left">Editar camara</h1>
   	<div class="pull-right">
-		<a class="btn primary" style="margin-right:10px;" href="${request.route_url('device_new')}">
-			Agregar Camara
-		</a>
+		<a class="btn primary" style="margin-right:10px;" href="${request.route_url('device_new')}">Agregar Camara</a>
 	</div>
 </div>
 
@@ -14,7 +41,14 @@
   <div class="span14">
 	
 	${form.begin(url=action_url, method="post")}
-	    ${fields.body()}
+	    <div class="span7">
+        ${fields.body()}
+        ${form.hidden('roi',obj.roi)}
+
+    </div>
+    <div class="span7">
+        <img id="sample" src="${sample}"  />
+    </div>
 	    
 	    <div class="actions">
 			<input type="submit" name="form_submitted" value="Guardar" class="btn primary">

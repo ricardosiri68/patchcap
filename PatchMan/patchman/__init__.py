@@ -33,6 +33,7 @@ def main(global_config, **settings):
     config.add_mako_renderer(".html")
 
     config.add_static_view("static", "patchman:static", cache_max_age=3600)
+    config.add_static_view("storage",settings["storage"], cache_max_age=3600)
     
     MyRoutes(config)
       

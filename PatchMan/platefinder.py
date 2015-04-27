@@ -21,15 +21,22 @@ from gi.repository import Gst, GObject, GstVideo, GLib
 GObject.threads_init()
 Gst.init(None)
 
-def analyze(src, dst, log):
+def analyze(src, dst, log, roi):
     detector  = PlateDetector()
     while True:
         img, ts = src.get()
         if img is None: return
-        plate, r = detector.find2(img)
-        if r is not None:
-            dst.put((plate,r, img, ts))
-            log.image(img, datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d%H%M%S'))
+        if roi is None:
+            roi = [0,0,img.shape[1], img.shape[0]]
+        try: 
+            plate, r = detector.find2(img[roi[1]:roi[3], roi[0]:roi[2]])
+            if r is not None:
+                pr = [r[0]+roi[0], r[1]+roi[1], r[2], r[3]]
+                dst.put((plate,pr, img, ts))
+                log.image(img, datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d%H%M%S'))
+        except Exception as e:
+            logging.debug(roi)
+            logging.error(e, exc_info=True)
 
 
 
@@ -55,16 +62,21 @@ class PlateFinder(GstVideo.VideoFilter):
 
     __gsttemplates__ = (_sinktemplate, _srctemplate)
 
-    def __init__(self, dev_id):
+    def __init__(self, dev):
         GstVideo.VideoFilter.__init__(self)
         self.last = None
         manager = Manager()
         self.procs = multiprocessing.cpu_count() * 2
         self.src = multiprocessing.Queue()
         self.dst = multiprocessing.Queue()
-        self.log = ImageLogger(dev_id)
+        self.log = ImageLogger(dev.id)
+        if dev.roi is not None:
+            self.roi = map(int, dev.roi.split(","))
+        else:
+            self.roi = None
+
     def do_start(self):
-        for _ in range(self.procs): multiprocessing.Process(target=analyze, args=(self.src, self.dst, self.log)).start()
+        for _ in range(self.procs): multiprocessing.Process(target=analyze, args=(self.src, self.dst, self.log, self.roi)).start()
         return True
 
     def do_stop(self):
@@ -104,7 +116,7 @@ class PlateFinder(GstVideo.VideoFilter):
         h = f.info.height
         w = f.info.width
         img = self.gst_to_cv(f,w,h)
-        self.src.put((img, time.time()))
+        self.src.put((img.copy(), time.time()))
 
         while not self.dst.empty():
             (plate, (x,y,w,h), orig_img, ts)  = self.dst.get()

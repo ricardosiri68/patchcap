@@ -80,7 +80,7 @@ class PatchFinder(Daemon):
         self.bus.add_signal_watch()
         self.bus.connect("message", self.on_message)
         self.src = VirtualDevice(self.dev.instream)
-        self.video = PlateFinder(self.dev.id)
+        self.video = PlateFinder(self.dev)
 
 
         self.sink = GstOutputStream(self.dev.outstream)
