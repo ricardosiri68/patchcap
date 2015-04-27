@@ -41,7 +41,7 @@ user_id = authenticated_userid(request)
 	            <a href="${request.route_url('auth',action='out')}">Sign Out</a>
             %else:
 	            <form action="${request.route_url('auth',action='in')}" method="post" class="form-inline">
-                    <input id="_csrf" type="hidden" value="${request.session.get_csrf_token()}" name="_csrf">
+                    <input id="_authentication_token" type="hidden" value="${request.session.get_csrf_token()}" name="_authentication_token">
 	            <input type="text" name="username" class="input-small" placeholder="usuario">
 	            <input type="password" name="password" class="input-small" placeholder="clave">
 	            <input type="submit" value="Log in" class="btn">
