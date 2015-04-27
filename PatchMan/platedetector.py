@@ -67,7 +67,7 @@ class PlateDetector(object):
             arcl = cv2.arcLength(c, True)
             approx = cv2.approxPolyDP(c, 0.02 * arcl, True)
             approx = approx.reshape(-1, 2)
-            if len(approx) == 4 and cv2.contourArea(approx) > 4000 and cv2.isContourConvex(approx):
+            if len(approx) == 4 and cv2.contourArea(approx) > 2000 and cv2.isContourConvex(approx):
                 max_cos = np.max([self.angle_cos(approx[i], approx[(i+1) % 4], approx[(i+2) % 4]) for i in xrange(4)])
                 if max_cos < 0.20:
                     rect = cv2.minAreaRect(approx)
