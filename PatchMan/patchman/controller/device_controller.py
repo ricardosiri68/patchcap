@@ -137,6 +137,7 @@ def edit(request):
     last = max(glob.iglob(path.join(sp, '*.png')), key=path.getctime)
     sample = '/store/{0}/{1}'.format(device.id, path.split(last)[1])
     action_url = request.route_url("device_edit", id=id)
+    if device.roi is None: device.roi = '400,400,650,650'
     return dict(form=FormRenderer(form), 
                 action_url=action_url, obj=device,sample = sample )
    
