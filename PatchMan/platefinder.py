@@ -74,6 +74,12 @@ class PlateFinder(GstVideo.VideoFilter):
             self.roi = map(int, dev.roi.split(","))
         else:
             self.roi = None
+        self.fps = 6
+        self.skip = 0 
+        self.skip_count = 0
+        self.lastt = 0
+        self.h = 0
+        self.w = 0
 
     def do_start(self):
         for _ in range(self.procs): multiprocessing.Process(target=analyze, args=(self.src, self.dst, self.log, self.roi)).start()
@@ -85,6 +91,10 @@ class PlateFinder(GstVideo.VideoFilter):
         return True
 
     def do_set_info(self, incaps, in_info, outcaps, out_info):
+        self.h = in_info.height
+        self.w = in_info.width
+        self.skip = in_info.fps_d / self.fps
+ 
         if in_info.finfo.format == GstVideo.VideoFormat.I420:
             self.gst_to_cv = self.i420_to_cv
             self.cv_to_gst = self.cv_to_i420
@@ -98,35 +108,40 @@ class PlateFinder(GstVideo.VideoFilter):
     def cv_to_bgr(self, img):
         return img
 
-    def bgr_to_cv(self, f, w, h):
+    def bgr_to_cv(self, f):
         data = f.buffer.extract_dup(0, f.buffer.get_size())
-        return numpy.ndarray((h, w, f.info.finfo.n_components), buffer=data, dtype=numpy.uint8)
+        return numpy.ndarray((self.h, self.w, f.info.finfo.n_components), buffer=data, dtype=numpy.uint8)
 
     def cv_to_i420(self,img):
         yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV_I420)
         return yuv
 
-    def i420_to_cv(self, f, w, h):
+    def i420_to_cv(self, f):
         data = f.buffer.extract_dup(0, f.buffer.get_size())
-        yuv = numpy.ndarray((h*3/2,w,1), buffer=data, dtype=numpy.uint8)
+        yuv = numpy.ndarray((self.h*3/2, self.w, 1), buffer=data, dtype=numpy.uint8)
         st = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR_IYUV)
         return st
 
     def do_transform_frame_ip(self, f):
-        h = f.info.height
-        w = f.info.width
-        img = self.gst_to_cv(f,w,h)
-        self.src.put((img.copy(), time.time()))
+        img = self.gst_to_cv(f)
 
-        while not self.dst.empty():
-            (plate, (x,y,w,h), orig_img, ts)  = self.dst.get()
-            self.last = orig_img[y:y+h,x:x+w]
+        if self.skip>self.skip_count:
+            self.skip_count = self.skip_count + 1
+        else:
+            self.src.put((img.copy(), time.time()))
+            self.skip_count = 0
 
-        if self.last is not None:
-            img.flags.writeable = True
+        if not self.dst.empty():
+            (plate, (x,y,self.w,self.h), orig_img, ts)  = self.dst.get()
+            self.last = orig_img[y:y+self.h,x:x+self.w]
+            self.lastt = 5
+
+        if self.lastt>0:
             rh, rw = self.last.shape[:2]
-            img[h-rh:h,w-rw:w] = self.last
+            img[h-rh:self.h,self.w-rw:self.w] = self.last
             f.buffer.fill(0, self.cv_to_gst(img).tobytes())
+            self.lastt = self.lastt-1
+
         return Gst.FlowReturn.OK
 
 
