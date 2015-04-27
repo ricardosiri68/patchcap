@@ -3,9 +3,9 @@
 1.1) Dependencias
 Python 2.x (testeado con 2.7)
 Mysql/Mariadb
-Opencv 3 (testado con 3-beta)
-Tesseract 3.x (testeado con 3.0.3)
-Gstreamer 1.x y gst-rtsp-server (testeado con 1.4.5)
+Opencv 3 (compilado 3-beta)
+Tesseract 3.x (compilado con 3.0.3)
+Gstreamer 1.x y gst-rtsp-server (compilado con 1.4.5)
 Pyramid framework (1.5.x)
 
 
@@ -17,8 +17,6 @@ pip install -r requirements.txt
 
 ./patchfinder.py start|stop|restart [camId]
 Donde camId es el id del registro en la base de datos correspondiente al dispositivo cargado
-
-
 
 2) Herramienta de Configuracion
 
@@ -33,6 +31,14 @@ Donde camId es el id del registro en la base de datos correspondiente al disposi
 > initialize_PatchMan_db development.ini [production.ini]
 
 
+El archivo de configuracion debe llamarse halcon.ini
+por lo que es conviente renombrarlo o hacer un enlace simbolico luego de configurarlo.
+
+ej:
+
+ln -sv production.ini halcon.ini
+
+
 Para configurarlo como wsgi en apache.
 
 2.4) Test
@@ -40,6 +46,7 @@ Para configurarlo como wsgi en apache.
 http://localhost:6543/
 user: admin
 pass: admin
+
 
 
 
