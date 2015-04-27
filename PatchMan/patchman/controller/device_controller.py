@@ -135,7 +135,7 @@ def edit(request):
     storage = request.registry.settings['storage']
     sp = path.join(storage, str(device.id))
     last = max(glob.iglob(path.join(sp, '*.png')), key=path.getctime)
-    sample = '/storage/{0}/{1}'.format(device.id, path.split(last)[1])
+    sample = '/store/{0}/{1}'.format(device.id, path.split(last)[1])
     action_url = request.route_url("device_edit", id=id)
     return dict(form=FormRenderer(form), 
                 action_url=action_url, obj=device,sample = sample )
