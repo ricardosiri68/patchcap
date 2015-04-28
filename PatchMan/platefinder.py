@@ -119,8 +119,12 @@ class PlateFinder(GstVideo.VideoFilter):
     def i420_to_cv(self, f):
         data = f.buffer.extract_dup(0, f.buffer.get_size())
         yuv = numpy.ndarray((self.h*3/2, self.w, 1), buffer=data, dtype=numpy.uint8)
-        st = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR_IYUV)
-        return st
+        try:
+            st = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR_IYUV)
+            return st
+        except:
+                logging.warn('fallo conversion %sx%s', self.h, self.w)
+                return None
 
     def do_transform_frame_ip(self, f):
         img = self.gst_to_cv(f)
@@ -132,13 +136,13 @@ class PlateFinder(GstVideo.VideoFilter):
             self.skip_count = 0
 
         if not self.dst.empty():
-            (plate, (x,y,self.w,self.h), orig_img, ts)  = self.dst.get()
-            self.last = orig_img[y:y+self.h,x:x+self.w]
-            self.lastt = 5
+            (plate, (x,y,w,h), orig_img, ts)  = self.dst.get()
+            self.last = orig_img[y:y+h,x:x+w]
+            self.lastt = 50
 
         if self.lastt>0:
             rh, rw = self.last.shape[:2]
-            img[h-rh:self.h,self.w-rw:self.w] = self.last
+            img[self.h-rh:self.h,self.w-rw:self.w] = self.last
             f.buffer.fill(0, self.cv_to_gst(img).tobytes())
             self.lastt = self.lastt-1
 
