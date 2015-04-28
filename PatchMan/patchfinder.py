@@ -64,7 +64,7 @@ class PatchFinder(Daemon):
             stdout='/dev/stdout'
         )
 
-        self.env = bootstrap(path.dirname(path.realpath(__file__))+'/development.ini')
+        self.env = bootstrap(path.dirname(path.realpath(__file__))+'/halcon.ini')
         initialize_sql(self.env['registry'].settings)
         self.caps = None
         self.dev = Device.findBy(device_id)
