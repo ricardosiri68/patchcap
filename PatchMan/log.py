@@ -42,7 +42,6 @@ class ImageLogger(object):
         if not path.isdir(self.storage):
             mkdir(self.storage)
         self.l = Lock()
-        logging.debug('configurando storage para las imagenes en %s', self.storage)
 
     def image(self, img, name =''):
         self.l.acquire()
