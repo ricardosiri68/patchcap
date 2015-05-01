@@ -26,30 +26,25 @@ GObject.threads_init()
 Gst.init(None)
 
 class MyFactory(GstRtspServer.RTSPMediaFactory):
-    def __init__(self, pads, fmt):
-        self.pads = pads
+    def __init__(self, fmt):
         self.fmt = fmt
         GstRtspServer.RTSPMediaFactory.__init__(self)
         self.set_shared(True)
         
     def do_create_element(self, url):
         if self.fmt == 'mp4':
-            pipe = "( intervideosrc ! %s ! avenc_mpeg4 ! rtpmp4vpay name=pay0 )"%(self.pads)
-        else:
-            pipe = "( intervideosrc ! %s ! x264enc tune=zerolatency byte-stream=true ! rtph264pay name=pay0 pt=96 )"%(self.pads)
-        logger.debug('configuring pipe '+pipe)
+            pipe = "( intervideosrc ! videoconvert ! avenc_mpeg4 ! rtpmp4vpay name=pay0 )"
+        elif self.fmt =='h264':
+            pipe = "( intervideosrc ! videoconvert ! vaapipostproc ! vaapiencode_h264 ! rtph264pay name=pay0 pt=96 )"
         return Gst.parse_launch(pipe)
 
 
 class StreamServer():
-    def __init__(self, pads, name):
-        logger.debug('starting rtsp server para '+ pads)
+    def __init__(self, name):
         self.server = GstRtspServer.RTSPServer()
         m = self.server.get_mount_points()
-        f = MyFactory(pads,'mp4')
-        f2 = MyFactory(pads,'h264')
-        m.add_factory("/{0}/mp4".format(name), f)
-        m.add_factory("/{0}/h264".format(name),f2)
+        m.add_factory("/{0}/mp4".format(name), MyFactory('mp4'))
+        m.add_factory("/{0}/h264".format(name),MyFactory('h264'))
         self.server.attach(None)
 
 
@@ -80,19 +75,17 @@ class PatchFinder(Daemon):
         self.bus.add_signal_watch()
         self.bus.connect("message", self.on_message)
         self.src = VirtualDevice(self.dev.instream)
+        self.vc1 = Gst.ElementFactory.make('videoconvert', None)
         self.video = PlateFinder(self.dev)
-
-
-        self.sink = GstOutputStream(self.dev.outstream)
+        self.sink = GstOutputStream(self.dev.outstream, split=False)
 
         self.pipeline.add(self.src)
+        self.pipeline.add(self.vc1)
         self.pipeline.add(self.video)
         self.pipeline.add(self.sink)
-        self.src.link(self.video)
+        self.src.link(self.vc1)
+        self.vc1.link(self.video)
         self.video.link(self.sink)
-
-        if self.dev.logging:
-            logger.debug("Se escribiran los logs a la base")
 
     def run(self):
         if logger.isEnabledFor(logging.DEBUG):
@@ -125,9 +118,9 @@ class PatchFinder(Daemon):
                 logger.info("monitor '%s' main pipeline is stopped"% self.dev.name)
                 self.kill()
             elif state == Gst.State.PLAYING:
-                logger.info("'%s' cambio de %s a %s. Pending: %s"%(self.dev.name, self.get_state(old), self.get_state(state), self.get_state(pending))) 
                 if message.src == self.pipeline:
-                    s = StreamServer(self.caps, self.dev.outstream)
+                    logger.info("'%s' cambio de %s a %s. Pending: %s"%(self.dev.name, self.get_state(old), self.get_state(state), self.get_state(pending))) 
+                    s = StreamServer(self.dev.outstream)
         elif t == Gst.MessageType.APPLICATION and message.has_name('video/x-raw'):
             s = message.get_structure()
             self.caps = s.to_string()
@@ -136,6 +129,13 @@ class PatchFinder(Daemon):
         elif t == Gst.MessageType.INFO:
             e, d = message.parse_info()
             logger.debug("{0}: {1}", e, d)
+        elif t == Gst.MessageType.WARNING:
+            e, d = message.parse_warning()
+            error = str(e)
+            if d:
+                error += " (%s)"%d
+                logger.warn("monitor '%s' received warning; %s"%(self.dev, error))
+
 
     def log(self, img, code, stats):
         stats.detected()

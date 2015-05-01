@@ -46,8 +46,8 @@ class PlateFinder(GstVideo.VideoFilter):
         "newelement",
         "Description",
         "Contact")
-    _srccaps = "video/x-raw, format={I420, BGR}"
-    _sinkcaps = "video/x-raw, format={I420}"
+    _srccaps = "video/x-raw, format={BGR}"
+    _sinkcaps = "video/x-raw, format={BGR}"
     _srctemplate = Gst.PadTemplate.new(
         'src',
         Gst.PadDirection.SRC,
@@ -80,7 +80,7 @@ class PlateFinder(GstVideo.VideoFilter):
         self.lastt = 0
         self.h = 0
         self.w = 0
-
+    
     def do_start(self):
         for _ in range(self.procs): multiprocessing.Process(target=analyze, args=(self.src, self.dst, self.log, self.roi)).start()
         return True
@@ -94,7 +94,7 @@ class PlateFinder(GstVideo.VideoFilter):
         self.h = in_info.height
         self.w = in_info.width
         self.skip = in_info.fps_d / self.fps
- 
+
         if in_info.finfo.format == GstVideo.VideoFormat.I420:
             self.gst_to_cv = self.i420_to_cv
             self.cv_to_gst = self.cv_to_i420
@@ -102,6 +102,7 @@ class PlateFinder(GstVideo.VideoFilter):
             self.gst_to_cv = self.bgr_to_cv
             self.cv_to_gst = self.cv_to_bgr
         else:
+            logging.error('invalid format')
             return False
         return True
 
@@ -113,8 +114,11 @@ class PlateFinder(GstVideo.VideoFilter):
         return numpy.ndarray((self.h, self.w, f.info.finfo.n_components), buffer=data, dtype=numpy.uint8)
 
     def cv_to_i420(self,img):
-        yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV_I420)
-        return yuv
+        try:
+            return cv2.cvtColor(img, cv2.COLOR_BGR2YUV_I420)
+        except:
+                logging.warn('fallo conversion %sx%s', self.h, self.w)
+                return None
 
     def i420_to_cv(self, f):
         data = f.buffer.extract_dup(0, f.buffer.get_size())
@@ -128,7 +132,6 @@ class PlateFinder(GstVideo.VideoFilter):
 
     def do_transform_frame_ip(self, f):
         img = self.gst_to_cv(f)
-
         if self.skip>self.skip_count:
             self.skip_count = self.skip_count + 1
         else:
@@ -141,6 +144,7 @@ class PlateFinder(GstVideo.VideoFilter):
             self.lastt = 50
 
         if self.lastt>0:
+            img.flags.writeable = True
             rh, rw = self.last.shape[:2]
             img[self.h-rh:self.h,self.w-rw:self.w] = self.last
             f.buffer.fill(0, self.cv_to_gst(img).tobytes())
@@ -150,10 +154,6 @@ class PlateFinder(GstVideo.VideoFilter):
 
 
 
-def plugin_init(plugin):
-    t = GObject.type_register (PlateFinder)
-    return Gst.Element.register(plugin, "platefinder", 0, t)
+GObject.type_register(PlateFinder)
+__gstelementfactory__ = ("platefinder", Gst.Rank.NONE, PlateFinder)
 
-if not Gst.Plugin.register_static(Gst.VERSION_MAJOR, Gst.VERSION_MINOR, "platefinder", "platefinder filter plugin", plugin_init, '0.02', 'LGPL', 'platefinder', 'patchcap', ''):
-    print("plugin register failed")
-    sys.exit()
