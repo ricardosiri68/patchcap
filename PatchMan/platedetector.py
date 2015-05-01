@@ -114,7 +114,7 @@ class PlateDetector(object):
 
     def findChars(self, img, blobs):
         i = 0
-        letters = [(img,p[1], p[0]) for p in sorted(enumerate(blobs), key=lambda b:b[1][0])]
+        letters = [(img,p[1], p[0]) for p in enumerate(sorted(blobs, key=lambda b:b[0]))]
         plate = self.p.map(get_start, letters)
         return ''.join(filter(None,plate))
 
