@@ -57,7 +57,7 @@ class VirtualDevice(Gst.Bin):
         self.dec.connect('pad-added', self.on_dec_src_pad_added)
         self.add(self.src)
         self.add(self.dec)
-
+ 
         if self.src.get_static_pad('src'):
             self.src.link(self.dec)
         else:
@@ -80,7 +80,6 @@ class VirtualDevice(Gst.Bin):
         cap = caps.get_structure(0)
         if cap.get_string('media')=='video':
             pad.link(self.dec.get_static_pad('sink'))
-	
 
     def on_dec_src_pad_added(self, element, pad):
         caps = pad.get_current_caps()
@@ -95,10 +94,8 @@ class VirtualDevice(Gst.Bin):
     def __str__(self):
 	    return self.name + "[%s]"%self.src 
 
-def plugin_init2(plugin):
-    vdt = GObject.type_register(VirtualDevice)
-    return Gst.Element.register(plugin, 'virtualdevice', 0, vdt)
+GObject.type_register(VirtualDevice)
+__gstelementfactory__ = ("halcondevice", Gst.Rank.NONE, VirtualDevice)
 
-if not Gst.Plugin.register_static(Gst.VERSION_MAJOR, Gst.VERSION_MINOR, "virtualdevice", "virtualdevice src plugin", plugin_init2, '0.02', 'LGPL', 'platefinder', 'patchcap', ''):
-    print ("src plugin register failed")
-    sys.exit()
+
+
