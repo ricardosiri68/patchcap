@@ -31,7 +31,6 @@ class PlateDetector(object):
         self.vdebug = vdebug
         self.pre = None
         self.edged = None
-        logger.debug('cv optimizado: {0}'.format(cv2.useOptimized()))
         self.warp = ImageBlobWarping()
         self.p  = Pool(processes = 6)
 
