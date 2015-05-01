@@ -18,12 +18,12 @@ class GstOutputStream(Gst.Bin):
 
     def __init__(self, src, split = False):
         super( GstOutputStream, self).__init__()
-        vsink = Gst.ElementFactory.make('intervideosink',None)
-        self.add(vsink)
+        self.vsink = Gst.ElementFactory.make('intervideosink',None)
+        self.add(self.vsink)
         if split:
             sink = self.add_tee()
         else:
-            sink = vsink
+            sink = self.vsink
         self.add_pad(Gst.GhostPad.new('sink',sink.get_static_pad('sink')))
         #vsink.get_static_pad('sink').add_probe(Gst.PadProbeType.BUFFER, self.rec_buff, 0)
 
@@ -41,10 +41,12 @@ class GstOutputStream(Gst.Bin):
         self.add(q1)
         self.add(xsink)
         self.add(q2)
+      
         tee.link(q1)
         q1.link(xsink)
+        
         tee.link(q2)
-        q2.link(vsink)  
+        q2.link(self.vsink)  
         return tee
 
     '''
