@@ -62,7 +62,7 @@ class PlateFinder(GstVideo.VideoFilter):
 
     __gsttemplates__ = (_sinktemplate, _srctemplate)
 
-    def __init__(self, dev):
+    def __init__(self, dev = None):
         GstVideo.VideoFilter.__init__(self)
         self.last = None
         manager = Manager()
