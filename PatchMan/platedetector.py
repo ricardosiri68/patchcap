@@ -129,16 +129,15 @@ class PlateDetector(object):
         self.edged = cv2.Canny(self.pre, 400, 1750, apertureSize=5)
 
         if self.vdebug:
-            logger.debug(VisualRecord("prepare", [self.edged], fmt = "jpg"))
+            logger.debug(VisualRecord("prepare", [self.pre, self.edged], fmt = "jpg"))
         return self.edged
 
     def prepare2(self, img, scale=True):
-        #ret,th2 = cv2.threshold(img, 110, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-        kern = np.ones((5,5),np.uint8)
-        th1 = cv2.erode(img, kern, iterations = 1)
-        ret,th = cv2.threshold(th1, 100, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+        kern = np.ones((3,5),np.uint8)
+        th1 =  cv2.erode(img, kern, iterations = 1)
+        ret,th = cv2.threshold(th1, 77, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
         if self.vdebug:
-            logger.debug(VisualRecord("prepare2", [img, opening, sure_bg, th1, th], fmt = "jpg"))
+            logger.debug(VisualRecord("prepare2", [img,  th1, th], fmt = "jpg"))
         return th
 
 
