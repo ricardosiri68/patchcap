@@ -38,6 +38,12 @@ def analyze(src, dst, log, roi):
             logging.debug(roi)
             logging.error(e, exc_info=True)
 
+def draw_str(dst, (x, y), s):
+    if not s:
+        return
+    cv2.putText(dst, s, (x+1, y+1), cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 0), thickness = 2, lineType=cv2.LINE_AA)
+    cv2.putText(dst, s, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), lineType=cv2.LINE_AA)
+
 
 
 class PlateFinder(GstVideo.VideoFilter):
@@ -64,7 +70,6 @@ class PlateFinder(GstVideo.VideoFilter):
 
     def __init__(self, dev = None):
         GstVideo.VideoFilter.__init__(self)
-        self.last = None
         manager = Manager()
         self.procs = multiprocessing.cpu_count() * 2
         self.src = multiprocessing.Queue()
@@ -77,6 +82,8 @@ class PlateFinder(GstVideo.VideoFilter):
         self.fps = 6
         self.skip = 0 
         self.skip_count = 0
+        self.lastplate = None
+        self.last = None
         self.lastt = 0
         self.h = 0
         self.w = 0
@@ -141,12 +148,14 @@ class PlateFinder(GstVideo.VideoFilter):
         if not self.dst.empty():
             (plate, (x,y,w,h), orig_img, ts)  = self.dst.get()
             self.last = orig_img[y:y+h,x:x+w]
+            self.lastplate = plate
             self.lastt = 50
 
         if self.lastt>0:
             img.flags.writeable = True
             rh, rw = self.last.shape[:2]
             img[self.h-rh:self.h,self.w-rw:self.w] = self.last
+            draw_str(img, (self.h-rh-20, self.w-rw), self.lastplate)
             f.buffer.fill(0, self.cv_to_gst(img).tobytes())
             self.lastt = self.lastt-1
 
