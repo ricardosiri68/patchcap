@@ -66,13 +66,13 @@ class PlateDetector(object):
             arcl = cv2.arcLength(c, True)
             approx = cv2.approxPolyDP(c, 0.02 * arcl, True)
             approx = approx.reshape(-1, 2)
-            if len(approx) == 4 and cv2.contourArea(approx) > 2000 and cv2.isContourConvex(approx):
+            if len(approx) == 4 and cv2.contourArea(approx) > 3200 and cv2.isContourConvex(approx):
                 max_cos = np.max([self.angle_cos(approx[i], approx[(i+1) % 4], approx[(i+2) % 4]) for i in xrange(4)])
-                if max_cos < 0.20:
+                if max_cos < 0.25:
                     rect = cv2.minAreaRect(approx)
                     w, h = rect[1]
                     ratio = float(w) / h if w>h else float(h) / w
-                    if 2.2 < ratio < 4:
+                    if 2 < ratio < 4.2:
                         rects.append(rect)
         return rects
 
@@ -91,12 +91,18 @@ class PlateDetector(object):
         roic = self.warp.transform(self.edged, box)
         roi =self.warp.transform(self.pre, box)
         
-        if self.vdebug:
-            logger.debug(VisualRecord("roi", [roi], fmt = "jpg"))
+        (roich,roicw) = roic.shape[:2]
+        nh = 143
+        if roich>200:
+            nw =  (roicw * nh)/roich
+            roi =  cv2.resize(roi,(nw, nh), interpolation = cv2.INTER_LINEAR)
+            roic =  cv2.resize(roic,(nw, nh), interpolation = cv2.INTER_LINEAR)
+
+
         letters = []
         i, cnts, _ = cv2.findContours(roic, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         h = roic.shape[0]
-        if not cnts or len(cnts) < 6:
+        if not cnts or len(cnts) < 5:
             return None
 
         for b in cnts:
@@ -105,7 +111,7 @@ class PlateDetector(object):
                 continue
             r = cv2.boundingRect(c)
             ratio = float(r[3]) / r[2]
-            if not 1.5 <= ratio <= 2.5 or r[3] < 0.5*h:
+            if not 1.5 <= ratio <= 2.5 or r[3] < 0.5*h or r[0]==1:
                 continue
             letters.append(r)
         return self.findChars(self.prepare2(roi), letters)
@@ -120,16 +126,19 @@ class PlateDetector(object):
     def prepare(self, img, scale=True):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         self.pre = cv2.GaussianBlur(gray, (5, 5), 0)
-        self.edged = cv2.Canny(self.pre, 500, 1000, apertureSize=5)
+        self.edged = cv2.Canny(self.pre, 400, 1750, apertureSize=5)
 
         if self.vdebug:
             logger.debug(VisualRecord("prepare", [self.edged], fmt = "jpg"))
         return self.edged
 
     def prepare2(self, img, scale=True):
-        ret,th = cv2.threshold(img, 87, 255, cv2.THRESH_BINARY_INV)
+        #ret,th2 = cv2.threshold(img, 110, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        kern = np.ones((5,5),np.uint8)
+        th1 = cv2.erode(img, kern, iterations = 1)
+        ret,th = cv2.threshold(th1, 100, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
         if self.vdebug:
-            logger.debug(VisualRecord("prepare2", [th], fmt = "jpg"))
+            logger.debug(VisualRecord("prepare2", [img, opening, sure_bg, th1, th], fmt = "jpg"))
         return th
 
 
@@ -153,10 +162,9 @@ if __name__ == "__main__":
 
     s = timer()
     f = PlateDetector(True)
-    logger.info('leyendo %s', path)
     img = cv2.imread(path)
+    logger.debug(VisualRecord("letters", [img], fmt = "jpg"))
     txt = f.find(img)
     e = timer()
     logger.debug('tiempo de exe %s', (e-s))
     print txt
-    logger.debug(VisualRecord("Detected edges", [img], fmt = "jpg"))
