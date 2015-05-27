@@ -19,7 +19,7 @@ class Daemon(object):
                 self.stdout = stdout
                 self.stderr = stderr
                 self.pidfile = pidfile
-
+        
         def daemonize(self):
                 """
                 do the UNIX double-fork magic, see Stevens' "Advanced
@@ -142,3 +142,15 @@ class Daemon(object):
                 will be called after the process has been daemonized by start()
                 or restart().
                 """
+
+
+
+        def getpid(self):
+            try:
+                pf = file(self.pidfile, 'r')
+                pid = int(pf.read().strip())
+                pf.close()
+            except IOError:
+                pid = None
+            return pid
+
