@@ -23,7 +23,7 @@ writer = cv2.VideoWriter(filename="out.avi",
 cv2.namedWindow("Camera")
 while True:
     flag, frame = video.read()
-    if not frame: continue
+    if not flag: continue
     cv2.imshow("Camera", frame)
     key_pressed = cv2.waitKey(10)
     if key_pressed == 27:                           #Escape key
