@@ -95,6 +95,10 @@ class Device(Base, BaseEntity):
         return DBSession.query(class_).filter_by(id=id).first()
 
     @classmethod
+    def enabled(class_,):
+        return DBSession.query(class_).filter_by(loggging=True).first()
+
+    @classmethod
     def first(cls):
         return DBSession.query(Device).first()
 
