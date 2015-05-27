@@ -36,8 +36,7 @@ class PlateDetector(object):
 
 
     def find(self, img):
-        edged= self.prepare(img)
-        blobs = self.findBlobs(edged)
+        blobs = self.findBlobs(img)
         for b in blobs:
             plate = self.checkBlob(b)
             if plate:
@@ -46,8 +45,7 @@ class PlateDetector(object):
 
     def find2(self, img):
         lastp = None
-        edged= self.prepare(img)
-        blobs = self.findBlobs(edged)
+        blobs = self.findBlobs(img)
         for b in blobs:
             bb=np.int0(cv2.boxPoints(b))
             lastp = cv2.boundingRect(bb)
@@ -56,16 +54,46 @@ class PlateDetector(object):
                 return plate, lastp
         return None, lastp
 
+    def findContours2(self, img):
+        height = img.shape[0]
+        width = img.shape[1]
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)) # matrix of ones
+        cnts = []
+        for gray in cv2.split(img):# [cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)]:#
+            dilated = cv2.dilate(src = gray, kernel = kernel, anchor = (-1,-1))
+            blured = cv2.medianBlur(dilated, 7)
+            small = cv2.pyrDown(blured, dstsize = (width / 2, height / 2))
+            oversized = cv2.pyrUp(small, dstsize = (width, height)) 
+            for thrs in xrange(0, 255, 26):
+                if thrs == 0:
+                    edges = cv2.Canny(oversized, threshold1 = 0, threshold2 = 50, apertureSize = 3)
+                    next = cv2.dilate(src = edges, kernel = kernel, anchor = (-1,-1))
+                else:
+                    retval, next = cv2.threshold(gray, thrs, 255, cv2.THRESH_BINARY)
+
+                _, contours, hierarchy = cv2.findContours(next, mode = cv2.RETR_LIST, method = cv2.CHAIN_APPROX_SIMPLE)
+                cnts.extend(contours)
+            self.prepare(img)
+            return cnts
+
+    def findContours(self, img):
+        i = self.prepare(img)
+        _, cnts, hie = cv2.findContours(i, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+        return cnts
+
     def findBlobs(self, img):
+
         rects = []
-        i, cnts, hie = cv2.findContours(img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = self.findContours(img)
         for c in cnts:
             c = c.reshape(-1, 2)
             if len(c) < 4:
                 continue
+
             arcl = cv2.arcLength(c, True)
             approx = cv2.approxPolyDP(c, 0.02 * arcl, True)
             approx = approx.reshape(-1, 2)
+
             if len(approx) == 4 and cv2.contourArea(approx) > 3200 and cv2.isContourConvex(approx):
                 max_cos = np.max([self.angle_cos(approx[i], approx[(i+1) % 4], approx[(i+2) % 4]) for i in xrange(4)])
                 if max_cos < 0.25:
@@ -126,7 +154,7 @@ class PlateDetector(object):
     def prepare(self, img, scale=True):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         self.pre = cv2.GaussianBlur(gray, (5, 5), 0)
-        self.edged = cv2.Canny(self.pre, 400, 1750, apertureSize=5)
+        self.edged = cv2.Canny(self.pre, 500, 1605,  apertureSize=5)
 
         if self.vdebug:
             logger.debug(VisualRecord("prepare", [self.pre, self.edged], fmt = "jpg"))
