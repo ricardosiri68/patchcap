@@ -16,21 +16,16 @@ class GstOutputStream(Gst.Bin):
     )
 
 
-    def __init__(self, src, split = False):
+    def __init__(self, name, split = False):
         super( GstOutputStream, self).__init__()
-        self.vsink = Gst.ElementFactory.make('intervideosink',None)
+        self.vsink = Gst.ElementFactory.make('intervideosink',name)
+        self.vsink.set_property('channel', name)
         self.add(self.vsink)
         if split:
             sink = self.add_tee()
         else:
             sink = self.vsink
         self.add_pad(Gst.GhostPad.new('sink',sink.get_static_pad('sink')))
-        #vsink.get_static_pad('sink').add_probe(Gst.PadProbeType.BUFFER, self.rec_buff, 0)
-
-    #def rec_buff(self, pad, info, data):
-    #    t = timer()
-    #    k = info.get_buffer().pts
-    #    return Gst.PadProbeReturn.OK
 
     def add_tee(self):
         tee = Gst.ElementFactory.make('tee', "tee")
