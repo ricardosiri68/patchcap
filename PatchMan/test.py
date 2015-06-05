@@ -5,13 +5,15 @@ import cv2
 import os
 from platedetector import PlateDetector
 import logging 
+from logging import FileHandler 
+
 from stat import *
 import multiprocessing
 from multiprocessing import Pool, Process, pool
     
 
-def analyze(s, d):
-    finder = PlateDetector(False)
+def analyze(s, d, vlogger):
+    finder = PlateDetector(vlogger)
     while True:
         f = s.get()
         if f is None: return
@@ -26,6 +28,7 @@ def analyze(s, d):
 
 
 if __name__ == "__main__":
+    vlogger = None
     logging.basicConfig(level=logging.DEBUG)
     count = 0
     count_ocr = 0
@@ -44,8 +47,14 @@ if __name__ == "__main__":
         files = []
         files.append(p)
     procs = []
+    if len(files)==1:
+        fh = FileHandler('test.html', mode="w")
+        vlogger = logging.getLogger("demo")
+        vlogger.setLevel(logging.DEBUG)
+        vlogger.addHandler(fh)
+
     for _ in range(nprocs): 
-        p = Process(target=analyze, args=(s, d))
+        p = Process(target=analyze, args=(s, d, vlogger))
         p.start()
         procs.append(p)
         
