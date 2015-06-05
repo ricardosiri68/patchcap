@@ -27,8 +27,8 @@ def get_start(args):
 
 
 class PlateDetector(object):
-    def __init__(self, vdebug = False):
-        self.vdebug = vdebug
+    def __init__(self, vlogger = None):
+        self.vlogger = vlogger
         self.pre = None
         self.edged = None
         self.warp = ImageBlobWarping()
@@ -93,14 +93,13 @@ class PlateDetector(object):
             arcl = cv2.arcLength(c, True)
             approx = cv2.approxPolyDP(c, 0.02 * arcl, True)
             approx = approx.reshape(-1, 2)
-
-            if len(approx) == 4 and cv2.contourArea(approx) > 3200 and cv2.isContourConvex(approx):
+            if len(approx) == 4 and cv2.contourArea(approx) > 3410:
                 max_cos = np.max([self.angle_cos(approx[i], approx[(i+1) % 4], approx[(i+2) % 4]) for i in xrange(4)])
                 if max_cos < 0.25:
                     rect = cv2.minAreaRect(approx)
                     w, h = rect[1]
                     ratio = float(w) / h if w>h else float(h) / w
-                    if 2 < ratio < 4.2:
+                    if 2.4 < ratio < 4.2:
                         rects.append(rect)
         return rects
 
@@ -156,16 +155,16 @@ class PlateDetector(object):
         self.pre = cv2.GaussianBlur(gray, (5, 5), 0)
         self.edged = cv2.Canny(self.pre, 500, 1605,  apertureSize=5)
 
-        if self.vdebug:
-            logger.debug(VisualRecord("prepare", [self.pre, self.edged], fmt = "jpg"))
+        if self.vlogger:
+            self.vlogger.debug(VisualRecord("prepare", [self.pre, self.edged], fmt = "jpg"))
         return self.edged
 
     def prepare2(self, img, scale=True):
         kern = np.ones((3,5),np.uint8)
         th1 =  cv2.erode(img, kern, iterations = 1)
         ret,th = cv2.threshold(th1, 77, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-        if self.vdebug:
-            logger.debug(VisualRecord("prepare2", [img,  th1, th], fmt = "jpg"))
+        if self.vlogger:
+            self.vlogger.debug(VisualRecord("prepare2", [img,  th1, th], fmt = "jpg"))
         return th
 
 
@@ -188,7 +187,7 @@ if __name__ == "__main__":
         path = '/home/hernando/proyectos/patchcap/samples/images/ehy435.jpg'
 
     s = timer()
-    f = PlateDetector(True)
+    f = PlateDetector(logger)
     img = cv2.imread(path)
     logger.debug(VisualRecord("letters", [img], fmt = "jpg"))
     txt = f.find(img)
