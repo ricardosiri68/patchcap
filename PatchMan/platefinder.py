@@ -71,7 +71,7 @@ class PlateFinder(GstVideo.VideoFilter):
     def __init__(self, dev = None):
         GstVideo.VideoFilter.__init__(self)
         manager = Manager()
-        self.procs = multiprocessing.cpu_count() * 2
+        self.procs = multiprocessing.cpu_count() 
         self.src = multiprocessing.Queue()
         self.dst = multiprocessing.Queue()
         self.log = ImageLogger(dev.id)
@@ -155,7 +155,7 @@ class PlateFinder(GstVideo.VideoFilter):
             img.flags.writeable = True
             rh, rw = self.last.shape[:2]
             img[self.h-rh:self.h,self.w-rw:self.w] = self.last
-            draw_str(img, (self.h-rh-20, self.w-rw), self.lastplate)
+            draw_str(img, (20, 20), self.lastplate)
             f.buffer.fill(0, self.cv_to_gst(img).tobytes())
             self.lastt = self.lastt-1
 
