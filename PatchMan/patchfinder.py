@@ -5,6 +5,7 @@ import gi
 import transaction
 from os import path
 from datetime import datetime
+from time import sleep
 from pyramid.paster import bootstrap
 import patchman
 from patchman.models import Plate, Device, initialize_sql
@@ -81,6 +82,7 @@ class Finder(object):
         self.pipeline.set_state(gst.STATE_NULL)
 
     def restart(self):
+	logger.info('restarting %s'%self.dev.name)
         self.stop()
         self.start()
 
@@ -92,8 +94,14 @@ class Finder(object):
             if debug:
                 error += " (%s)"%debug
                 logger.error("monitor '%s' received error; %s"%(self.dev, error))
+	    sleep(10)
+	    self.restart()
+   	    
         elif t == Gst.MessageType.EOS:
             logger.warn('EOS')
+	    sleep(10)
+	    self.restart()
+	    
         elif t == Gst.MessageType.STATE_CHANGED:
             old, state, pending = message.parse_state_changed()
             if state == Gst.State.NULL:
@@ -115,6 +123,8 @@ class Finder(object):
             if d:
                 error += " (%s)"%d
                 logger.warn("monitor '%s' received warning; %s"%(self.dev, error))
+	    sleep(10)
+	    self.restart()
 
     def stop(self):
         self.pipeline.set_state(Gst.State.NULL)
@@ -236,7 +246,7 @@ if __name__ == "__main__":
                       help="render debug to buffer and print messages")
 
     parser.add_option("-A", "--monitor-all",
-                      action="store_true", dest="all", default=False,
+                      action="store_true", dest="all", default=True,
                       help="Add all enabled devices to be monitored.")
 
     parser.add_option("-d", "--device",
