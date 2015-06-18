@@ -32,12 +32,17 @@ class MyFactory(GstRtspServer.RTSPMediaFactory):
         self.name = name
         GstRtspServer.RTSPMediaFactory.__init__(self)
         self.set_shared(True)
+        self.vaapi_enabled = Gst.ElementFactory.make('vaapipostproc', None)
 
     def do_create_element(self, url):
         if self.fmt == 'mp4':
             pipe = "( intervideosrc channel=%s name=%s ! videoconvert ! avenc_mpeg4 ! rtpmp4vpay name=pay0 )"%(self.name, self.name)
+	
         elif self.fmt =='h264':
-            pipe = "( intervideosrc channel=%s name=%s ! videoconvert ! vaapipostproc ! vaapiencode_h264 ! rtph264pay name=pay0 pt=96 )"%(self.name, self.name)
+	    if self.vaapi_enabled is not None:
+                pipe = "( intervideosrc channel=%s name=%s ! videoconvert ! vaapipostproc ! vaapiencode_h264 ! rtph264pay name=pay0 pt=96 )"%(self.name, self.name)
+	    else:
+                pipe = "( intervideosrc channel=%s name=%s ! x264enc tune=zerolatency byte-stream=true ! rtph264pay name=pay0 pt=96 )"%(self.name, self.name)
         return Gst.parse_launch(pipe)
 
 
