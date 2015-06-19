@@ -9,15 +9,14 @@ from time import sleep
 from pyramid.paster import bootstrap
 import patchman
 from patchman.models import Plate, Device, initialize_sql
-
-from daemon import Daemon
 from device import VirtualDevice
 import log
 from platefinder import PlateFinder
 from gstoutputstream import GstOutputStream
 from stats import PatchStat
 
-logger = log.setup()
+
+logger = logging.getLogger(__name__)
 
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst, GstRtspServer
@@ -67,7 +66,7 @@ class Finder(object):
         self.src = VirtualDevice(dev.instream)
         self.vc1 = Gst.ElementFactory.make('videoconvert', None)
         self.video = PlateFinder(dev)
-        self.sink = GstOutputStream(dev.outstream, split=True)
+        self.sink = GstOutputStream(dev.outstream, split=False)
 
         self.pipeline.add(self.src)
         self.pipeline.add(self.vc1)
@@ -132,7 +131,6 @@ class Finder(object):
 
     def stop(self):
         self.pipeline.set_state(Gst.State.NULL)
-        self.bus.remove_signal_watch()
 
     def get_state(self, state):
         if state == Gst.State.PLAYING:
@@ -147,10 +145,10 @@ class Finder(object):
             return "null"
     
     def __del__(self):
-        self.stop()
+        self.bus.remove_signal_watch()
 
 
-class PatchFinder(Daemon):
+class PatchFinder(object):
 
     def __init__(self, options, pidfile = None):
         self.env = None
@@ -162,26 +160,17 @@ class PatchFinder(Daemon):
         if self.options.debug:
             logger.debug(self.options)
 
-        super(PatchFinder, self).__init__(
-           "/tmp/patchfinder.pid",
-            stdin='/dev/stdin',
-            stderr='/dev/stderr',
-            stdout='/dev/stdout'
-        )
-
     def run(self):
         self.server = StreamServer()
-        self.env = bootstrap(path.dirname(path.realpath(__file__))+'/halcon.ini')
+        self.env = bootstrap(path.dirname(path.realpath(__file__))+'/condor.ini')
         initialize_sql(self.env['registry'].settings)
         self.finders = self.setup_monitors()
         try:
             self.mainloop.run()
         except KeyboardInterrupt:
             logger.warning("Cancelando...")
-            self.stop_children()
-            raise KeyboardInterrupt
         finally:
-            self.mainloop.quit()
+	    self.quit()
 
     def setup_monitors(self):
         logger.debug('configurando dispositivos')
@@ -225,13 +214,14 @@ class PatchFinder(Daemon):
                 logger.debug(real[:6] + ": " + output)
 
 
-    def stop_children(self):
+    def quit(self):
+	logger.debug('quitting process')
         for m in self.finders:
             m.stop()
- 
-    def __del__(self):
         if self.mainloop and self.mainloop.is_running():
            self.mainloop.quit()
+
+    def __del__(self):
         self.src = None
         if self.env:
             self.env['closer']()
@@ -239,11 +229,10 @@ class PatchFinder(Daemon):
 
 
 
-
 if __name__ == "__main__": 
     from optparse import OptionParser
-    parser = OptionParser(usage=("%%prog [options] [command]\n"
-                                 "Commands: start, stop, restart and nodaemon.\n"
+    parser = OptionParser(usage=("%%prog [options]\n"
+                                 "Run with no params to watch all enabled devices.\n"
                                  ))
     parser.add_option("-D", "--debug",
                       action="store_true", dest="debug", default=False,
@@ -260,30 +249,6 @@ if __name__ == "__main__":
 
     (options, args) = parser.parse_args()
     
-    daemon = PatchFinder(options)
+    monitor = PatchFinder(options)
+    monitor.run()
     
-    if args:
-        arg = args[0].strip().lower()
-        if arg == 'start':
-            logger.debug('start daemon')
-            daemon.start()
-        elif arg == 'stop':
-            daemon.stop()
-        elif arg == 'restart':
-            logger.debug('restart daemon')
-            daemon.restart()
-        elif arg == "nodaemon":
-            print('run no daemon')
-            try:
-                daemon.run()
-            except KeyboardInterrupt:
-                logger.warning("Cancelando...")
-    else:
-        parser.print_help()
-        print
-        pid = daemon.getpid()
-        if pid:
-            print "daemon is running according to '%s'"%daemon.pidfile
-        else:
-            print "daemonis not running according to '%s'"%daemon.pidfile
-        print
