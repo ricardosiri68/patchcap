@@ -161,8 +161,9 @@ class PlateDetector(object):
 
     def prepare2(self, img, scale=True):
         kern = np.ones((3,5),np.uint8)
-        th1 =  cv2.erode(img, kern, iterations = 1)
+        th1 =  cv2.erode(img/2, kern, iterations = 1)
         ret,th = cv2.threshold(th1, 77, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+
         if self.vlogger:
             self.vlogger.debug(VisualRecord("prepare2", [img,  th1, th], fmt = "jpg"))
         return th
