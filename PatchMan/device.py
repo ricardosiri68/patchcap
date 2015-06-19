@@ -23,7 +23,7 @@ Gst.init(None)
 class VirtualDevice(Gst.Bin):
 
     __gstmetadata__ = (
-            'Open device based on halcon configuration',
+            'Open device based on condor configuration',
         	'Video Source',
         	'quesoy',
         	'Hernando Rojas <hrojas@lacuatro.com.ar>'
@@ -95,7 +95,7 @@ class VirtualDevice(Gst.Bin):
 	    return self.name + "[%s]"%self.src 
 
 GObject.type_register(VirtualDevice)
-__gstelementfactory__ = ("halcondevice", Gst.Rank.NONE, VirtualDevice)
+__gstelementfactory__ = ("condordevice", Gst.Rank.NONE, VirtualDevice)
 
 
 

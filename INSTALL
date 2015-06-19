@@ -31,12 +31,12 @@ Donde camId es el id del registro en la base de datos correspondiente al disposi
 > initialize_PatchMan_db development.ini [production.ini]
 
 
-El archivo de configuracion debe llamarse halcon.ini
+El archivo de configuracion debe llamarse condor.ini
 por lo que es conviente renombrarlo o hacer un enlace simbolico luego de configurarlo.
 
 ej:
 
-ln -sv production.ini halcon.ini
+ln -sv production.ini condor.ini
 
 
 Para configurarlo como wsgi en apache.

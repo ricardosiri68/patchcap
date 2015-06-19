@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class GstOutputStream(Gst.Bin):
     __gstdetails__ = (
-        	'Create Sink device based on halcon configuration',
+        	'Create Sink device based on condor configuration',
         	'Video Sink',
         	'w',
         	'Hernando Rojas <hrojas@lacuatro.com.ar>',

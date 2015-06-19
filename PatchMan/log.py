@@ -17,7 +17,7 @@ def setup():
     console.setLevel(logging.DEBUG)
 
     rotating_file = logging.handlers.RotatingFileHandler(
-        path.dirname(path.dirname(path.realpath(__file__)))+"/log/patchcap.log",
+        path.dirname(path.dirname(path.realpath(__file__)))+"/logs/patchcap.log",
         mode='a',
         maxBytes=10 * math.pow(1024, 3),
         backupCount=45
@@ -36,8 +36,8 @@ class ImageLogger(object):
 
     def __init__(self, dev_id):
         config = ConfigParser.ConfigParser()
-        config.read('halcon.ini')
-        storage_root = config.get('halcon', 'storage')
+        config.read(path.dirname(path.realpath(__file__))+"/condor.ini")
+        storage_root = config.get('condor', 'storage')
         self.storage = path.join(storage_root, str(dev_id))
         if not path.isdir(self.storage):
             mkdir(self.storage)

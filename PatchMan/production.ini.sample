@@ -83,7 +83,7 @@ qualname = sqlalchemy.engine
 # "level = WARN" logs neither.  (Recommended for production systems.)
 [handler_filelog]
 class = FileHandler
-args = ('%(here)s/halcon.log','a')
+args = ('%(here)s/condor.log','a')
 level = WARN
 formatter = generic
 
