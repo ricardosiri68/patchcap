@@ -16,12 +16,15 @@ $(document).ready(function () {
                     $('#roi').val(s.x1+','+s.y1+','+s.x2+','+s.y2);
             }
     });
+	$("#sample").one("load", function() {
     if ($('#roi').val()!= '') {
+	console.log('configurando roi');
         values = $('#roi').val().split(',');
         var ias = $('#sample').imgAreaSelect({ instance: true });
         ias.setSelection(values[0], values[1], values[2], values[3], false);
         ias.update();
     }
+	}).each(function() {if(this.complete) $(this).load();});
 });
 </script>
 <style type="text/css">
