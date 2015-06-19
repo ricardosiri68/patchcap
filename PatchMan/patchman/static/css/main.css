@@ -47,6 +47,7 @@
 
  /* Override some defaults */
       html, body {
+          overflow:hidden;
         background-color: #eee;
       }
       body {
