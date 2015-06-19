@@ -47,7 +47,6 @@ class StreamServer():
 
     def add(self, name):
         m = self.server.get_mount_points()
-        # m.add_factory("/{0}/mp4".format(name), MyFactory('mp4', name))
         m.add_factory("/{0}/h264".format(name),MyFactory('h264', name))
 
 
@@ -62,7 +61,7 @@ class Finder(object):
         self.src = VirtualDevice(dev.instream)
         self.vc1 = Gst.ElementFactory.make('videoconvert', None)
         self.video = PlateFinder(dev)
-        self.sink = GstOutputStream(dev.outstream, split=False)
+        self.sink = GstOutputStream(dev.outstream, split=True)
 
         self.pipeline.add(self.src)
         self.pipeline.add(self.vc1)
