@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import sys
-import logging
 import gi
 import transaction
 from os import path
@@ -10,13 +9,13 @@ from pyramid.paster import bootstrap
 import patchman
 from patchman.models import Plate, Device, initialize_sql
 from device import VirtualDevice
-import log
+from log import logger
 from platefinder import PlateFinder
 from gstoutputstream import GstOutputStream
 from stats import PatchStat
 
 
-logger = logging.getLogger(__name__)
+log = logger()
 
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst, GstRtspServer
@@ -77,15 +76,15 @@ class Finder(object):
         self.video.link(self.sink)
 
     def start(self):
-        logging.info("starting %s"%self.dev.name)
+        log.info("starting %s"%self.dev.name)
         self.pipeline.set_state(Gst.State.PLAYING)
 
     def stop(self):
-        logging.info("stopping %s"%self.dev.name)
+        log.info("stopping %s"%self.dev.name)
         self.pipeline.set_state(gst.STATE_NULL)
 
     def restart(self):
-	logger.info('restarting %s'%self.dev.name)
+	log.info('restarting %s'%self.dev.name)
         self.stop()
         self.start()
 
@@ -96,22 +95,22 @@ class Finder(object):
             error = str(err)
             if debug:
                 error += " (%s)"%debug
-                logger.error("monitor '%s' received error; %s"%(self.dev, error))
+                log.error("monitor '%s' received error; %s"%(self.dev, error))
 	    sleep(10)
 	    self.restart()
    	    
         elif t == Gst.MessageType.EOS:
-            logger.warn('EOS')
+            log.warn('EOS')
 	    sleep(10)
 	    self.restart()
 	    
         elif t == Gst.MessageType.STATE_CHANGED:
             old, state, pending = message.parse_state_changed()
             if state == Gst.State.NULL:
-                logger.info("monitor '%s' main pipeline is stopped"% self.dev.name)
+                log.info("monitor '%s' main pipeline is stopped"% self.dev.name)
             elif state == Gst.State.PLAYING:
                 if message.src == self.pipeline:
-                    logger.info("'%s' cambio de %s a %s."%(self.dev.name, self.get_state(old), self.get_state(state))) 
+                    log.info("'%s' cambio de %s a %s."%(self.dev.name, self.get_state(old), self.get_state(state))) 
         elif t == Gst.MessageType.APPLICATION and message.has_name('video/x-raw'):
             s = message.get_structure()
             self.caps = s.to_string()
@@ -119,13 +118,13 @@ class Finder(object):
                 self.caps = self.caps[:-1]
         elif t == Gst.MessageType.INFO:
             e, d = message.parse_info()
-            logger.debug("{0}: {1}", e, d)
+            log.debug("{0}: {1}", e, d)
         elif t == Gst.MessageType.WARNING:
             e, d = message.parse_warning()
             error = str(e)
             if d:
                 error += " (%s)"%d
-                logger.warn("monitor '%s' received warning; %s"%(self.dev, error))
+                log.warn("monitor '%s' received warning; %s"%(self.dev, error))
 	    sleep(10)
 	    self.restart()
 
@@ -158,7 +157,7 @@ class PatchFinder(object):
         self.options = options
 
         if self.options.debug:
-            logger.debug(self.options)
+            log.debug(self.options)
 
     def run(self):
         self.server = StreamServer()
@@ -168,12 +167,11 @@ class PatchFinder(object):
         try:
             self.mainloop.run()
         except KeyboardInterrupt:
-            logger.warning("Cancelando...")
+            log.warning("Cancelando...")
         finally:
 	    self.quit()
 
     def setup_monitors(self):
-        logger.debug('configurando dispositivos')
         finders = []
         if self.options.all:
             devs = Device.enabled()
@@ -182,7 +180,7 @@ class PatchFinder(object):
             for o in self.options.devices:
                 devs.append(Device.findBy(int(o)))
             
-        logger.debug('configurando %s dispositivos',len(devs))
+        log.warn('configurando %s dispositivos',len(devs))
         for d in devs:
             f = Finder(d)
             f.start()
@@ -192,10 +190,10 @@ class PatchFinder(object):
 
 
 
-    def log(self, img, code, stats):
+    def save(self, img, code, stats):
         stats.detected()
         if self.dev.logging:
-            logger.debug("loging capture to db")
+            log.debug("loging capture to db")
             transaction.begin()
             plate = Plate.findBy(code)
             if plate.active:
@@ -208,14 +206,14 @@ class PatchFinder(object):
             real = path.splitext(path.basename(img.filename))[0].upper()
             output = code.upper().replace(" ","")[:6]
             if output == real[:6]:
-                logger.debug("\033[92m" + output + ": OK \033[0m")
+                log.debug("\033[92m" + output + ": OK \033[0m")
                 stats.found()
             else:
-                logger.debug(real[:6] + ": " + output)
+                log.debug(real[:6] + ": " + output)
 
 
     def quit(self):
-	logger.debug('quitting process')
+	log.debug('quitting process')
         for m in self.finders:
             m.stop()
         if self.mainloop and self.mainloop.is_running():
@@ -239,7 +237,7 @@ if __name__ == "__main__":
                       help="render debug to buffer and print messages")
 
     parser.add_option("-A", "--monitor-all",
-                      action="store_true", dest="all", default=True,
+                      action="store_true", dest="all", default=False,
                       help="Add all enabled devices to be monitored.")
 
     parser.add_option("-d", "--device",
