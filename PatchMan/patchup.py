@@ -13,7 +13,7 @@ def main(argv):
                                 ['help', "add-device=", "list-devices", "delete-device=", "add-plate=",'list-plates','delete-plate='])
         if not opts:
             raise getopt.GetoptError("Se esperaba un parametro")
-        env = bootstrap(path.dirname(path.realpath(__file__))+'/development.ini')
+        env = bootstrap(path.dirname(path.realpath(__file__))+'/condor.ini')
         initialize_sql(env['registry'].settings)
         for opt, arg in opts:
             if opt in ('-a','--add-device'):
