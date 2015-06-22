@@ -1,4 +1,3 @@
-from patchfinder import PatchFinder 
 from patchman.models import Device, DBSession
 from formencode import validators
 from formencode.schema import Schema
@@ -11,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from webhelpers import paginate
 from webhelpers.paginate import Page
 
+from patchman.utils.supercontrol import *
 from patchman.utils.wsdiscovery import *
 from os import path
 import glob
@@ -130,7 +130,9 @@ def edit(request):
         form.bind(device)
         dbsession.add(device)
         request.session.flash("warning;Se guardo el dispositivo!")
-        return HTTPFound(location = request.route_url("device_list"))
+        s = SuperControl()
+	s.restart('condor')
+	return HTTPFound(location = request.route_url("device_list"))
 
     storage = request.registry.settings['storage']
     sp = path.join(storage, str(device.id))
@@ -150,18 +152,6 @@ def view(request):
     return {'device':device}
 
 
-def capture_cam(device):
-    daemon = PatchFinder(device.id)
-    daemon.start()
-
-
-
-@view_config(route_name='device_run', renderer="device/mon.html")
-def start(request):
-    device_id  = int(request.matchdict.get('id', -1))
-    device = Device.findBy(device_id) if device_id>0 else  Device.first()    
-    request.registry.scheduler.add_async_job(capture_cam, args=(device))
-  
  
 @view_config(route_name="device_delete", permission="delete")
 def delete(request):
