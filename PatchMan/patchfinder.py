@@ -128,6 +128,7 @@ class Finder(object):
 	    sleep(10)
 	    self.restart()
 
+    
     def stop(self):
         self.pipeline.set_state(Gst.State.NULL)
 
