@@ -45,7 +45,6 @@ def draw_str(dst, (x, y), s):
     cv2.putText(dst, s, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), lineType=cv2.LINE_AA)
 
 
-
 class PlateFinder(GstVideo.VideoFilter):
     __gstmetadata__ = (
         "PlateFinder plugin",
