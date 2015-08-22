@@ -11,6 +11,8 @@ from transitions import Machine
 from logging import FileHandler, StreamHandler
 from vlogging import VisualRecord
 
+from scipy.spatial import distance
+
 logger = logging.getLogger(__name__)
 cap = cv2.VideoCapture(argv[1])
 
@@ -47,8 +49,7 @@ class BlobTracker(Machine):
         self.lastb = 0
         self.age = 0
         self.tracker = tracker
-        self.kalman = cv2.KalmanFilter(2, 1, 0)
-        self.setup_kalman() 
+        self.kalman = cv2.KalmanFilter(4, 2, 0)
         self.lost = -1
         states = ['hypothesis', 'entering', 'normal', 'leaving', 'lost', 'deleted']
         Machine.__init__(self, states=states, initial='hypothesis')
@@ -67,20 +68,14 @@ class BlobTracker(Machine):
         inside = blob.inside(self.tracker.roi)
         self.lastb = blob.ts
         self.bloblist[blob.ts] = blob
+
+
         if len(self.bloblist)==1:
+            self.setup_kalman(blob.centroid)
             return
+        else:
+            self.kalman.correct(blob.centroid)
 
-        prediction = self.kalman.predict()
-        measurement = self.kalman.measurementNoiseCov * np.random.randn(1, 1)
-        # generate measurement
-        measurement = np.dot(self.kalman.measurementMatrix, blob.centroid) + measurement
-        measurement_angle = measurement[0, 0]
-        self.kalman.correct(measurement)
-        process_noise = self.kalman.processNoiseCov * np.random.randn(2, 1)
-        blob.centroid  = np.dot(self.kalman.transitionMatrix, blob.centroid) + process_noise
-
-
- 
         if inside:
             self.to_normal()
         else:
@@ -99,26 +94,30 @@ class BlobTracker(Machine):
             self.to_deleted()
             return
 
+        if self.age>1:
+            self.prediction = self.kalman.predict()
+
         if self.lost == 1:
             self.to_lost()
         if self.lost == BlobTracker.MaxFramesLosted:
             self.to_deleted()
 
     def __contains__(self, b):
-        return b == self.bloblist[self.lastb]
+        return b == self.bloblist[self.lastb] 
+     
 
     def blob(self):
         if self.ts == self.lastb:
             return self.bloblist[self.lastb]
         return None
 
-    def setup_kalman(self):
-        self.kalman.transitionMatrix = np.array([[1., 1.], [0., 1.]])
-        self.kalman.measurementMatrix = 1. * np.ones((1, 2))
-        self.kalman.processNoiseCov = 1e-5 * np.eye(2)
-        self.kalman.measurementNoiseCov = 1e-1 * np.ones((1, 1))
-        self.kalman.errorCovPost = 1. * np.ones((2, 2))
-        self.kalman.statePost = 0.1 * np.random.randn(2, 1)
+    def setup_kalman(self, ini):
+        self.kalman.measurementMatrix = np.array([[1,0,0,0],[0,1,0,0]],np.float32)   #H
+        self.kalman.transitionMatrix = np.array([[1,0,1,0],[0,1,0,1],[0,0,1,0],[0,0,0,1]],np.float32)
+        self.kalman.processNoiseCov = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],np.float32) * 0.01 #Q
+        self.kalman.errorCovPost = np.ones((4, 4), np.float32)
+        self.kalman.statePost = np.array([[ini[0][0]], [ini[1][0]], [0], [0]], np.float32)
+       
 
     def __repr__(self):
         return '<BlobTracker> id: %s. ts: %s. Blob:%s. state: %s \n'%(self.id, self.ts, self.blob(), self.state)

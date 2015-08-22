@@ -10,7 +10,7 @@ class Blob(object):
         self.img = img
         self.ts = ts
         self.kp = kp
-        self.centroid = cxy
+        self.centroid = np.asarray(cxy, np.float32).reshape(2,1)
         self.desc = desc
         self.bbox  = bbox
         Blob.id += 1
@@ -49,7 +49,10 @@ class Blob(object):
         return self.bbox[0] >= roi[0] and self.bbox[1] >= roi[1] and \
                 self.bbox[0]+self.bbox[2] < roi[0]+roi[2] and \
                 self.bbox[1]+self.bbox[3] < roi[1]+roi[3]
- 
+
+    def cxy(self):
+        return tuple(map(int,self.centroid.reshape(1,4)[0][:2]))
+
     def __hash__(self):
         return (self.id).__hash__()
 
