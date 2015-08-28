@@ -51,13 +51,16 @@ class Blob(object):
                 self.bbox[1]+self.bbox[3] < roi[1]+roi[3]
 
     def cxy(self):
-        return tuple(map(int,self.centroid.reshape(1,4)[0][:2]))
+        return tuple(map(int,self.centroid.reshape(1,2)[0]))
+
+    def width(self):
+        return self.bbox[2]
 
     def __hash__(self):
         return (self.id).__hash__()
 
     def __repr__(self):
-        return '<Blob> id:%s. feat:%s. roi: %s.\n'%(self.id, len(self.kp), self.bbox)
+        return '<Blob> id:%s %s.%s'%(self.id, self.bbox, self.cxy())
 
 
 class BlobExtractor(object):

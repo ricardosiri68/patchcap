@@ -37,12 +37,10 @@ transitions = [
 
 
 class BlobTracker(Machine):
-        
     id = 0
-    FramesToLost = 45
-    MaxFramesLosted = 300
+    MaxFramesLosted = 200
     FramesInHypo = 3
-    
+
     def __init__(self, tracker):
         self.bloblist = {}
         self.ts = 0
@@ -50,15 +48,14 @@ class BlobTracker(Machine):
         self.age = 0
         self.tracker = tracker
         self.kalman = cv2.KalmanFilter(4, 2, 0)
-        self.lost = -1
+        self.lost = 0
         states = ['hypothesis', 'entering', 'normal', 'leaving', 'lost', 'deleted']
         Machine.__init__(self, states=states, initial='hypothesis')
         r = lambda: random.randint(0,255)
         self.color = (r(),r(),r())
-        # self.add_transition('enter','entering', 'normal')
+        #self.add_transition('enter','entering', 'normal')
         BlobTracker.id += 1
         self.id = BlobTracker.id
-
 
     def active(self):
         return self.is_normal() or self.is_entering() or self.is_leaving()
@@ -81,7 +78,7 @@ class BlobTracker(Machine):
         else:
             if self.is_normal():
                 self.to_leaving()
-            else:
+            elif not self.is_leaving():
                 self.to_entering()
 
     def touch(self, ts):
@@ -90,37 +87,45 @@ class BlobTracker(Machine):
 
         if self.ts != self.lastb:
             self.lost = self.lost + 1
-        if (self.is_hypothesis() and self.lost ==  BlobTracker.FramesInHypo ):
+
+        if self.is_hypothesis() and self.lost ==  BlobTracker.FramesInHypo:
             self.to_deleted()
             return
 
-        if self.age>1:
-            self.prediction = self.kalman.predict()
+        self.prediction = self.kalman.predict()
 
-        if self.lost == 1:
-            self.to_lost()
-        if self.lost == BlobTracker.MaxFramesLosted:
-            self.to_deleted()
+        if self.lost > 0:
+            self.kalman.statePost = self.kalman.statePre
+            self.kalman.errorCovPost = self.kalman.errorCovPre
+
+            if self.lost == 1:
+                self.to_lost()
+            elif self.lost == BlobTracker.MaxFramesLosted:
+                self.to_deleted()
+
 
     def __contains__(self, b):
-        return b == self.bloblist[self.lastb] 
-     
+        last = self.bloblist[self.lastb]
+        cx = self.prediction[:2]
+        return (b == last) or (distance.euclidean(b.centroid, cx)<50)
 
     def blob(self):
         if self.ts == self.lastb:
             return self.bloblist[self.lastb]
         return None
 
+    def cxy(self):
+        return tuple(map(int,self.prediction.reshape(1,4)[0][:2]))
+
     def setup_kalman(self, ini):
         self.kalman.measurementMatrix = np.array([[1,0,0,0],[0,1,0,0]],np.float32)   #H
         self.kalman.transitionMatrix = np.array([[1,0,1,0],[0,1,0,1],[0,0,1,0],[0,0,0,1]],np.float32)
-        self.kalman.processNoiseCov = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],np.float32) * 0.01 #Q
+        self.kalman.processNoiseCov = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],np.float32) * 0.005 #Q
         self.kalman.errorCovPost = np.ones((4, 4), np.float32)
         self.kalman.statePost = np.array([[ini[0][0]], [ini[1][0]], [0], [0]], np.float32)
-       
 
     def __repr__(self):
-        return '<BlobTracker> id: %s. ts: %s. Blob:%s. state: %s \n'%(self.id, self.ts, self.blob(), self.state)
+        return '<BT>[%s] id: %s. %s. Pre: %s'%(self.state, self.id, self.blob(), self.cxy())
 
 class Tracker(object):
     def __init__(self, bgsample):
@@ -131,16 +136,12 @@ class Tracker(object):
         self.roi = [margin, margin, shape[1]-2*margin, shape[0]-2*margin]
 
     def track(self, ts, img):
-        found = False
         blobs = self.be.blobs(img, ts)
 
-        for t in self.tracks:
-            for i in xrange(len(blobs) - 1, -1, -1):
-                b = blobs[i]
-                if b in t:
-                    t.add(b)
-                    del blobs[i]
-            t.touch(ts)
+        rels = self.match(blobs)
+        t.add(b)
+        del blobs[i]
+        t.touch(ts)
 
         for b in blobs:
             t = BlobTracker(self)
@@ -153,14 +154,46 @@ class Tracker(object):
         if len(tt):
             logger.debug(tt)
 
+    def match(self, blobs):
+        b2t = {}
+        t2b = {}
+        unassigneds = []
+        for t in reversed(self.tracks):
+            if b not in b2t:
+            b2t[t] = []
+            for i in xrange(len(blobs) - 1, -1, -1):
+            if t not in t2b:
+                t2b[b] = []
+                b = blobs[i]
+                if b in t:
+                    b2t[t].append(b)
+                    t2b[b].append(t)
+                elif t.contains(b):
+                    b2t[t].append(b)
+                else:
+                    unassigneds.append(b)
+
+        for ub in unassigneds:
+            if t.contains(
+
+
+
 
     def draw(self, img):
         for t in [tr for tr in self.tracks if tr.active()]:
             b = t.blob()
             x, y, w, h = b.bbox
-            cv2.rectangle(img, (x, y), (x+w,y+h), t.color, thickness=3)
-            #img[0:h,0:w] = b.img
 
+            cv2.circle(img,b.cxy(),4, t.color, thickness=4, lineType=8, shift=0)
+            cv2.circle(img,t.cxy(),8, t.color, thickness=2, lineType=8, shift=0)
+            cv2.rectangle(img, (x, y), (x+w,y+h), t.color, thickness=3)
+            draw_str(img,
+                     (x, y+20),
+                     "%s  vel %.1f %.1f %.1f " % (
+                         t.id,
+                         t.prediction[2][0],
+                         t.prediction[3][0],
+                         np.linalg.norm(t.prediction[2:])))
 
 if __name__ == "__main__":
     logger.setLevel(logging.DEBUG)
@@ -186,7 +219,7 @@ if __name__ == "__main__":
             paused = (k == ord('p')) and not paused
         if not step and paused:
             continue
-            
+
         ret, img = cap.read()
         img = cv2.resize(img, (940,560))
         ts = cv2.getTickCount()
