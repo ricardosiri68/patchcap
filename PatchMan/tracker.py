@@ -56,6 +56,7 @@ class BlobTracker(Machine):
         #self.add_transition('enter','entering', 'normal')
         BlobTracker.id += 1
         self.id = BlobTracker.id
+        
 
     def active(self):
         return self.is_normal() or self.is_entering() or self.is_leaving()
@@ -80,6 +81,60 @@ class BlobTracker(Machine):
                 self.to_leaving()
             elif not self.is_leaving():
                 self.to_entering()
+
+    def merge(self, segments, img):
+        b = segments.pop()
+        bb = list(b.bbox)
+        rois = []
+        subr = img[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2]]
+        rois.append(cv2.resize(subr, (200,200)))
+
+        for b in segments:
+            r = b.bbox
+            if r[0]<bb[0]:
+                bb[0] = r[0]
+            if r[1]<bb[1]:
+                bb[1] = r[1]
+            if r[0]+r[2] > bb[0]+bb[2]:
+                bb[2] = r[0]+r[2]-bb[0]
+            if r[1]+r[3] > bb[1]+bb[3]:
+                bb[3] = r[1]+bb[3]-bb[1]
+            subr = img[r[1]:r[1]+r[3], r[0]:r[0]+r[2]]
+            draw_str(subr, (20, 20), str(len(rois)))
+            rois.append(cv2.resize(subr, (200,200)))
+            logger.debug(rois)
+
+        cv2.imshow('merge', np.hstack(rois))
+
+        roi = img[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2]]
+        kp, desc = self.tracker.be.detector.detectAndCompute(roi, None)
+        cx = bb[0] + bb[2]/2
+        cy = bb[1] + bb[3]/2
+        self.add(Blob(self.ts, tuple(bb),(cx, cy), roi, kp, desc))
+
+    def combine(self, blob, img):
+        b = self.blob()
+        if not b:
+            self.add(blob)
+            return
+        bb = list(b.bbox)
+        r = blob.bbox
+        if r[0]<bb[0]:
+            bb[0] = r[0]
+        if r[1]<bb[1]:
+            bb[1] = r[1]
+        if r[0]+r[2] > bb[0]+bb[2]:
+            bb[2] = r[0]+r[2]-bb[0]
+        if r[1]+r[3] > bb[1]+bb[3]:
+            bb[3] = r[1]+bb[3]-bb[1]
+
+        roi = img[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2]]
+        kp, desc = self.tracker.be.detector.detectAndCompute(roi, None)
+        cx = bb[0] + bb[2]/2
+        cy = bb[1] + bb[3]/2
+        self.bloblist[self.lastb] = Blob(self.lastb, tuple(bb),(cx, cy), roi, kp, desc)
+
+
 
     def touch(self, ts):
         self.ts = ts
@@ -109,6 +164,18 @@ class BlobTracker(Machine):
         cx = self.prediction[:2]
         return (b == last) or (distance.euclidean(b.centroid, cx)<50)
 
+    def contains(self, b):
+        last = self.blob()
+        if not last:
+            return False
+        dx = min(last.bbox[0]+last.bbox[2], b.bbox[0]+b.bbox[2]) - max(last.bbox[0], b.bbox[0])
+        dy = min(last.bbox[1]+last.bbox[3], b.bbox[1]+b.bbox[3]) - max(last.bbox[1], b.bbox[1])
+        sub = b.bbox[0]>last.bbox[0] and \
+                b.bbox[0]+b.bbox[2] < last.bbox[0]+last.bbox[2] and \
+                (distance.euclidean(b.centroid, last.centroid)<last.bbox[3])
+        return (dx>=0) and (dy>=0) or sub
+        
+
     def blob(self):
         if self.ts == self.lastb:
             return self.bloblist[self.lastb]
@@ -137,46 +204,49 @@ class Tracker(object):
 
     def track(self, ts, img):
         blobs = self.be.blobs(img, ts)
+        b2t = {}
+        t2b = {}
+        untracked = []
 
-        rels = self.match(blobs)
-        t.add(b)
-        del blobs[i]
-        t.touch(ts)
+        for t in reversed(self.tracks):
+            t.touch(ts)
+            b2t[t] = []
+            for b in blobs:
+                t2b[b] = []
+                if b in t:
+                    b2t[t].append(b)
+                    t2b[b].append(t)
 
-        for b in blobs:
+        for t in b2t:
+            bbs = b2t[t]
+            if len(bbs)==0:
+                continue
+            if len(bbs)==1:
+                t.add(bbs[0])
+            else:
+                t.merge(bbs, img)
+
+        
+        unassigneds = [b for b in blobs if b not in t2b or len(t2b[b])==0]
+        for t in reversed(self.tracks):
+            for ub in unassigneds:
+                if t.contains(ub):
+                    t.combine(ub, img)
+                    t2b[ub].append(t)
+
+        untracked = [b for b in blobs if b not in t2b or len(t2b[b])==0]
+
+        for b in untracked:
             t = BlobTracker(self)
             t.add(b)
             t.touch(ts)
             self.tracks.append(t)
 
+
         self.tracks[:] = [x for x in self.tracks if not x.is_deleted()]
         tt = [tr for tr in self.tracks if tr.active()]
         if len(tt):
             logger.debug(tt)
-
-    def match(self, blobs):
-        b2t = {}
-        t2b = {}
-        unassigneds = []
-        for t in reversed(self.tracks):
-            if b not in b2t:
-            b2t[t] = []
-            for i in xrange(len(blobs) - 1, -1, -1):
-            if t not in t2b:
-                t2b[b] = []
-                b = blobs[i]
-                if b in t:
-                    b2t[t].append(b)
-                    t2b[b].append(t)
-                elif t.contains(b):
-                    b2t[t].append(b)
-                else:
-                    unassigneds.append(b)
-
-        for ub in unassigneds:
-            if t.contains(
-
-
 
 
     def draw(self, img):
@@ -184,8 +254,8 @@ class Tracker(object):
             b = t.blob()
             x, y, w, h = b.bbox
 
-            cv2.circle(img,b.cxy(),4, t.color, thickness=4, lineType=8, shift=0)
-            cv2.circle(img,t.cxy(),8, t.color, thickness=2, lineType=8, shift=0)
+            cv2.circle(img, b.cxy(),4, t.color, thickness=4, lineType=8, shift=0)
+            cv2.circle(img, t.cxy(),8, t.color, thickness=2, lineType=8, shift=0)
             cv2.rectangle(img, (x, y), (x+w,y+h), t.color, thickness=3)
             draw_str(img,
                      (x, y+20),
