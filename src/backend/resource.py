@@ -68,7 +68,7 @@ class UserContainer(BaseQuery):
     CMD_RESET = "forgot"
 
     def login(self, login_id, password):
-        u = self.__qry__().filter_by(email=login_id).first()
+        u = self.__qry__().filter_by(username=login_id).first()
         if u and u.password == password:
             headers = security.remember(self._request, u.id)
             self._request.response.headerlist.extend(headers)
@@ -120,7 +120,7 @@ class UserContainer(BaseQuery):
                    "Reset Your Password",
                    "reset.html",
                    reset_link=reset_link)
-        
+
 
     def do_reset(self, command_id=None, email=None, password=None):
         cmd = self._request.api_root["command"][command_id]
@@ -165,10 +165,33 @@ class CommandContainer(BaseQuery):
         self._request.db.add(result)
         return result
 
-        
+
+
+class DeviceContainer(BaseQuery):
+    __model__ = m.Device
+    __name__ = "device"
+
+    def create(self, name=None, mail=None, password=None):
+        result = self.__model__(email=email, password=password)
+        self._request.db.add(result)
+        return result
+
+    def list(self):
+       return self.__qry__().all()
+
+    def update(self, device):
+        result = self.__model__()
+        self._request.db.add(result)
+
+
+    def delete(self, id):
+        return self._request.db.delete(id)
+
+
 class APIRoot(BaseResource):
     def __init__(self, request):
         super(self.__class__, self).__init__(request)
         request.api_root = self
+        self._create_child(DeviceContainer)
         self._create_child(UserContainer)
         self._create_child(CommandContainer)

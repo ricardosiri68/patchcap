@@ -8,6 +8,15 @@ class LoginSchema(colander.MappingSchema):
     login_id = colander.SchemaNode(colander.String())
     password = colander.SchemaNode(colander.String())
 
+class DeviceSchema(colander.MappingSchema):
+    name = colander.SchemaNode(colander.String())
+    ip = colander.SchemaNode(colander.String())
+    instream = colander.SchemaNode(colander.String())
+    outstream = colander.SchemaNode(colander.String())
+    username = colander.SchemaNode(colander.String())
+    password = colander.SchemaNode(colander.String())
+    roi = colander.SchemaNode(colander.String())
+
 
 class RegisterSchema(colander.MappingSchema):
     email = colander.SchemaNode(colander.String(), 

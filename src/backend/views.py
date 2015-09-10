@@ -5,15 +5,14 @@ import colander
 from pyramid.httpexceptions import exception_response
 from .mailers import send_email
 
-@view_config(route_name="home", 
-             renderer="home.html")
+@view_config(route_name="home", renderer="home.html")
 def home_view(request):
     return {}
 
 
 @view_config(route_name="api", 
              context=resource.UserContainer, 
-             name="register", 
+             name="register",
              renderer="json", 
              request_method="POST")
 def register_view(context, request):
@@ -81,7 +80,7 @@ def logout_view(context, request):
 def me_view(context, request):
     u = request.authenticated_user()
     if u:
-        return dict(email=u.email, first_name=u.first_name, last_name=u.last_name, id=u.id)
+        return dict(email=u.email, name=u.name, username=u.username, id=u.id)
     else:
         raise exception_response(403)
 
@@ -90,3 +89,49 @@ def me_view(context, request):
 def validation_error_view(exc, request):
     request.response.status_int = 400
     return exc.asdict()
+
+
+class DeviceView(object):
+
+    @view_config(request_method='PUT', context=resource.DeviceContainer, renderer='json')
+    def update(context, request):
+        data = schemas.ResetSchema().deserialize(request.POST)
+        r = context.update(data)
+        return Response(
+            status='202 Accepted',
+            content_type='application/json; charset=UTF-8')
+
+
+    @view_config(request_method='GET', context=resource.DeviceContainer, renderer='json')
+    def get(context, request):
+        id = request.matchdict['id']
+        r = context[id]
+        if r is None:
+            raise HTTPNotFound()
+        else:
+            return r
+
+
+    @view_config(request_method='DELETE', context=resource.DeviceContainer, renderer='json')
+    def delete(context, request):
+        id = request.matchdict['id']
+        r = context[id]
+        context.delete(r)
+
+        return Response(
+            status='202 Accepted',
+            content_type='application/json; charset=UTF-8')
+
+    @view_config(request_method='POST', context=resource.DeviceContainer, renderer='json')
+    def create(context, request):
+        data = schemas.ResetSchema().deserialize(request.POST)
+        r = context.create(**data)
+        return Response(
+            status='201 Created',
+            content_type='application/json; charset=UTF-8')
+
+
+    #    @view_config(request_method='GET', context=resource.DeviceContainer, renderer='json')
+    # def list(context, request):
+    #    return context.list()
+
