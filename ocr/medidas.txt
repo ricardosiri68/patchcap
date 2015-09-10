@@ -30,3 +30,18 @@ nums 302
 sep medio 128
 
 
+medida real
+distance to object (mm) = focal length (mm) * real height of the object (mm) * image height (pixels)
+                          ---------------------------------------------------------------------------
+                          object height (pixels) * sensor height (mm)
+
+fl    d             fl * ow [mm]    * iw
+-- = --   ==>   d = -------      ow
+sw   ow                sw 
+
+The ratio of focal length to sensor width (or height) is the same as the ratio of subject distance to subject width (or height)
+
+
+    1    1      1
+    -- + -- =  --
+    O    I      F
