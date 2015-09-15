@@ -44,7 +44,6 @@ class BaseQuery(BaseResource):
         return self._request.db.query(self.__model__)
 
     def __getitem__(self, key):
-
         try:
             id = int(key)
         except ValueError:
@@ -52,9 +51,8 @@ class BaseQuery(BaseResource):
 
         result = self.__qry__().get(id)
 
-        result.__parent__ = self
-
         if result:
+            result.__parent__ = self
             return result
         else:
             raise KeyError("%s(%s) not found" % (self.__model__.__name__, key))
@@ -62,7 +60,7 @@ class BaseQuery(BaseResource):
 
 class UserContainer(BaseQuery):
     __model__ = m.User
-    __name__ = "user"
+    __name__ = "users"
 
     CMD_REGISTER = "register"
     CMD_RESET = "forgot"
@@ -169,12 +167,12 @@ class CommandContainer(BaseQuery):
 
 class DeviceContainer(BaseQuery):
     __model__ = m.Device
-    __name__ = "device"
+    __name__ = "devices"
 
-    def create(self, name=None, mail=None, password=None):
-        result = self.__model__(email=email, password=password)
-        self._request.db.add(result)
-        return result
+    def create(self, username, roi, name, ip, outstream, password, instream, logging):
+        d = self.__model__(name, instream, outstream, ip, username, password, roi, logging)
+        self._request.db.add(d)
+        return d
 
     def list(self):
        return self.__qry__().all()

@@ -19,7 +19,8 @@ requires = [
     'pyramid_marrowmailer',
     'html2text',
     'pyramid_tm',
-    'sqlalchemy-utils'
+    'sqlalchemy-utils',
+    'colanderalchemy'
     ]
 
 setup(name='backend',
