@@ -60,7 +60,7 @@ class BaseQuery(BaseResource):
 
 class UserContainer(BaseQuery):
     __model__ = m.User
-    __name__ = "users"
+    __name__ = "user"
 
     CMD_REGISTER = "register"
     CMD_RESET = "forgot"
