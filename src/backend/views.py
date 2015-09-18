@@ -128,20 +128,21 @@ class DeviceView(object):
 
 
     @view_config(request_method='PUT', context=Device)
-    def update(self, device):
+    def update(self):
+        device = self.context
         if device is None:
             raise HTTPNotFound()
         else:
             data = schemas.DeviceSchema.deserialize(self.request.json_body)
             device.name = data['name']
-            device.instream = data['instream ']
-            device.outstream = data['outstream ']
+            device.instream = data['instream']
+            device.outstream = data['outstream']
             device.ip = data['ip']
             device.username = data['username']
             device.password = data['password']
             device.roi = data['roi']
             device.logging = data['logging']
-            DeviceContainer().update(device)
+            self.request.db.add(device)
 
         return Response(
             status='202 Accepted',
@@ -149,9 +150,11 @@ class DeviceView(object):
 
 
     @view_config(request_method='DELETE', context=Device)
-    def delete(self, context):
-        DeviceContainer().delete(context)
-
+    def delete(self):
+        if self.context is None:
+            raise HTTPNotFound()
+        
+        self.request.db.delete(self.context)
         return Response(
             status='202 Accepted',
             content_type='application/json; charset=UTF-8')
