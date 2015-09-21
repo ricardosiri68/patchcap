@@ -57,10 +57,18 @@ class BaseQuery(BaseResource):
         else:
             raise KeyError("%s(%s) not found" % (self.__model__.__name__, key))
 
+    def list(self):
+        print 'listing'
+        return self.__qry__().all()
+
+    def delete(self, id):
+        return self._request.db.delete(id)
+
+
 
 class UserContainer(BaseQuery):
     __model__ = m.User
-    __name__ = "user"
+    __name__ = "users"
 
     CMD_REGISTER = "register"
     CMD_RESET = "forgot"
@@ -103,6 +111,12 @@ class UserContainer(BaseQuery):
             msg = "Invalid %s Command for %s, %s" % \
                   (self.CMD_REGISTER, command_id, email)
             raise ValueError(msg)
+
+    def create(self, username, name, email, password):
+        d = self.__model__(name=name, username=username, email=email, password=password)
+        self._request.db.add(d)
+        return d
+
 
     def request_reset(self, email):
         cc = self._request.api_root["command"]
@@ -173,17 +187,6 @@ class DeviceContainer(BaseQuery):
         d = self.__model__(name, instream, outstream, ip, username, password, roi, logging)
         self._request.db.add(d)
         return d
-
-    def list(self):
-       return self.__qry__().all()
-
-    def update(self, device):
-        result = self.__model__()
-        self._request.db.add(result)
-
-
-    def delete(self, id):
-        return self._request.db.delete(id)
 
 
 class APIRoot(BaseResource):
