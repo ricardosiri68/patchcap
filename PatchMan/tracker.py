@@ -86,6 +86,10 @@ class BlobTracker(Machine):
         b = segments.pop()
         bb = list(b.bbox)
         rois = []
+
+        last = self.bloblist[self.lastb]
+        rois.append(cv2.resize(last.img, (200,200)))
+
         subr = img[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2]]
         rois.append(cv2.resize(subr, (200,200)))
 
@@ -103,6 +107,7 @@ class BlobTracker(Machine):
             draw_str(subr, (20, 20), str(len(rois)))
             rois.append(cv2.resize(subr, (200,200)))
             logger.debug(rois)
+
 
         cv2.imshow('merge', np.hstack(rois))
 
