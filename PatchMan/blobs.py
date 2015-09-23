@@ -17,29 +17,15 @@ class Blob(object):
         self.id = Blob.id
 
     def __eq__(self, o):
-        min_matches = 25
+        min_matches = 28
         matches = self.matcher.match(o.desc, self.desc)
         count = len(matches)
         if count < min_matches:
             return False
-        good_matches = [match for match in matches if match.distance <= 52]
+        good_matches = [match for match in matches if match.distance <= 50]
         if len(good_matches) < min_matches:
             return False
        
-        '''
-        distances = [match.distance for match in matches]
-        print min(distances)
-        print max(distances)
-        print 'good matches'
-        print len(good_matches)
-        good_distances = [match.distance for match in good_matches]
-        print min(good_distances)
-        print max(good_distances)
-
-        i2 = cv2.resize(self.img, (o.img.shape[1], o.img.shape[0]))
-        print i2.shape
-        cv2.imshow('matches', np.hstack([o.img,i2 ]))
-        '''
         return True
 
     '''
