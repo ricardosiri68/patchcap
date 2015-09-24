@@ -33,7 +33,7 @@ class Blob(object):
     '''
     def inside(self, roi):
         return self.bbox[0] >= roi[0] and self.bbox[1] >= roi[1] and \
-                self.bbox[0]+self.bbox[2] < roi[0]+roi[2] and \
+                (self.bbox[0]+self.bbox[2]) < (roi[0]+roi[2])    and \
                 self.bbox[1]+self.bbox[3] < roi[1]+roi[3]
 
     def cxy(self):

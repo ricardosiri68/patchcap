@@ -18,19 +18,6 @@ lat = StatValue()
 cv2.namedWindow('frame')
 ret, frame = cap.read()
 
-'''
-hint for transitions:
-self.is_{state}()
-self.on_enter_{state}()
-self.on_exit_{state}()
-self.set_state('')
-self.to_{state}()
-transitions = [
-['trigger', 'source', 'dest'],
-['trigger', 'source', 'dest']
-]    
-'''
-
 class Tracker(object):
     def __init__(self, bgsample):
         self.be = BlobExtractor(bgsample)
@@ -74,9 +61,7 @@ class Tracker(object):
         untracked = [b for b in blobs if b not in t2b or len(t2b[b])==0]
 
         for b in untracked:
-            t = BlobTracker(self)
-            t.add(b)
-            t.touch(ts)
+            t = BlobTracker(self, b)
             self.tracks.append(t)
 
 
@@ -94,7 +79,7 @@ class Tracker(object):
             cv2.circle(img, t.cxy(),8, t.color, thickness=2, lineType=8, shift=0)
             cv2.rectangle(img, (x, y), (x+w,y+h), t.color, thickness=3)
             draw_str(img,
-                     (x, y+20),
+                     (x, y+40),
                      "%s  vel %.1f %.1f %.1f " % (
                          t.id,
                          t.prediction[2][0],
@@ -131,10 +116,11 @@ if __name__ == "__main__":
         ts = cv2.getTickCount()
         t = clock()
         tr.track(t, img)
-        tr.draw(img)
+        i = img.copy()
+        tr.draw(i)
         lat.update(clock()-t)
-        draw_str(img, (20, 40), "latency        :  %.1f ms" % (lat.value*1000))
-        cv2.imshow('frame', img)
+        draw_str(i, (20, 40), "latency        :  %.1f ms" % (lat.value*1000))
+        cv2.imshow('frame', i)
         if step:
             paused = True
             step = False

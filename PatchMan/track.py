@@ -6,44 +6,49 @@ import random
 from scipy.spatial import distance
 from transitions import Machine
 
-class BlobTracker(Machine):
-    id = 0
-    MaxFramesLosted = 200
-    FramesInHypo = 3
 
-    def __init__(self, tracker):
+'''
+hint for transitions:
+self.is_{state}()
+self.on_enter_{state}()
+self.on_exit_{state}()
+self.set_state('')
+self.to_{state}()
+transitions = [
+['trigger', 'source', 'dest'],
+['trigger', 'source', 'dest']
+]    
+'''
+#self.add_transition('enter','entering', 'normal')
+
+class BlobTracker(Machine):
+    id = 1
+    MaxFramesLosted = 100
+    FramesInHypo = 3
+    States = ['hypothesis', 'entering', 'normal', 'leaving', 'lost', 'deleted']
+
+    def __init__(self, tracker, blob):
+        Machine.__init__(self, states=BlobTracker.States, initial='hypothesis')
         self.bloblist = {}
-        self.ts = 0
-        self.lastb = 0
-        self.age = 0
+        self._addblob(blob)
+        self.ts = blob.ts
+        self.age = 1
         self.tracker = tracker
         self.kalman = cv2.KalmanFilter(4, 2, 0)
-        self.lost = 0
-        states = ['hypothesis', 'entering', 'normal', 'leaving', 'lost', 'deleted']
-        Machine.__init__(self, states=states, initial='hypothesis')
+        self.setup_kalman(blob.centroid)
         r = lambda: random.randint(0,255)
         self.color = (r(),r(),r())
-        #self.add_transition('enter','entering', 'normal')
-        BlobTracker.id += 1
         self.id = BlobTracker.id
-        
+        BlobTracker.id += 1
 
     def active(self):
         return self.is_normal() or self.is_entering() or self.is_leaving()
 
     def add(self, blob):
-        self.lost = 0
+        self._addblob(blob)
+        self.kalman.correct(blob.centroid)
+
         inside = blob.inside(self.tracker.roi)
-        self.lastb = blob.ts
-        self.bloblist[blob.ts] = blob
-
-
-        if len(self.bloblist)==1:
-            self.setup_kalman(blob.centroid)
-            return
-        else:
-            self.kalman.correct(blob.centroid)
-
         if inside:
             self.to_normal()
         else:
@@ -51,6 +56,32 @@ class BlobTracker(Machine):
                 self.to_leaving()
             elif not self.is_leaving():
                 self.to_entering()
+
+    def _addblob(self, blob):
+        self.lost = 0
+        self.lastb = blob.ts
+        self.bloblist[blob.ts] = blob
+
+
+    def touch(self, ts):
+        self.ts = ts
+        self.age += 1
+        self.lost += 1
+
+        if self.is_hypothesis() and self.age == BlobTracker.FramesInHypo:
+            self.to_deleted()
+            return
+
+        self.to_lost()
+
+        if self.lost > 1:
+            self.kalman.statePost = self.kalman.statePre
+            self.kalman.errorCovPost = self.kalman.errorCovPre
+
+            if self.lost == BlobTracker.MaxFramesLosted:
+                self.to_deleted()
+
+        self.prediction = self.kalman.predict()
 
     def merge(self, segments, img):
         b = segments.pop()
@@ -110,28 +141,6 @@ class BlobTracker(Machine):
 
 
 
-    def touch(self, ts):
-        self.ts = ts
-        self.age = self.age + 1
-
-        if self.ts != self.lastb:
-            self.lost = self.lost + 1
-
-        if self.is_hypothesis() and self.lost ==  BlobTracker.FramesInHypo:
-            self.to_deleted()
-            return
-
-        self.prediction = self.kalman.predict()
-
-        if self.lost > 0:
-            self.kalman.statePost = self.kalman.statePre
-            self.kalman.errorCovPost = self.kalman.errorCovPre
-
-            if self.lost == 1:
-                self.to_lost()
-            elif self.lost == BlobTracker.MaxFramesLosted:
-                self.to_deleted()
-
 
     def __contains__(self, b):
         last = self.bloblist[self.lastb]
@@ -164,8 +173,9 @@ class BlobTracker(Machine):
         self.kalman.processNoiseCov = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],np.float32) * 0.005 #Q
         self.kalman.errorCovPost = np.ones((4, 4), np.float32)
         self.kalman.statePost = np.array([[ini[0][0]], [ini[1][0]], [0], [0]], np.float32)
+        self.prediction = self.kalman.predict()
 
     def __repr__(self):
-        return 'T[%s]: [%s]'%(self.id, self.state)
+        return 'T[%s]: [%s]. age:%s, lost:%s'%(self.id, self.state, self.age, self.lost)
 
 
