@@ -43,6 +43,10 @@ class DeviceView(object):
         if r is None:
             raise HTTPNotFound()
         else:
+            self.request.response.headers['Vary'] = 'Accept-Encoding'
+            self.request.response.headers['X-Content-Type-Options'] = 'nosniff'
+            self.request.response.headers['Content-Type'] = 'application/json'
+            del self.request.response.headers['Content-Type'] 
             return schemas.DeviceSchema.serialize(r.__dict__)
 
 
