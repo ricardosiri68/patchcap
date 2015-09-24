@@ -1,3 +1,4 @@
+from pyramid.events import NewRequest
 from pyramid.config import Configurator
 from pyramid import authentication, authorization
 
@@ -67,6 +68,21 @@ def config_auth_policy(config, settings):
     policy = authentication.AuthTktAuthenticationPolicy(settings['auth_secret'], get_principals, cookie_name="backend_auth", hashalg="sha512")
     config.set_authentication_policy(policy)
     config.set_authorization_policy(authorization.ACLAuthorizationPolicy())
+    config.add_subscriber(add_cors_headers_response_callback, NewRequest)
+
+
+def add_cors_headers_response_callback(event):
+    def cors_headers(request, response):
+        response.headers.update({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST,GET,DELETE,PUT,OPTIONS',
+        'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept, Authorization',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Max-Age': '1728000',
+        })
+    event.request.add_response_callback(cors_headers)
+
+from pyramid.events import NewRequest
 
 def config_secrets(settings):
     if "secrets" in settings:
