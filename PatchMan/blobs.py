@@ -52,21 +52,22 @@ class Blob(object):
 class BlobExtractor(object):
 
     def __init__(self, bgsample,  min_area = 2000, min_width = None, min_height = None):
-        self.bgs = cv2.createBackgroundSubtractorMOG2(250, 12, False)
-        self.bgs.apply(bgsample)
+        self.bgs = cv2.createBackgroundSubtractorMOG2(200, 8, False)
+        self.bgmask = self.bgs.apply(bgsample)
         self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
         self.min_area = min_area
         self.min_width = min_width
         self.min_height = min_height
         self.detector = cv2.ORB_create()
+        
 
     def blobs(self, img, ts):
         f = .25
         # frame = cv2.resize(img, (0,0),  fx=f, fy=f)
         img = cv2.GaussianBlur(img, (5, 5), 0)
-        fgmask = self.bgs.apply(img)
-        fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, self.kernel)
-        _, cnts, hie = cv2.findContours(fgmask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        self.fgmask = self.bgs.apply(img)
+        self.fgmask = cv2.morphologyEx(self.fgmask, cv2.MORPH_OPEN, self.kernel)
+        _, cnts, hie = cv2.findContours(self.fgmask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         blbs = []
 
         for c in cnts:
@@ -86,7 +87,6 @@ class BlobExtractor(object):
             cy = int(M['m01']/M['m00'])
             blob = Blob(ts, (x,y,w,h),(cx, cy), roi, kp, desc)
             blbs.append(blob)
-            cv2.rectangle(fgmask, (x,y), (x+w,y+h), (255,0,0), thickness=2)
         return blbs
 
 

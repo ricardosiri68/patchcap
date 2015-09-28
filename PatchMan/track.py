@@ -66,22 +66,24 @@ class BlobTracker(Machine):
     def touch(self, ts):
         self.ts = ts
         self.age += 1
-        self.lost += 1
 
         if self.is_hypothesis() and self.age == BlobTracker.FramesInHypo:
             self.to_deleted()
             return
 
-        self.to_lost()
+        if self.ts != self.lastb:
+            self.to_lost()
+            self.lost += 1
 
-        if self.lost > 1:
+        self.prediction = self.kalman.predict()
+
+        if self.is_lost():
             self.kalman.statePost = self.kalman.statePre
             self.kalman.errorCovPost = self.kalman.errorCovPre
 
             if self.lost == BlobTracker.MaxFramesLosted:
                 self.to_deleted()
 
-        self.prediction = self.kalman.predict()
 
     def merge(self, segments, img):
         b = segments.pop()
@@ -138,8 +140,6 @@ class BlobTracker(Machine):
         cx = bb[0] + bb[2]/2
         cy = bb[1] + bb[3]/2
         self.bloblist[self.lastb] = Blob(self.lastb, tuple(bb),(cx, cy), roi, kp, desc)
-
-
 
 
     def __contains__(self, b):
