@@ -11,14 +11,20 @@ from models import Device, User
 def home_view(request):
     return {}
 
-@view_defaults(route_name='api', context = resource.DeviceContainer, renderer='json')
-class DeviceView(object):
-
+@view_defaults(route_name='api', renderer='json')
+class RestView(object):
     def __init__(self, context, request):
         self.request = request
         self.context = context
 
-    @view_config(request_method='POST')
+    @view_config(request_method="OPTIONS")
+    def options_view(self):
+        return Response(status_int=200) 
+
+
+
+class DeviceView(object):
+    @view_config(request_method='POST', context = resource.DeviceContainer)
     def create(self):
         data = schemas.DeviceSchema.deserialize(self.request.json_body)
         r = self.context.create(**data)
@@ -26,7 +32,7 @@ class DeviceView(object):
             status='201 Created',
             content_type='application/json; charset=UTF-8')
 
-    @view_config(request_method='GET')
+    @view_config(request_method='GET', context = resource.DeviceContainer)
     def list(self):
         r = self.context.list()
         if r is None:
@@ -46,7 +52,7 @@ class DeviceView(object):
             self.request.response.headers['Vary'] = 'Accept-Encoding'
             self.request.response.headers['X-Content-Type-Options'] = 'nosniff'
             self.request.response.headers['Content-Type'] = 'application/json'
-            del self.request.response.headers['Content-Type'] 
+            del self.request.response.headers['Content-Type']
             return schemas.DeviceSchema.serialize(r.__dict__)
 
 
@@ -76,21 +82,16 @@ class DeviceView(object):
     def delete(self):
         if self.context is None:
             raise HTTPNotFound()
-        
+
         self.request.db.delete(self.context)
         return Response(
             status='202 Accepted',
             content_type='application/json; charset=UTF-8')
 
 
-@view_defaults(route_name='api', context = resource.UserContainer, renderer='json')
-class UserView(object):
 
-    def __init__(self, context, request):
-        self.request = request
-        self.context = context
-
-    @view_config(request_method='POST')
+class UserView(RestView):
+    @view_config(request_method='POST', context = resource.UserContainer)
     def create(self):
         data = schemas.UserSchema.deserialize(self.request.json_body)
         r = self.context.create(**data)
@@ -98,7 +99,7 @@ class UserView(object):
             status='201 Created',
             content_type='application/json; charset=UTF-8')
 
-    @view_config(request_method='GET')
+    @view_config(request_method='GET', context = resource.UserContainer)
     def list(self):
         r = self.context.list()
         if r is None:
@@ -147,7 +148,7 @@ class UserView(object):
             content_type='application/json; charset=UTF-8')
 
     @view_config(name="forgot", request_method="POST")
-    def forgot_view(context, request):
+    def forgot_view(self):
         data = schemas.ForgotSchema().deserialize(request.POST)
         context.request_reset(data["email"])
         return {}
@@ -179,6 +180,7 @@ class UserView(object):
         else:
             raise exception_response(403)
 
+    
 
 @view_config(context=colander.Invalid, renderer="json")
 def validation_error_view(exc, request):
