@@ -58,7 +58,6 @@ class BaseQuery(BaseResource):
             raise KeyError("%s(%s) not found" % (self.__model__.__name__, key))
 
     def list(self):
-        print 'listing'
         return self.__qry__().all()
 
     def delete(self, id):
