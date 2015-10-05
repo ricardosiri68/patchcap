@@ -5,6 +5,7 @@ import numpy as np
 import random
 from scipy.spatial import distance
 from transitions import Machine
+import copy
 
 
 '''
@@ -85,41 +86,20 @@ class BlobTracker(Machine):
                 self.to_deleted()
 
 
-    def merge(self, segments, img):
-        b = segments.pop()
-        bb = list(b.bbox)
-        rois = []
-
+    def group(self, blob, img):
+        b = copy.copy(blob)
         last = self.bloblist[self.lastb]
-        rois.append(cv2.resize(last.img, (200,200)))
-
-        subr = img[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2]]
-        rois.append(cv2.resize(subr, (200,200)))
-
-        for b in segments:
-            r = b.bbox
-            if r[0]<bb[0]:
-                bb[0] = r[0]
-            if r[1]<bb[1]:
-                bb[1] = r[1]
-            if r[0]+r[2] > bb[0]+bb[2]:
-                bb[2] = r[0]+r[2]-bb[0]
-            if r[1]+r[3] > bb[1]+bb[3]:
-                bb[3] = r[1]+bb[3]-bb[1]
-            subr = img[r[1]:r[1]+r[3], r[0]:r[0]+r[2]]
-            draw_str(subr, (120, 120), str(len(rois)))
-            rois.append(cv2.resize(subr, (200,200)))
+        cx = self.prediction[:2]
+        print self.id, cx
+        print 'box antes', b.bbox
+        b.correct(last.bbox, cx)
+        print 'box desp', b.bbox
+        self.combine(b, img)
 
 
-        cv2.imshow('merge', np.hstack(rois))
-
-        roi = img[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2]]
-        kp, desc = self.tracker.be.detector.detectAndCompute(roi, None)
-        cx = bb[0] + bb[2]/2
-        cy = bb[1] + bb[3]/2
-        self.add(Blob(self.ts, tuple(bb),(cx, cy), roi, kp, desc))
 
     def combine(self, blob, img):
+        self.ts = blob.ts
         b = self.blob()
         if not b:
             self.add(blob)
@@ -158,6 +138,9 @@ class BlobTracker(Machine):
                 (distance.euclidean(b.centroid, last.centroid)<last.bbox[3])
         return (dx>=0) and (dy>=0) or sub
         
+
+    def __getitem__(self, key):
+        return self.bloblist[key]
 
     def blob(self):
         if self.ts == self.lastb:

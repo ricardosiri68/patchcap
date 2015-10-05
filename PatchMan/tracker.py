@@ -28,41 +28,33 @@ class Tracker(object):
 
     def track(self, ts, img):
         blobs = self.be.blobs(img, ts)
-        b2t = {}
         t2b = {}
         untracked = []
 
-        for t in reversed(self.tracks):
-            b2t[t] = []
-            for b in blobs:
-                if b not in t2b:
-                    t2b[b] = []
+        for b in blobs:
+            t2b[b] = []
+            for t in reversed(self.tracks):
                 if b in t:
-                    b2t[t].append(b)
                     t2b[b].append(t)
-
-        for t in b2t:
-            bbs = b2t[t]
-            if len(bbs)==0:
-                continue
-            if len(bbs)==1:
-                t.add(bbs[0])
+            tts = t2b[b]
+            if len(tts)==0:
+                untracked.append(b)
+            elif len(tts)==1:
+                tts[0].combine(b, img)
             else:
-                t.merge(bbs, img)
+                for t in tts:
+                    t.group(b, img)
 
-        
-        unassigneds = [b for b in blobs if b not in t2b or len(t2b[b])==0]
-        for t in reversed(self.tracks):
-            for ub in unassigneds:
-                if t.contains(ub):
-                    t.combine(ub, img)
-                    t2b[ub].append(t)
-
-        
-        untracked = [b for b in blobs if b not in t2b or len(t2b[b])==0]
         for b in untracked:
-            t = BlobTracker(self, b)
-            self.tracks.append(t)
+            assigned = False
+            for t in reversed(self.tracks):
+                if t.contains(b):
+                    t.combine(b, img)
+                    assigned = True
+                    break
+            if not assigned:
+                t = BlobTracker(self, b)
+                self.tracks.append(t)
 
         for t in self.tracks:
             t.touch(ts)
@@ -73,8 +65,8 @@ class Tracker(object):
                 logger.debug(tt)
         logger.debug("-----------------------------")
 
-    def draw(self):
-        img = self.be.fgmask
+    def draw(self, i):
+        img = i.copy()
         for t in [tr for tr in self.tracks if tr.active()]:
             b = t.blob()
             x, y, w, h = b.bbox
@@ -123,7 +115,7 @@ if __name__ == "__main__":
         ts = cv2.getTickCount()
         t = clock()
         tr.track(t, img)
-        i = tr.draw()
+        i = tr.draw(img)
         lat.update(clock()-t)
         draw_str(i, (20, 40), "latency        :  %.1f ms" % (lat.value*1000))
         cv2.imshow('frame', i)

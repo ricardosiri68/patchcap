@@ -16,17 +16,12 @@ class Blob(object):
         Blob.id += 1
         self.id = Blob.id
 
+
     def __eq__(self, o):
-        min_matches = 28
-        matches = self.matcher.match(o.desc, self.desc)
-        count = len(matches)
-        if count < min_matches:
-            return False
-        good_matches = [match for match in matches if match.distance <= 50]
-        if len(good_matches) < min_matches:
-            return False
-       
-        return True
+        min_matches =  30
+        matches = self.matcher.match(o.desc, trainDescriptors = self.desc)
+        count = sum(1 for m in matches if m.distance < 50)
+        return count >= min_matches
 
     '''
     return true  if blob is fully contained inside roi
@@ -48,11 +43,22 @@ class Blob(object):
     def __repr__(self):
         return '<Blob> id:%s %s.%s'%(self.id, self.bbox, self.cxy())
 
+    def correct(self, bb, centroid):
+        self.centroid = centroid
+        c = self.cxy()
+        x = c[0] - bb[2] / 2
+        if x<0:
+            x = 0 
+        y = c[1] - bb[3] / 2 
+        if y<0:
+            y = 0 
+        self.bbox = (x,y, bb[2], bb[3])
+
 
 class BlobExtractor(object):
 
     def __init__(self, bgsample,  min_area = 2000, min_width = None, min_height = None):
-        self.bgs = cv2.createBackgroundSubtractorMOG2(200, 8, False)
+        self.bgs = cv2.createBackgroundSubtractorMOG2(100, 8, False)
         self.bgmask = self.bgs.apply(bgsample)
         self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
         self.min_area = min_area
@@ -74,7 +80,6 @@ class BlobExtractor(object):
             c = c.reshape(-1, 2)
             if len(c) < 4 or cv2.contourArea(c)< self.min_area:
                 continue
-            M = cv2.moments(c)
             x, y, w, h = cv2.boundingRect(c)
             if (self.min_width and  w < self.min_width ) or \
                 (self.min_height and h < self.min_height):
@@ -83,6 +88,7 @@ class BlobExtractor(object):
             kp, desc = self.detector.detectAndCompute(roi, None)
             if desc is None:
                 continue
+            M = cv2.moments(c)
             cx = int(M['m10']/M['m00'])
             cy = int(M['m01']/M['m00'])
             blob = Blob(ts, (x,y,w,h),(cx, cy), roi, kp, desc)
