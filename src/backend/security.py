@@ -1,17 +1,20 @@
 """
 authentication policy/authorization policy
 """
-from . import models as m 
-from pyramid import security
+from . import models as m
+from pyramid.security import authenticated_userid
+
+def _find_user(request, id):
+    return request.db.query(m.User).get(id)
 
 
-def get_principals(user_id, request):
-    """
-    called by authentication policy
-    """
-    u = request.db.query(m.User).filter_by(id=int(user_id)).first()
+def groupfinder(userid, request):
+    user = _find_user(request, userid)
+    return ['g:'+r.name for r in user.profiles]
 
-    if u:
-        return [u, security.Authenticated]
-    else:
-        return []
+
+def get_user(request):
+    userid = authenticated_userid(request)
+    if userid is not None:
+        return _find_user(request, userid)
+    return None

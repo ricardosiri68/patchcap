@@ -51,6 +51,12 @@ class User(Base):
                     secondary=association_table,
                     backref='users')
 
+     
+    #    @property
+    #def __acl__(self):
+    #    return [
+    #        (Allow, self., 'view'),
+    #    ]
 
 class Command(Base):
     expire_on = Column(DateTime, nullable=False)

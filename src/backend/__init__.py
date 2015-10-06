@@ -5,10 +5,11 @@ from pyramid import authentication, authorization
 from sqlalchemy import engine_from_config
 from sqlalchemy.orm import sessionmaker
 from .resource import APIRoot 
-from .security import get_principals
+from .security import groupfinder, get_user
 from .models import User
 from ConfigParser import ConfigParser
 import logging
+import locale
 
 log = logging.getLogger(__name__)
 
@@ -31,11 +32,6 @@ def db(request):
 
     return session
 
-def authenticated_user(request):
-    def x():
-        return request.db.query(User).filter_by(id=request.authenticated_userid).first()
-    return x
-
 def config_static(config):
     config.add_static_view('static', 'static', cache_max_age=3600)
 
@@ -45,6 +41,9 @@ def config_jinja2(config):
     config.add_jinja2_renderer('.html')
     config.add_jinja2_search_path('templates', name='.html')
 
+def localization(request):
+    locale.setlocale(locale.LC_ALL, 'es_AR.utf8')
+    return 'es'
 
 def config_mailer(config):
     config.include('pyramid_marrowmailer')
@@ -65,9 +64,10 @@ def config_routes(config):
     config.add_route("api", '/api/*traverse', factory=APIRoot)
 
 def config_auth_policy(config, settings):
-    policy = authentication.AuthTktAuthenticationPolicy(settings['auth_secret'], get_principals, cookie_name="backend_auth", hashalg="sha512")
+    policy = authentication.AuthTktAuthenticationPolicy(settings['auth_secret'], groupfinder, cookie_name="backend_auth", hashalg="sha512", timeout = 20, reissue_time=2)
     config.set_authentication_policy(policy)
     config.set_authorization_policy(authorization.ACLAuthorizationPolicy())
+    config.set_default_permission('view')
     config.add_subscriber(add_cors_headers_response_callback, NewRequest)
 
 
@@ -82,7 +82,6 @@ def add_cors_headers_response_callback(event):
         })
     event.request.add_response_callback(cors_headers)
 
-from pyramid.events import NewRequest
 
 def config_secrets(settings):
     if "secrets" in settings:
@@ -101,6 +100,7 @@ def main(global_config, **settings):
     config_db(config, settings)
     config_routes(config)
     config_auth_policy(config, settings)
+    config.set_locale_negotiator(localization)
     config_mailer(config)
-    config.add_request_method(authenticated_user, reify=True)
+    config.add_request_method(get_user,'user', reify=True)
     return config.make_wsgi_app()

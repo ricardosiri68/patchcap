@@ -2,6 +2,7 @@
 resources for traversal
 """
 from . import models as m
+from pyramid.security import Allow, Everyone, Authenticated,ALL_PERMISSIONS
 from pyramid import security
 from pyramid.httpexceptions import HTTPUnauthorized
 from  datetime import datetime , timedelta
@@ -20,6 +21,9 @@ def cleanup_rec(rec, session):
 class BaseResource(object):
     __name__ = None
     __parent__ = None
+    __acl__ = [
+               (Allow, Authenticated, 'view'),
+               (Allow, 'g:admin', ALL_PERMISSIONS) ]
 
     def __init__(self, request, name=None, parent=None):
         self.__name__ = name or self.__name__
@@ -81,6 +85,7 @@ class UserContainer(BaseQuery):
             raise HTTPUnauthorized("login failed")
 
     def logout(self):
+        
         self._request.response.headerlist.extend(security.forget(self._request))
 
 

@@ -6,7 +6,7 @@ from models import Device, User
 from colanderalchemy import SQLAlchemySchemaNode
 
 class LoginSchema(colander.MappingSchema):
-    login_id = colander.SchemaNode(colander.String())
+    username = colander.SchemaNode(colander.String())
     password = colander.SchemaNode(colander.String())
 
 DeviceSchema = SQLAlchemySchemaNode(Device,

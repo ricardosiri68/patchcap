@@ -1,3 +1,4 @@
+from pyramid import security
 from pyramid.view import view_config, view_defaults
 from pyramid.response import Response
 from . import resource
@@ -23,8 +24,8 @@ class RestView(object):
 
 
 
-class DeviceView(object):
-    @view_config(request_method='POST', context = resource.DeviceContainer)
+class DeviceView(RestView):
+    @view_config(request_method='POST', context = resource.DeviceContainer, permission="add")
     def create(self):
         data = schemas.DeviceSchema.deserialize(self.request.json_body)
         r = self.context.create(**data)
@@ -147,6 +148,25 @@ class UserView(RestView):
             status='202 Accepted',
             content_type='application/json; charset=UTF-8')
 
+    @view_config(name="login", request_method="POST", permission=security.NO_PERMISSION_REQUIRED)
+    def login_view(self):
+        data = schemas.LoginSchema().deserialize(self.request.json_body)
+        self.context.login(data['username'], data['password'])
+        return {}
+
+    @view_config(name="logout")
+    def logout_view(self):
+        self.context.logout()
+        return {}
+
+    @view_config(name="me")
+    def me_view(self):
+        u = self.request.user
+        if u:
+            return dict(email=u.email, name=u.name, username=u.username, id=u.id)
+        else:
+            raise exception_response(403)
+
     @view_config(name="forgot", request_method="POST")
     def forgot_view(self):
         data = schemas.ForgotSchema().deserialize(request.POST)
@@ -160,29 +180,9 @@ class UserView(RestView):
         user = context.do_reset(**data)
         return dict(email=user.email, id=user.id)
 
-    @view_config(context=resource.APIRoot, name="login", request_method="POST")
-    def login_view(context, request):
-        context["user"].login(**schemas.LoginSchema().deserialize(request.POST))
-        return {}
 
 
-    @view_config(context=resource.APIRoot, name="logout", request_method="POST")
-    def logout_view(context, request):
-        context["user"].logout()
-        return {}
-
-
-    @view_config(name="me")
-    def me_view(context, request):
-        u = request.authenticated_user()
-        if u:
-            return dict(email=u.email, name=u.name, username=u.username, id=u.id)
-        else:
-            raise exception_response(403)
-
-    
-
-@view_config(context=colander.Invalid, renderer="json")
+@view_config(context=colander.Invalid, renderer="json",permission=security.NO_PERMISSION_REQUIRED)
 def validation_error_view(exc, request):
     request.response.status_int = 400
     return exc.asdict()
