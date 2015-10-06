@@ -64,7 +64,14 @@ def config_routes(config):
     config.add_route("api", '/api/*traverse', factory=APIRoot)
 
 def config_auth_policy(config, settings):
-    policy = authentication.AuthTktAuthenticationPolicy(settings['auth_secret'], groupfinder, cookie_name="backend_auth", hashalg="sha512", timeout = 20, reissue_time=2)
+    policy = authentication.AuthTktAuthenticationPolicy(
+            settings['auth_secret'], 
+            groupfinder, 
+            cookie_name="backend_auth", 
+            hashalg="sha512", 
+            timeout = 20, 
+            reissue_time=2
+            )
     config.set_authentication_policy(policy)
     config.set_authorization_policy(authorization.ACLAuthorizationPolicy())
     config.set_default_permission('view')
@@ -74,7 +81,7 @@ def config_auth_policy(config, settings):
 def add_cors_headers_response_callback(event):
     def cors_headers(request, response):
         response.headers.update({
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': '*' if request.method=='OPTIONS' else request.headers.get('Origin'),
         'Access-Control-Allow-Methods': 'POST,GET,DELETE,PUT,OPTIONS',
         'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept, Authorization',
         'Access-Control-Allow-Credentials': 'true',
