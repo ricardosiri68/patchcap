@@ -81,7 +81,7 @@ def config_auth_policy(config, settings):
 def add_cors_headers_response_callback(event):
     def cors_headers(request, response):
         response.headers.update({
-        'Access-Control-Allow-Origin': '*' if request.method=='OPTIONS' else request.headers.get('Origin'),
+        'Access-Control-Allow-Origin': '*' if request.method=='OPTIONS' or not 'Host' in request.headers else request.headers.get('Host'),
         'Access-Control-Allow-Methods': 'POST,GET,DELETE,PUT,OPTIONS',
         'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept, Authorization',
         'Access-Control-Allow-Credentials': 'true',
