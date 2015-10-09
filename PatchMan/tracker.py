@@ -36,20 +36,22 @@ class Tracker(object):
             for t in reversed(self.tracks):
                 if b in t:
                     t2b[b].append(t)
+
+
             tts = t2b[b]
             if len(tts)==0:
                 untracked.append(b)
             elif len(tts)==1:
-                tts[0].combine(b, img)
+                tts[0].append(b, img)
             else:
                 for t in tts:
-                    t.group(b, img)
+                    t.from_group(b, img)
 
         for b in untracked:
             assigned = False
             for t in reversed(self.tracks):
                 if t.contains(b):
-                    t.combine(b, img)
+                    t.append(b, img)
                     assigned = True
                     break
             if not assigned:
@@ -61,7 +63,7 @@ class Tracker(object):
 
         self.tracks[:] = [x for x in self.tracks if not x.is_deleted()]
         for tt in self.tracks:
-            if tt.active():
+            if tt.active() or tt.id==8:
                 logger.debug(tt)
         logger.debug("-----------------------------")
 
@@ -70,7 +72,8 @@ class Tracker(object):
         for t in [tr for tr in self.tracks if tr.active()]:
             b = t.blob()
             x, y, w, h = b.bbox
-
+            if t.id==15 or t.id==16:
+                cv2.imwrite(str(t.id)+'-'+str(b.id)+'.png', b.img)
             cv2.circle(img, b.cxy(),4, t.color, thickness=4, lineType=8, shift=0)
             cv2.circle(img, t.cxy(),8, t.color, thickness=2, lineType=8, shift=0)
             cv2.rectangle(img, (self.roi[0], self.roi[1]), (self.roi[0]+self.roi[2],self.roi[1]+self.roi[3]), (255,255,255), thickness=6)

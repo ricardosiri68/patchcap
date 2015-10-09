@@ -1,27 +1,56 @@
 import cv2
 import numpy as np
-import logging 
+import logging
 logger = logging.getLogger(__name__)
 
 class Blob(object):
     id = 0
-    def __init__(self, ts, bbox, cxy, img, kp, desc):
+
+    @classmethod
+    def create(cls, ts, bbox, cxy, img):
+        blob = cls(ts, bbox, cxy, img)
+        if blob.desc is None:
+            return None
+        return blob
+
+    def __init__(self, ts, bbox, cxy, img):
         self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING, True)
         self.img = img
         self.ts = ts
-        self.kp = kp
         self.centroid = np.asarray(cxy, np.float32).reshape(2,1)
-        self.desc = desc
         self.bbox  = bbox
         Blob.id += 1
         self.id = Blob.id
+        self.detector = cv2.ORB_create()
+        self.kp, self.desc = self.detector.detectAndCompute(img, None)
 
 
-    def __eq__(self, o):
-        min_matches =  30
-        matches = self.matcher.match(o.desc, trainDescriptors = self.desc)
-        count = sum(1 for m in matches if m.distance < 50)
-        return count >= min_matches
+    def match(self, blob):
+        kp, desc = self.detector.detectAndCompute(blob.img, None)
+        matches = self.matcher.match(desc, trainDescriptors = self.desc)
+        cnt = [kp[m.queryIdx].pt for m in matches if m.distance < 16]
+        if len(cnt)<5:
+            logger.warn('No match')
+            return [], []
+        roi = list(cv2.boundingRect(np.asarray(cnt,dtype=int)))
+        matched = blob.img[roi[1]:roi[1]+roi[3], roi[0]:roi[0]+roi[2]]
+        roi[0] += blob.bbox[0]
+        roi[1] += blob.bbox[1]
+
+#        outImg = blob.img
+#        outImg = cv2.drawMatches(blob.img, kp, self.img, self.kp, matches[:5], outImg )
+#        cv2.imshow('matches',
+#                np.hstack([
+#                    cv2.resize(self.img,(200,200)),
+#                    cv2.resize(blob.img,(200,200)),
+#                    cv2.resize(matched,(200,200))
+#                ])
+#            )
+#        cv2.imshow('match', outImg)
+#        cv2.imwrite('match-'+str(blob.id)+'.png', outImg)
+        
+        return roi, matched
+
 
     '''
     return true  if blob is fully contained inside roi
@@ -37,22 +66,22 @@ class Blob(object):
     def width(self):
         return self.bbox[2]
 
+    def __eq__(self, o):
+        min_matches =  30
+        try:
+            matches = self.matcher.match(o.desc, trainDescriptors = self.desc)
+            count = sum(1 for m in matches if m.distance < 50)
+        except:
+            print o.desc
+            print self.desc
+            count = 0
+        return count >= min_matches
+
     def __hash__(self):
         return (self.id).__hash__()
 
     def __repr__(self):
         return '<Blob> id:%s %s.%s'%(self.id, self.bbox, self.cxy())
-
-    def correct(self, bb, centroid):
-        self.centroid = centroid
-        c = self.cxy()
-        x = c[0] - bb[2] / 2
-        if x<0:
-            x = 0 
-        y = c[1] - bb[3] / 2 
-        if y<0:
-            y = 0 
-        self.bbox = (x,y, bb[2], bb[3])
 
 
 class BlobExtractor(object):
@@ -64,7 +93,6 @@ class BlobExtractor(object):
         self.min_area = min_area
         self.min_width = min_width
         self.min_height = min_height
-        self.detector = cv2.ORB_create()
         
 
     def blobs(self, img, ts):
@@ -85,14 +113,13 @@ class BlobExtractor(object):
                 (self.min_height and h < self.min_height):
                 continue
             roi = img[y:y+h, x:x+w]
-            kp, desc = self.detector.detectAndCompute(roi, None)
-            if desc is None:
-                continue
             M = cv2.moments(c)
             cx = int(M['m10']/M['m00'])
             cy = int(M['m01']/M['m00'])
-            blob = Blob(ts, (x,y,w,h),(cx, cy), roi, kp, desc)
-            blbs.append(blob)
+            blob = Blob.create(ts, (x,y,w,h),(cx, cy), roi)
+            if blob:
+                blbs.append(blob)
+
         return blbs
 
 

@@ -6,7 +6,7 @@ import random
 from scipy.spatial import distance
 from transitions import Machine
 import copy
-
+import logging
 
 '''
 hint for transitions:
@@ -21,6 +21,7 @@ transitions = [
 ]    
 '''
 #self.add_transition('enter','entering', 'normal')
+logger = logging.getLogger(__name__)
 
 class BlobTracker(Machine):
     id = 1
@@ -46,6 +47,9 @@ class BlobTracker(Machine):
         return self.is_normal() or self.is_entering() or self.is_leaving()
 
     def add(self, blob):
+        if self.id == 10:
+            print self.ts, blob.ts
+
         self._addblob(blob)
         self.kalman.correct(blob.centroid)
 
@@ -86,24 +90,36 @@ class BlobTracker(Machine):
                 self.to_deleted()
 
 
-    def group(self, blob, img):
-        b = copy.copy(blob)
+    def from_group(self, blob, frame):
         last = self.bloblist[self.lastb]
-        cx = self.prediction[:2]
-        print self.id, cx
-        print 'box antes', b.bbox
-        b.correct(last.bbox, cx)
-        print 'box desp', b.bbox
-        self.combine(b, img)
+        #roi, img = last.match(blob)
+
+        #if self.id==10:
+        #    cv2.imshow('blob', blob.img)
+
+        
+        roi = list(last.bbox)
+        img = last.img
+        dx = self.prediction[2]
+        dy = self.prediction[3]
+        roi[0] += dx
+        roi[1] += dy
+        
+        if len(img):
+            b = Blob.create(blob.ts, roi, self.prediction[:2], img)
+            if b:
+                self.append(b, frame)
+            else:
+                print 'errro'
 
 
-
-    def combine(self, blob, img):
+    def append(self, blob, img):
         self.ts = blob.ts
         b = self.blob()
         if not b:
             self.add(blob)
             return
+
         bb = list(b.bbox)
         r = blob.bbox
         if r[0]<bb[0]:
@@ -115,17 +131,21 @@ class BlobTracker(Machine):
         if r[1]+r[3] > bb[1]+bb[3]:
             bb[3] = r[1]+bb[3]-bb[1]
 
-        roi = img[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2]]
-        kp, desc = self.tracker.be.detector.detectAndCompute(roi, None)
         cx = bb[0] + bb[2]/2
         cy = bb[1] + bb[3]/2
-        self.bloblist[self.lastb] = Blob(self.lastb, tuple(bb),(cx, cy), roi, kp, desc)
-
+        roi = img[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2]]
+        try:
+            b = Blob.create(blob.ts, tuple(bb), (cx, cy), roi)
+            if b:
+                self.bloblist[self.lastb] = b
+        except:
+            print roi.shape
 
     def __contains__(self, b):
         last = self.bloblist[self.lastb]
         cx = self.prediction[:2]
-        return (b == last) or (distance.euclidean(b.centroid, cx)<50)
+        d = distance.euclidean(b.centroid, cx)
+        return b == last and (d<50)
 
     def contains(self, b):
         last = self.blob()
