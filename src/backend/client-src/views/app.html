@@ -1,0 +1,17 @@
+<div class="row">
+  <div class="large-12 columns">
+    <h4>{{APP_NAME}}</h4>
+    <ul>
+      <li><a ui-sref="app">app</a></li>
+      <li ng-hide="user.id"><a ui-sref="login">login</a></li>
+      <li ng-show="user.id"><a ui-sref="logout">logout</a></li>
+    </ul>
+    
+  </div>
+</div>
+
+<div class="row">
+  <div class="large-12 columns">
+    <div ui-view="">child state stuff goes here</div>
+  </div>
+</div>

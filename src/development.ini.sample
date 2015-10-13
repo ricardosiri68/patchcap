@@ -1,0 +1,64 @@
+[app:main]
+use = egg:backend
+secrets = %(here)s/secret_settings.ini
+sqlalchemy.url = sqlite:///%(here)s/db.sqlite
+# sqlalchemy.echo = true
+pyramid.reload_templates = true
+pyramid.debug_authorization = false
+pyramid.debug_notfound = false
+pyramid.debug_routematch = false
+pyramid.default_locale_name = en
+auth_secret = supersecretsecret
+
+mail_sender = me@example.com
+
+#marrow_mailer
+
+mail.transport.use = smtp
+mail.transport.host = smtp.gmail.com
+mail.transport.port = 465
+mail.transport.tls = ssl
+mail.transport.debug.on = true
+
+
+
+###
+# wsgi server configuration
+###
+
+[server:main]
+use = egg:waitress#main
+host = 0.0.0.0
+port = 6543
+
+###
+# logging configuration
+# http://docs.pylonsproject.org/projects/pyramid/en/1.5-branch/narr/logging.html
+###
+
+[loggers]
+keys = root, backend
+
+[handlers]
+keys = console
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = INFO
+handlers = console
+
+[logger_backend]
+level = DEBUG
+handlers =
+qualname = backend
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(asctime)s %(levelname)-5.5s [%(name)s][%(threadName)s] %(message)s

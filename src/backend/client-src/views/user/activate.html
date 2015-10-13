@@ -1,0 +1,18 @@
+<div class="row">
+  <div class="large-12 columns">
+    <label>email: <input ng-model="form.email" name="email" type="text" value=""/></label>
+    <span class="error" ng-show="errors.email">{{errors.email}}</span>
+  </div>
+</div>
+<div class="row">
+  <div class="large-12 columns">
+    <label>password: <input ng-model="form.password" name="password" type="password" value=""/></label>
+    <span class="error" ng-show="errors.password">{{errors.password}}</span>
+  </div>
+</div>
+<div class="row">
+  <div class="large-6 columns">
+    <button ng-click="doActivate()">Activate</button>
+  </div>
+</div>
+

@@ -1,0 +1,27 @@
+<div class="row">
+  <div class="large-12 columns">
+    <label>email: <input ng-model="form.login_id" name="login_id" type="text" value=""/></label>
+    <span class="error" ng-show="errors.login_id">{{errors.login_id}}</span>
+  </div>
+</div>
+<div class="row">
+  <div class="large-12 columns">
+    <label>password: <input ng-model="form.password" name="password" type="password" value=""/></label>
+    <span class="error" ng-show="errors.password">{{errors.password}}</span>
+  </div>
+</div>
+<div class="row">
+  <div class="large-6 columns">
+    <button ng-click="doLogin()">Login</button>
+  </div>
+  <div class="large-6 columns">
+    <ul>
+      <li>
+	<a ui-sref="register">Register</a>
+      </li>
+      <li>
+	<a ui-sref="forgot">Forgot Password</a>
+      </li>
+    </ul>
+  </div>
+</div>
