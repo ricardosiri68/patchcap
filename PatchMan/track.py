@@ -145,7 +145,7 @@ class BlobTracker(Machine):
         last = self.bloblist[self.lastb]
         cx = self.prediction[:2]
         d = distance.euclidean(b.centroid, cx)
-        return b == last and (d<50)
+        return (b == last) or (d<50)
 
     def contains(self, b):
         last = self.blob()
