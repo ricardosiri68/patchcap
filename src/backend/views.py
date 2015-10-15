@@ -6,7 +6,7 @@ from . import schemas
 import colander
 from pyramid.httpexceptions import exception_response
 from .mailers import send_email
-from models import Device, User
+from models import Device, User, Profile
 
 @view_config(route_name="home", renderer="home.html")
 def home_view(request):
@@ -22,6 +22,14 @@ class RestView(object):
     def options_view(self):
         return Response(status_int=200) 
 
+    def _delete(self):
+        if self.context is None:
+            raise HTTPNotFound()
+
+        self.request.db.delete(self.context)
+        return Response(
+            status='202 Accepted',
+            content_type='application/json; charset=UTF-8')
 
 
 class DeviceView(RestView):
@@ -81,14 +89,7 @@ class DeviceView(RestView):
 
     @view_config(request_method='DELETE', context=Device)
     def delete(self):
-        if self.context is None:
-            raise HTTPNotFound()
-
-        self.request.db.delete(self.context)
-        return Response(
-            status='202 Accepted',
-            content_type='application/json; charset=UTF-8')
-
+        return self._delete()
 
 
 class UserView(RestView):
@@ -116,11 +117,12 @@ class UserView(RestView):
         u = self.context
         if u is None:
             raise HTTPNotFound()
-        return schemas.UserSchema.serialize(u.__dict__)
+        return schemas.UserSchema.serialize(schemas.UserSchema.dictify(u))
 
 
     @view_config(request_method='PUT', context=User)
     def update(self):
+        profiles = resource.ProfileContainer(self.request)
         user = self.context
         if user is None:
             raise HTTPNotFound()
@@ -129,8 +131,13 @@ class UserView(RestView):
         user.name = data['name']
         user.email = data['email']
         user.username = data['username']
-        user.password = data['password']
-            
+        if data['password']:
+            user.password = data['password']
+        
+        user.profiles = []
+        for p in data['profiles']:
+            user.profiles.append(profiles[p['id']])
+
         self.request.db.add(user)
 
         return Response(
@@ -140,13 +147,9 @@ class UserView(RestView):
 
     @view_config(request_method='DELETE', context=User)
     def delete(self):
-        if self.context is None or self.context.id==1:
-            raise HTTPNotFound()
-        
-        self.request.db.delete(self.context)
-        return Response(
-            status='202 Accepted',
-            content_type='application/json; charset=UTF-8')
+        if self.context.id!=1:
+            return self._delete()
+        raise HTTPNotFound()
 
     @view_config(name="login", request_method="POST", permission=security.NO_PERMISSION_REQUIRED)
     def login_view(self):
@@ -180,6 +183,53 @@ class UserView(RestView):
         user = context.do_reset(**data)
         return dict(email=user.email, id=user.id)
 
+class ProfileView(RestView):
+    @view_config(request_method='POST', context = resource.ProfileContainer, permission="add")
+    def create(self):
+        data = schemas.ProfileSchema.deserialize(self.request.json_body)
+        r = self.context.create(**data)
+        return Response(
+            status='201 Created',
+            content_type='application/json; charset=UTF-8')
+
+    @view_config(request_method='GET', context = resource.ProfileContainer)
+    def list(self):
+        r = self.context.list()
+        if r is None:
+            raise HTTPNotFound()
+        else:
+            profiles = []
+            for p in r:
+                profiles.append(schemas.ProfileSchema.serialize(p.__dict__))
+            return profiles
+
+    @view_config(request_method='GET', context=Profile)
+    def read(self):
+        r = self.context
+        if r is None:
+            raise HTTPNotFound()
+        else:
+            return schemas.ProfileSchema.serialize(r.__dict__)
+
+
+    @view_config(request_method='PUT', context=Profile)
+    def update(self):
+        p = self.context
+        if p is None:
+            raise HTTPNotFound()
+        else:
+            data = schemas.DeviceSchema.deserialize(self.request.json_body)
+            p.name = data['name']
+            self.request.db.add(p)
+
+        return Response(
+            status='202 Accepted',
+            content_type='application/json; charset=UTF-8')
+
+
+    @view_config(request_method='DELETE', context=Profile)
+    def delete(self):
+        return self._delete()
 
 
 @view_config(context=colander.Invalid, renderer="json",permission=security.NO_PERMISSION_REQUIRED)
