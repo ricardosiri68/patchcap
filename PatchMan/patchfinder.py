@@ -5,15 +5,12 @@ import transaction
 from os import path
 from datetime import datetime
 from time import sleep
-from pyramid.paster import bootstrap
-import patchman
-from patchman.models import Plate, Device, initialize_sql
 from device import VirtualDevice
 from log import logger
 from platefinder import PlateFinder
 from gstoutputstream import GstOutputStream
 from stats import PatchStat
-
+from client import Backend
 
 log = logger()
 
@@ -62,10 +59,10 @@ class Finder(object):
         self.bus = self.pipeline.get_bus()
         self.bus.add_signal_watch()
         self.bus.connect("message", self.on_message)
-        self.src = VirtualDevice(dev.instream)
+        self.src = VirtualDevice(dev['instream'])
         self.vc1 = Gst.ElementFactory.make('videoconvert', None)
         self.video = PlateFinder(dev)
-        self.sink = GstOutputStream(dev.outstream, split=False)
+        self.sink = GstOutputStream(dev['outstream'], split=False)
 
         self.pipeline.add(self.src)
         self.pipeline.add(self.vc1)
@@ -76,15 +73,15 @@ class Finder(object):
         self.video.link(self.sink)
 
     def start(self):
-        log.info("starting %s"%self.dev.name)
+        log.info("starting %s [%s]"%(self.dev['name'], self.dev['instream']))
         self.pipeline.set_state(Gst.State.PLAYING)
 
     def stop(self):
-        log.info("stopping %s"%self.dev.name)
+        log.info("stopping %s"%self.dev['name'])
         self.pipeline.set_state(gst.STATE_NULL)
 
     def restart(self):
-	log.info('restarting %s'%self.dev.name)
+	log.info('restarting %s'%self.dev['name'])
         self.stop()
         self.start()
 
@@ -95,22 +92,22 @@ class Finder(object):
             error = str(err)
             if debug:
                 error += " (%s)"%debug
-                log.error("monitor '%s' received error; %s"%(self.dev, error))
-	    sleep(10)
-	    self.restart()
+                log.error("monitor '%s' received error; %s"%(self.dev['name'], error))
+	        sleep(10)
+	        self.restart()
    	    
         elif t == Gst.MessageType.EOS:
             log.warn('EOS')
-	    sleep(10)
-	    self.restart()
+            sleep(10)
+            self.restart()
 	    
         elif t == Gst.MessageType.STATE_CHANGED:
             old, state, pending = message.parse_state_changed()
             if state == Gst.State.NULL:
-                log.info("monitor '%s' main pipeline is stopped"% self.dev.name)
+                log.info("monitor '%s' main pipeline is stopped"% self.dev['name'])
             elif state == Gst.State.PLAYING:
                 if message.src == self.pipeline:
-                    log.info("'%s' cambio de %s a %s."%(self.dev.name, self.get_state(old), self.get_state(state))) 
+                    log.info("'%s' cambio de %s a %s."%(self.dev['name'], self.get_state(old), self.get_state(state))) 
         elif t == Gst.MessageType.APPLICATION and message.has_name('video/x-raw'):
             s = message.get_structure()
             self.caps = s.to_string()
@@ -124,9 +121,9 @@ class Finder(object):
             error = str(e)
             if d:
                 error += " (%s)"%d
-                log.warn("monitor '%s' received warning; %s"%(self.dev, error))
-	    sleep(10)
-	    self.restart()
+                log.warn("monitor '%s' received warning; %s"%(self.dev['name'], error))
+	        sleep(10)
+	        self.restart()
 
     
     def stop(self):
@@ -151,42 +148,40 @@ class Finder(object):
 class PatchFinder(object):
 
     def __init__(self, options, pidfile = None):
-        self.env = None
         self.server = None
         self.mainloop = GObject.MainLoop()
         self.finders = []
         self.options = options
+        self.backend = Backend()
 
         if self.options.debug:
             log.debug(self.options)
 
     def run(self):
         self.server = StreamServer()
-        self.env = bootstrap(path.dirname(path.realpath(__file__))+'/condor.ini')
-        initialize_sql(self.env['registry'].settings)
         self.finders = self.setup_monitors()
         try:
             self.mainloop.run()
         except KeyboardInterrupt:
             log.warning("Cancelando...")
         finally:
-	    self.quit()
+	        self.quit()
 
     def setup_monitors(self):
         finders = []
         if self.options.all:
-            devs = Device.enabled()
+            devs = self.backend.devices()
         else:
             devs = []
             for o in self.options.devices:
-                devs.append(Device.findBy(int(o)))
+                devs.append(self.backend.devices(int(o)))
             
         log.warn('configurando %s dispositivos',len(devs))
         for d in devs:
             f = Finder(d)
             f.start()
             finders.append(f)
-            self.server.add(d.outstream)
+            self.server.add(d['outstream'])
         return finders
 
 
@@ -214,17 +209,11 @@ class PatchFinder(object):
 
 
     def quit(self):
-	log.debug('quitting process')
+        log.debug('quitting process')
         for m in self.finders:
             m.stop()
         if self.mainloop and self.mainloop.is_running():
            self.mainloop.quit()
-
-    def __del__(self):
-        self.src = None
-        if self.env:
-            self.env['closer']()
-            del self.env
 
 
 

@@ -73,9 +73,9 @@ class PlateFinder(GstVideo.VideoFilter):
         self.procs = multiprocessing.cpu_count() 
         self.src = multiprocessing.Queue()
         self.dst = multiprocessing.Queue()
-        self.log = ImageLogger(dev.id)
-        if dev.roi is not None:
-            self.roi = map(int, dev.roi.split(","))
+        self.log = ImageLogger(dev['id'])
+        if dev['roi'] is not None and dev['roi'] != "None":
+            self.roi = map(int, dev['roi'].split(","))
         else:
             self.roi = None
         self.fps = 6
