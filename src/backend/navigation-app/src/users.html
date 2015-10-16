@@ -1,0 +1,52 @@
+<template>
+  <require from="blur-image"></require>
+
+  <section class="au-animate">
+      <h2>${heading}</h2>       
+      <button class="btn btn-default" click.delegate="newUser()"> Agregar Usuario </button>
+      
+      <div class="row au-stagger">
+        <div class="col-sm-6 col-md-3 card-container au-animate" repeat.for="user of users">
+            <div class="card">
+                <canvas class="header-bg" width="250" height="70" blur-image.bind="image"></canvas>
+                <div class="avatar">
+                    <img src="images.jpeg" crossorigin ref="image"/>
+                </div>
+                <div class="content">
+                    <p class="name">${user.name}</p>                    
+                    <p class="id">${user.id}</p>
+                    
+                    <button class="btn btn-default" click.delegate="$parent.modify($index)"> Modificar </button>
+                    <button class="btn btn-default" click.delegate="$parent.del($index)"> Borrar </button>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      <modal showing.bind="showing">
+        <modal-header title= "${headingModal}" close.call="closeModal()"></modal-header>
+        <modal-body>
+            <div if.bind="showingNewUser" class="form-group">
+              <label for="fn">User Name</label>
+              <input type="text" value.bind="user.username" class="form-control" id="fn" placeholder="User Name">
+            </div>
+            <div class="form-group">
+              <label for="ln">Full Name</label>
+              <input type="text" value.bind="user.name" class="form-control" id="ln" placeholder="Full Name">
+            </div>
+            <div if.bind="showingNewUser" class="form-group">
+              <label  for="ln">Password</label>
+              <input  type="password" value.bind="user.password" class="form-control" id="ln" placeholder="Password">
+            </div>
+            <div class="form-group">
+              <label for="ln">Email</label>
+              <input type="text" value.bind="user.email" class="form-control" id="ln" placeholder="Email">
+            </div>      
+        </modal-body>
+        <modal-footer>
+          <button class="btn" click.trigger="submit()">Save</button>
+          <au-button text="Cancel" click.call="closeModal()"></au-button>
+        </modal-footer>
+      </modal>
+  </section>  
+</template>

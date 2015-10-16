@@ -1,0 +1,52 @@
+<template>
+  <require from="blur-image"></require>
+
+  <section class="au-animate">
+      <h2>${heading}</h2>       
+      <button class="btn btn-default" click.delegate="newDevice()"> Agregar Dispositivo </button>
+      
+      <div class="row au-stagger">
+        <div class="col-sm-6 col-md-3 card-container au-animate" repeat.for="device of devices">
+            <div class="card">
+                <canvas class="header-bg" width="250" height="70" blur-image.bind="image"></canvas>
+                <div class="avatar">
+                    <img src="images.jpeg" crossorigin ref="image"/>
+                </div>
+                <div class="content">
+                    <p class="name">${device.name}</p>                    
+                    <p class="id">${device.ip}</p>
+                    
+                    <button class="btn btn-default" click.delegate="$parent.modify($index)"> Modificar </button>
+                    <button class="btn btn-default" click.delegate="$parent.del($index)"> Borrar </button>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      <modal showing.bind="showing">
+        <modal-header title= "${headingModal}" close.call="closeModal()"></modal-header>
+        <modal-body>
+            <div if.bind="showingNewDevice" class="form-group">
+              <label for="fn">Name</label>
+              <input type="text" value.bind="device.name" class="form-control" id="fn" placeholder="User Name">
+            </div>
+            <div class="form-group">
+              <label for="ln">Name</label>
+              <input type="text" value.bind="device.name" class="form-control" id="ln" placeholder="Full Name">
+            </div>
+            <div if.bind="showingNewDevice" class="form-group">
+              <label  for="ln">IP</label>
+              <input  type="password" value.bind="device.ip" class="form-control" id="ln" placeholder="Password">
+            </div>
+            <div class="form-group">
+              <label for="ln">IP</label>
+              <input type="text" value.bind="device.ip" class="form-control" id="ln" placeholder="Email">
+            </div>      
+        </modal-body>
+        <modal-footer>
+          <button class="btn" click.trigger="submit()">Save</button>
+          <au-button text="Cancel" click.call="closeModal()"></au-button>
+        </modal-footer>
+      </modal>
+  </section>  
+</template>
