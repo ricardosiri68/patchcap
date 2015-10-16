@@ -68,9 +68,9 @@ def config_auth_policy(config, settings):
             settings['auth_secret'], 
             groupfinder, 
             cookie_name="backend_auth", 
-            hashalg="sha512", 
-            timeout = 20, 
-            reissue_time=2
+            hashalg="sha512" #, 
+            # timeout = 20, 
+            #reissue_time=2
             )
     config.set_authentication_policy(policy)
     config.set_authorization_policy(authorization.ACLAuthorizationPolicy())

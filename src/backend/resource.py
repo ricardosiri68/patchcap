@@ -116,10 +116,16 @@ class UserContainer(BaseQuery):
                   (self.CMD_REGISTER, command_id, email)
             raise ValueError(msg)
 
-    def create(self, username, name, email, password):
-        d = self.__model__(name=name, username=username, email=email, password=password)
-        self._request.db.add(d)
-        return d
+    def create(self, username, name, email, password, profiles):
+        profiles = ProfileContainer()
+        u = self.__model__(name=name, username=username, email=email, password=password)
+        u.profiles = []
+        for p in profiles:
+            u.profiles.append(profiles[p['id']])
+
+
+        self._request.db.add(u)
+        return u
 
 
     def request_reset(self, email):
@@ -182,6 +188,16 @@ class CommandContainer(BaseQuery):
         return result
 
 
+class ProfileContainer(BaseQuery):
+    __model__ = m.Profile
+    __name__ = "profiles"
+
+    def create(self, name):
+        p = self.__model__()
+        p.name = name
+        self._request.db.add(p)
+        return p
+
 
 class DeviceContainer(BaseQuery):
     __model__ = m.Device
@@ -199,4 +215,5 @@ class APIRoot(BaseResource):
         request.api_root = self
         self._create_child(DeviceContainer)
         self._create_child(UserContainer)
+        self._create_child(ProfileContainer)
         self._create_child(CommandContainer)
