@@ -3,8 +3,7 @@ import transaction
 import sys, getopt
 from os import path
 from pyramid.paster import bootstrap
-from patchman.models import *
-from patchman.models import Plate, Device, initialize_sql
+import client
 
 def main(argv):
     try:
@@ -13,18 +12,25 @@ def main(argv):
                                 ['help', "add-device=", "list-devices", "delete-device=", "add-plate=",'list-plates','delete-plate='])
         if not opts:
             raise getopt.GetoptError("Se esperaba un parametro")
-        env = bootstrap(path.dirname(path.realpath(__file__))+'/condor.ini')
-        initialize_sql(env['registry'].settings)
+
+        backend = client.Backend()
+
         for opt, arg in opts:
             if opt in ('-a','--add-device'):
                 devargs = arg.split(',')
-                dev = Device(devargs[0],devargs[1],devargs[2])
-                existing = DBSession.query(Device).filter_by(instream=dev.instream).count()
-                if not existing:
-                    DBSession.add(dev)
-                    transaction.commit()
-                else:
-                    print("Ya existe ese dispositivo en la base")
+                dev = {'name': devargs[0], 'instream': devargs[1], 'outstream': devargs[2]}
+                r = backend.add_device(dev)
+                if r.status_code !=201:
+                    print ("Error", r.text)
+
+            elif opt in ('-l','--list-devices'):
+                devices = backend.devices()
+                for d in devices:
+                    print(d)
+
+            elif opt in ('-d','--delete-device'):
+                backend.delete_device(arg)
+
             elif opt in ('-A','--add-plate'):
                 plate = Plate()
                 plate.code = arg
@@ -34,19 +40,17 @@ def main(argv):
                     transaction.commit()
                 else:
                     print("Ya existe esa placa en la base")
-            elif opt in ('-l','--list-devices'):
-                devices = DBSession.query(Device).all()
-                for d in devices:
-                    print(d)
-            elif opt in ('-D','--delete-plate'):
-                DBSession.query(Plate).filter_by(code=arg).delete()
+
+            elif opt in ('-d','--delete-plate'):
+                dbsession.query(plate).filter_by(code=arg).delete()
+
             elif opt in ('-L','--list-plates'):
                 plates = DBSession.query(Plate).all()
                 for p in plates:
                     print(p)
             else:
-
                 print ('Sorry, not implemented')
+
     except getopt.GetoptError:
         print(usage())
         sys.exit(2)
@@ -56,7 +60,7 @@ def main(argv):
 def usage():
     msg = sys.argv[0]
     msg += "\n\t[-a | --add-device] <name>,<uri>,<rtsp mount>\n"
-    msg += "\t[-d | --delete-device] <uri> \n"
+    msg += "\t[-d | --delete-device] id \n"
     msg += "\t[-l | --list-devices]\n"
     msg += "\t[-A | --add-plate] <XXXNNN>\n"
     msg += "\t[-D | --delete-plate] <XXXNNN>\n"
