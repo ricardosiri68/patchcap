@@ -26,9 +26,7 @@ def analyze(src, dst, log, roi):
     while True:
         img, ts = src.get()
         if img is None: return
-        if roi is None:
-            roi = [0,0,img.shape[1], img.shape[0]]
-        try: 
+        try:
             plate, r = detector.find2(img[roi[1]:roi[3], roi[0]:roi[2]])
             if r is not None:
                 pr = [r[0]+roi[0], r[1]+roi[1], r[2], r[3]]
@@ -70,7 +68,7 @@ class PlateFinder(GstVideo.VideoFilter):
     def __init__(self, dev = None):
         GstVideo.VideoFilter.__init__(self)
         manager = Manager()
-        self.procs = multiprocessing.cpu_count() 
+        self.procs = multiprocessing.cpu_count()
         self.src = multiprocessing.Queue()
         self.dst = multiprocessing.Queue()
         self.log = ImageLogger(dev['id'])
@@ -100,6 +98,9 @@ class PlateFinder(GstVideo.VideoFilter):
         self.h = in_info.height
         self.w = in_info.width
         self.skip = in_info.fps_d / self.fps
+
+        if not self.roi:
+            self.roi = [0,0, self.h, self.w]
 
         if in_info.finfo.format == GstVideo.VideoFormat.I420:
             self.gst_to_cv = self.i420_to_cv
@@ -139,13 +140,15 @@ class PlateFinder(GstVideo.VideoFilter):
     def do_transform_frame_ip(self, f):
         img = self.gst_to_cv(f)
         if self.skip>self.skip_count:
-            self.skip_count = self.skip_count + 1
+            self.skip_count += 1
         else:
             self.src.put((img.copy(), time.time()))
             self.skip_count = 0
 
         if not self.dst.empty():
-            (plate, (x,y,w,h), orig_img, ts)  = self.dst.get()
+            plate = self.dst.get()
+            (plate, (x,y,w,h), orig_img, ts)  = plate
+            self.post_message(Gst.Message.new_application(self, plate))
             self.last = orig_img[y:y+h,x:x+w]
             self.lastplate = plate
             self.lastt = 50
@@ -156,7 +159,7 @@ class PlateFinder(GstVideo.VideoFilter):
             img[self.h-rh:self.h,self.w-rw:self.w] = self.last
             draw_str(img, (20, 20), self.lastplate)
             f.buffer.fill(0, self.cv_to_gst(img).tobytes())
-            self.lastt = self.lastt-1
+            self.lastt -= 1
 
         return Gst.FlowReturn.OK
 
