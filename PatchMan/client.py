@@ -2,9 +2,7 @@ import requests
 from ConfigParser import ConfigParser
 
 
-
-
-class   Backend(object):
+class Backend(object):
 
     def __init__(self):
         config = ConfigParser()
@@ -16,6 +14,13 @@ class   Backend(object):
         login="http://localhost:8080/api/users/login/"
         r = self.client.post(login, json=auth)
         self.url_base ='http://localhost:8080/api/devices'
+
+    def add_device(self, dev):
+        return self.client.post(self.url_base, json=dev)
+
+    def delete_device(self, id):
+        return self.client.delete(self.url_base+'/'+str(id))
+
 
     def devices(self, id = None):
         if id:
