@@ -11,6 +11,8 @@ class LoginSchema(colander.MappingSchema):
 
 DeviceSchema = SQLAlchemySchemaNode(Device,
                               excludes=['updated_on','created_on'],
+                              overrides={'roi':{'missing': None, 'default': None},
+                                         'ip':{'missing': None, 'default': None}},
                               title='Devices')
 
 

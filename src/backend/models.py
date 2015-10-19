@@ -83,7 +83,7 @@ class Device(Base):
     password = Column(String(255), nullable=True, default='admin')
     instream = Column(String(100), nullable=False)
     outstream = Column(String(100), nullable=False, unique=True)
-    roi = Column(String(20), nullable=True, unique=False, default='(0,0,1920,1080)')
+    roi = Column(String(20), nullable=True, unique=False)
     logging = Column(Boolean, nullable=False, default=True)
 
 
