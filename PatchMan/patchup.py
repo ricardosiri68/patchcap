@@ -4,6 +4,7 @@ import sys, getopt
 from os import path
 from pyramid.paster import bootstrap
 import client
+import json
 
 def main(argv):
     try:
@@ -26,7 +27,7 @@ def main(argv):
             elif opt in ('-l','--list-devices'):
                 devices = backend.devices()
                 for d in devices:
-                    print(d)
+                    print(json.dumps(d, sort_keys=True, indent=4, separators=(',',': ' )))
 
             elif opt in ('-d','--delete-device'):
                 backend.delete_device(arg)
