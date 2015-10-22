@@ -10,10 +10,12 @@
             <div class="card">
                 <canvas class="header-bg" width="250" height="70" blur-image.bind="image"></canvas>
                 <div class="avatar">
-                    <img src="images.jpeg" crossorigin ref="image"/>
+                    <img src="camara.jpg" crossorigin ref="image"/>
                 </div>
                 <div class="content">
                     <p class="name">${device.name}</p>                    
+                    <p class="id">${device.instream}</p>
+                    <p class="id">${device.outstream}</p>
                     <p class="id">${device.ip}</p>
                     
                     <button class="btn btn-default" click.delegate="$parent.modify($index)"> Modificar </button>
@@ -26,21 +28,21 @@
       <modal showing.bind="showing">
         <modal-header title= "${headingModal}" close.call="closeModal()"></modal-header>
         <modal-body>
-            <div if.bind="showingNewDevice" class="form-group">
-              <label for="fn">Name</label>
-              <input type="text" value.bind="device.name" class="form-control" id="fn" placeholder="User Name">
+            <div class="form-group">
+              <label for="fn">Instream</label>
+              <input type="text" value.bind="device.instream" class="form-control" id="fn" placeholder="Instream">
             </div>
             <div class="form-group">
-              <label for="ln">Name</label>
-              <input type="text" value.bind="device.name" class="form-control" id="ln" placeholder="Full Name">
-            </div>
-            <div if.bind="showingNewDevice" class="form-group">
-              <label  for="ln">IP</label>
-              <input  type="password" value.bind="device.ip" class="form-control" id="ln" placeholder="Password">
+              <label for="ln">Outstream</label>
+              <input type="text" value.bind="device.outstream" class="form-control" id="ln" placeholder="Outstream">
             </div>
             <div class="form-group">
               <label for="ln">IP</label>
-              <input type="text" value.bind="device.ip" class="form-control" id="ln" placeholder="Email">
+              <input type="text" value.bind="device.ip" class="form-control" id="ln" placeholder="IP">
+            </div>
+            <div class="form-group">
+              <label for="ln">Name</label>
+              <input type="text" value.bind="device.name" class="form-control" id="ln" placeholder="Name">
             </div>      
         </modal-body>
         <modal-footer>

@@ -18,7 +18,8 @@ export class Logout{
 	heading = 'Login';
 
 	activate(){
-		this.http.fetch('users/logout' , { method: "POST"}) //, credentials: 'include'
+	  if(confirm('Desea Salir. Usted esta seguro? ')){
+		this.http.fetch('users/logout' , { method: "POST", credentials: 'include'}) 
 			.then(  
 				function(response) {  
         			if (response.status !== 200) {  
@@ -34,10 +35,9 @@ export class Logout{
 	        .catch(function(err) {  
               		console.log('Fetch Error :-S', err);                
         	});
-	    $('#userName').text('Login');
-	    localStorage.removeItem("auth_token");
-
-
-	    window.location.href='#';
+	    $('#userName').text('Login').attr("href", "#/login");
+	    localStorage.removeItem("auth_token");	    
+	  }
+	  window.location.href='#';
 	}
 }

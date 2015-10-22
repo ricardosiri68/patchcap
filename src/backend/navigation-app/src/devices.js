@@ -22,22 +22,38 @@ export class Devices{
   }
 
   activate(){
+    this.devices = [];
     return this.http.fetch('devices', {credentials: 'include'})
       .then(response => response.json())
-      .then(devices => this.devices = devices);
+      .then(devices => this.devices = devices)
+      .catch(function(err) {
+              console.log('Fetch Error :-S', err);                
+              if(err.status == 403){
+                localStorage.removeItem("auth_token");  
+                window.location.reload();
+              }
+            });
   }
 
   newDevice(){
     this.device = {};
     this.headingModal= "Agregar Dispositivo";
     this.showingNewDevice = true;
-    this.showing = true;    
+    this.showing = true;        
     this.submit = function () { this.http.fetch('devices', { method: "POST", 
                                                               body: JSON.stringify({ name: this.device.name,
                                                                                       ip: this.device.ip}),
                                                               credentials: 'include'
-                                                            });                  
-                                  window.location.reload();
+                                               })
+                                               .catch(function(err) {
+                                                  console.log('Fetch Error :-S', err);                
+                                                  if(err.status == 403){
+                                                    localStorage.removeItem("auth_token");  
+                                                    window.location.reload();
+                                                  }
+                                                });                                              
+                                  this.activate();
+                                  this.showing = false;
                               }
   } 
 
@@ -45,19 +61,34 @@ export class Devices{
     this.headingModal= "Modificar Dispositivo";
     this.device = this.devices[index];
     this.showingNewDevice = false;
-    this.showing = true;    
+    this.showing = true;        
     this.submit = function () { this.http.fetch('devices/'+this.devices[index].id , 
                                                   { method: "PUT", body: JSON.stringify({ name: this.device.name,
                                                                                           ip: this.device.ip}),
                                                     credentials: 'include'
-                                                  });      
-                                  window.location.reload();
+                                              })
+                                              .catch(function(err) {
+                                                        console.log('Fetch Error :-S', err);                
+                                                        if(err.status == 403){
+                                                          localStorage.removeItem("auth_token");  
+                                                          window.location.reload();
+                                                        }
+                                              });
+                                  this.activate();
+                                  this.showing = false;
                               }
   }
 
   del(index){
-    this.http.fetch('devices/'+this.devices[index].id , {method: "DELETE", credentials: 'include'} );
-    window.location.reload()
+    this.http.fetch('devices/'+this.devices[index].id , {method: "DELETE", credentials: 'include'} )
+                    .catch(function(err) {
+                              console.log('Fetch Error :-S', err);                
+                              if(err.status == 403){
+                                localStorage.removeItem("auth_token");  
+                                window.location.reload();
+                              }
+                    });
+    this.activate();
   } 
 
   closeModal(){   

@@ -41,6 +41,13 @@
             <div class="form-group">
               <label for="ln">Email</label>
               <input type="text" value.bind="user.email" class="form-control" id="ln" placeholder="Email">
+            </div>
+            <div class="form-group">
+              <label for="ln">Perfil</label>
+              <select value.bind="user.profiler" class="form-control" >  
+                  <option></option>
+                  <option repeat.for="profile of profiles" value.bind="profile.id">${profile.name}</option>
+              </select>              
             </div>      
         </modal-body>
         <modal-footer>

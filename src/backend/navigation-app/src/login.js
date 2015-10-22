@@ -34,7 +34,7 @@ export class Login{
 
               	localStorage.setItem("auth_token", "ah12h3");              	
 
-              	/*there.http.fetch('users/me' , { method: "POST"}) //, credentials: 'include'
+              	there.http.fetch('users/me' , { method: "POST" , credentials: 'include'}) 
 				.then(  
 					function(response) {  
             			if (response.status !== 200) {  
@@ -44,15 +44,16 @@ export class Login{
 
 						response.json().then(function(data) {  
         					console.log(data);  
+			           	  	$('#userName').text(data.name).attr("href", "#/logout");;
       				}); 
               	
         	    
 	            })
 	            .catch(function(err) {  
               		console.log('Fetch Error :-S', err);                
-            	});*/
+            	});
 
-           	  	$('#userName').text(there.username);
+
    	          	window.location.href='#';
 
 
@@ -61,5 +62,5 @@ export class Login{
             .catch(function(err) {  
               console.log('Fetch Error :-S', err);                
             });
-	}	
+	}
 }
