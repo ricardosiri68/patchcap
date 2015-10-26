@@ -117,11 +117,11 @@ class UserContainer(BaseQuery):
             raise ValueError(msg)
 
     def create(self, username, name, email, password, profiles):
-        profiles = ProfileContainer()
+        Profiles = ProfileContainer(self._request)
         u = self.__model__(name=name, username=username, email=email, password=password)
         u.profiles = []
         for p in profiles:
-            u.profiles.append(profiles[p['id']])
+            u.profiles.append(Profiles[p['id']])
 
 
         self._request.db.add(u)
