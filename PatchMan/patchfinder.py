@@ -170,7 +170,11 @@ class PatchFinder(object):
     def setup_monitors(self):
         finders = []
         if self.options.all:
-            devs = self.backend.devices()
+	    resp = self.backend.devices()
+	    if not resp.error():
+            	devs = resp.result
+	    else:
+		log.error(resp.result)
         else:
             devs = []
             for o in self.options.devices:

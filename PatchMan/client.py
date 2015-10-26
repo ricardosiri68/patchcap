@@ -1,5 +1,17 @@
 import requests
 from ConfigParser import ConfigParser
+import json
+
+
+class Response(object):
+	def __init__(self, r):
+		self.status = r.status_code
+		if r.status_code<400:
+			self.result  = r.json()
+		else:
+			self.result = r.reason
+	def error(self):
+		return self.status>=400
 
 
 class Backend(object):
@@ -9,11 +21,12 @@ class Backend(object):
         config.read('secret_settings.ini')
         self.user = config.get('backend', 'user')
         self.password = config.get('backend', 'password')
+	self.host = config.get('backend', 'host')
         self.client = requests.Session()
-        auth = {'username': 'hernando', 'password': 'nonsecurepass'}
-        login="http://localhost:8080/api/users/login/"
+        auth = {'username': self.user, 'password': self.password}
+        login= self.host + '/users/login/'
         r = self.client.post(login, json=auth)
-        self.url_base ='http://localhost:8080/api/devices'
+        self.url_base = self.host + '/devices'
 
     def add_device(self, dev):
         return self.client.post(self.url_base, json=dev)
@@ -27,6 +40,5 @@ class Backend(object):
             url = self.url_base+'/'+str(id)
         else:
             url = self.url_base
-        r = self.client.get(url)
-        return r.json()
+        return Response(self.client.get(url))
 

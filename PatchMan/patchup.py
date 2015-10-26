@@ -24,9 +24,12 @@ def main(argv):
                     print ("Error", r.text)
 
             elif opt in ('-l','--list-devices'):
-                devices = backend.devices()
-                for d in devices:
-                    print(d)
+                r = backend.devices()
+		if r.error():
+			print r.result
+		else:
+                	for d in r.result:
+                    		print(d)
 
             elif opt in ('-d','--delete-device'):
                 backend.delete_device(arg)
@@ -66,15 +69,6 @@ def usage():
     msg += "\t[-D | --delete-plate] <XXXNNN>\n"
     msg += "\t[-L | --list-plates] \n"
     print(msg)
-
-
-def init_db():
-    global engine
-    engine = create_engine(dbname, echo=False)
-    Session.remove()
-    Session.configure(bind=engine, autoflush=False, expire_on_commit=False)
-    Base.metadata.drop_all(engine)
-    Base.metadata.create_all(engine)
 
 
 if __name__ == "__main__":
