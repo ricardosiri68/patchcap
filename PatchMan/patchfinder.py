@@ -178,7 +178,11 @@ class PatchFinder(object):
         else:
             devs = []
             for o in self.options.devices:
-                devs.append(self.backend.devices(int(o)))
+		r = self.backend.devices(int(o))
+		if r.error():
+			log.error('getting device {}, reason:{}', o, r.result)
+			continue
+                devs.append(r.result)
             
         log.warn('configurando %s dispositivos',len(devs))
         for d in devs:
