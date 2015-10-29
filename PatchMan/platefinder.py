@@ -148,7 +148,9 @@ class PlateFinder(GstVideo.VideoFilter):
         if not self.dst.empty():
             plate = self.dst.get()
             (plate, (x,y,w,h), orig_img, ts)  = plate
-            self.post_message(Gst.Message.new_application(self, plate))
+	    msg = Gst.Structure.new_empty('detection')
+	    msg.set_value('plate', plate) 
+            self.post_message(Gst.Message.new_application(self, msg))
             self.last = orig_img[y:y+h,x:x+w]
             self.lastplate = plate
             self.lastt = 50

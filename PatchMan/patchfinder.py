@@ -108,6 +108,10 @@ class Finder(object):
             elif state == Gst.State.PLAYING:
                 if message.src == self.pipeline:
                     log.info("'%s' cambio de %s a %s."%(self.dev['name'], self.get_state(old), self.get_state(state))) 
+        elif t == Gst.MessageType.APPLICATION and message.has_name('detection'):
+		msg = message.get_structure()
+		plate = msg.get_structure()
+		log.info('se detecto {}',plate[0])
         elif t == Gst.MessageType.APPLICATION and message.has_name('video/x-raw'):
             s = message.get_structure()
             self.caps = s.to_string()
