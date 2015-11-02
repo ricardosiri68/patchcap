@@ -28,12 +28,12 @@ class ImageLogger(object):
         if not name:
             name = str(uuid.uuid4())
         
-        imgpath = path.join(self.storage, "%s.png" % (name))
+        imgpath = path.join(self.storage, "%s.jpg" % (name))
         if path.isfile(imgpath):
             i = 1
-            imgpath = path.join(self.storage, "%s-%s.png" % (name, i))
+            imgpath = path.join(self.storage, "%s-%s.jpg" % (name, i))
             while path.isfile(imgpath):
                 i += 1
-                imgpath = path.join(self.storage, "%s-%s.png" % (name, i))
+                imgpath = path.join(self.storage, "%s-%s.jpg" % (name, i))
         cv2.imwrite(imgpath,img)
         self.l.release()
