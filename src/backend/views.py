@@ -1,12 +1,17 @@
+import gevent
 from pyramid import security
+from pyramid.httpexceptions import exception_response
 from pyramid.view import view_config, view_defaults
 from pyramid.response import Response
+from socketio import socketio_manage
+from socketio.namespace import BaseNamespace
+from socketio.mixins import BroadcastMixin
 from . import resource
 from . import schemas
 import colander
-from pyramid.httpexceptions import exception_response
 from .mailers import send_email
 from models import Device, User, Profile
+from zope.sqlalchemy import mark_changed
 
 @view_config(route_name="home", renderer="home.html")
 def home_view(request):
@@ -238,4 +243,98 @@ def validation_error_view(exc, request):
     return exc.asdict()
 
 
+@view_config(route_name="socket.io")
+def socketio_service(request):
+    r = socketio_manage(request.environ, {'/devices': DeviceNamespace},
+                    request)
+    return Response(r)
+
+
+class ClientRoomsMixin(BroadcastMixin):
+    def __init__(self, *args, **kwargs):
+        super(ClientRoomsMixin, self).__init__(*args, **kwargs)
+        if 'rooms' not in self.session:
+            self.session['rooms'] = set()
+
+    def join(self, room):
+        self.session['rooms'].add(self._get_room_name(room))
+
+    def leave(self, room):
+        self.session['rooms'].remove(self._get_room_name(room))
+
+    def _get_room_name(self, room):
+        return self.ns_name + '_' + room
+
+    def emit_to_room(self, room, event, *args):
+        pkt = dict(type="event",
+                   name=event,
+                   args=args,
+                   endpoint=self.ns_name)
+        room_name = self._get_room_name(room)
+        for sessid, socket in self.socket.server.sockets.iteritems():
+            if 'rooms' not in socket.session:
+                continue
+            if room_name in socket.session['rooms']:
+                socket.send_packet(pkt)
+
+
+class LogNamespace(BaseNamespace, ClientRoomsMixin):
+
+    _clients = {}
+    _running = False
+
+    def initialize(self):
+        logging.debug('iniciando name. %s', self._running)
+
+    def show_clients(self):
+        for k in self._clients:
+            logging.debug('queda client %s con %s',k, len(self._clients[k]))
+
+    def on_register(self, state):
+        logging.debug(state)
+
+
+    def register(self, user_id):
+        if user_id not in self._clients:
+            self._clients[user_id] = []
+
+        self._clients[user_id].append(id(self))
+        logging.debug('joining client %s to room %s',id(self), user_id)
+        self.join(user_id)
+        self.show_clients()
+        self.session['user_id'] = user_id
+
+
+
+    def recv_connect(self):
+        self.register(client_id)
+    
+        def senddata():
+            user_id = int(self.session['user_id'])
+            lastrefresh = {}
+            db = DBSession()
+            while True:
+                devices = Log.findBy(client_id).devices() if client_id else db.query(Device).all()
+                sens = []
+                for d in devices:
+                    if d.id  not in lastrefresh:
+                        lastrefresh[d.id] = datetime(2010, 1, 1, 0, 0, 0)
+                    if not d.timestamp() or d.timestamp()<=lastrefresh[d.id]:
+                        continue
+                
+                    for s in d.sensors:
+                        sens.append({'n':s.name,'v':d.lastvalue(s),'t':s.sensor_type,'i':s.id})
+                    self.emit_to_room(str(client_id), 'refresh',d.id , {'s':sens,'t':d.lastupdate()})
+                    lastrefresh[d.id] = d.timestamp()
+                transaction.commit()
+                gevent.sleep(1)
+        self.spawn(senddata)
+
+
+    def recv_disconnect(self):
+        client_id = self.session['client_id']
+        self._clients[client_id].remove(id(self))
+        if not self._clients[client_id]:
+            del self._clients[client_id]
+        self.disconnect(silent=True)
 
