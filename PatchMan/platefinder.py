@@ -31,7 +31,6 @@ def analyze(src, dst, log, roi):
             if r is not None:
                 pr = [r[0]+roi[0], r[1]+roi[1], r[2], r[3]]
                 dst.put((plate,pr, img, ts))
-                log.image(img, datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d%H%M%S'))
         except Exception as e:
             logging.debug(roi)
             logging.error(e, exc_info=True)
@@ -147,12 +146,15 @@ class PlateFinder(GstVideo.VideoFilter):
 
         if not self.dst.empty():
             plate = self.dst.get()
-            (plate, (x,y,w,h), orig_img, ts)  = plate
+            (code, (x,y,w,h), orig_img, ts)  = plate
 	    msg = Gst.Structure.new_empty('detection')
-	    msg.set_value('plate', plate) 
+	    msg.set_value('code', plate[0]) 
+	    msg.set_value('roi', plate[1]) 
+	    msg.set_value('img', plate[2]) 
+	    msg.set_value('ts', plate[3]) 
             self.post_message(Gst.Message.new_application(self, msg))
             self.last = orig_img[y:y+h,x:x+w]
-            self.lastplate = plate
+            self.lastplate = code 
             self.lastt = 50
 
         if self.lastt>0:
