@@ -1,6 +1,7 @@
 import requests
 from ConfigParser import ConfigParser
 import json
+from log import ImageLogger
 
 
 class Response(object):
@@ -22,11 +23,14 @@ class Backend(object):
         self.user = config.get('backend', 'user')
         self.password = config.get('backend', 'password')
 	self.host = config.get('backend', 'host')
+        root = config.get('condor', 'storage')
+
         self.client = requests.Session()
         auth = {'username': self.user, 'password': self.password}
         login= self.host + '/users/login/'
         r = self.client.post(login, json=auth)
         self.url_base = self.host + '/devices'
+        self.log = ImageLogger(root)
 
     def add_device(self, dev):
         return self.client.post(self.url_base, json=dev)
@@ -42,3 +46,8 @@ class Backend(object):
             url = self.url_base
         return Response(self.client.get(url))
 
+
+    def log(self, data):
+	url = self.url_base+'/'+str(data.id)+'/log/'
+	self.log.image(data.id, data.img, data.ts)
+        return self.client.post(url, json=data)

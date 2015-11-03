@@ -14,21 +14,21 @@ def logger(name = None):
 
 class ImageLogger(object):
 
-    def __init__(self, dev_id):
-        config = ConfigParser.ConfigParser()
-        config.read(path.dirname(path.realpath(__file__))+"/condor.ini")
-        storage_root = config.get('condor', 'storage')
-        self.storage = path.join(storage_root, str(dev_id))
+    def __init__(self, root):
+        self.storage = root
         if not path.isdir(self.storage):
             mkdir(self.storage)
         self.l = Lock()
 
-    def image(self, img, name =''):
+    def image(self,dev_id, img, ts=None):
         self.l.acquire()
-        if not name:
+
+	if ts:
+	    name = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d%H%M%S')
+        else:
             name = str(uuid.uuid4())
-        
-        imgpath = path.join(self.storage, "%s.jpg" % (name))
+	
+        imgpath = path.join(storage, "%s/%s.jpg" % (dev_id, name))
         if path.isfile(imgpath):
             i = 1
             imgpath = path.join(self.storage, "%s-%s.jpg" % (name, i))

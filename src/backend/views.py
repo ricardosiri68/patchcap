@@ -96,6 +96,12 @@ class DeviceView(RestView):
     def delete(self):
         return self._delete()
 
+    @view_config(name="log", request_method="POST", permission=security.NO_PERMISSION_REQUIRED)
+    def log_view(self):
+        data = schemas.LogSchema().deserialize(self.request.json_body)
+        self.context.log(data['device_id'], data['ts'], data['roi'], data['code'], data['conf'])
+        return {}
+
 
 class UserView(RestView):
     @view_config(request_method='POST', context = resource.UserContainer)

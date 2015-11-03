@@ -208,6 +208,12 @@ class DeviceContainer(BaseQuery):
         self._request.db.add(d)
         return d
 
+    def log(self, device_id, ts, roi, code, conf):
+	l = m.Log(roi, ts, code, conf)
+        self._request.db.add(l)
+        return l
+	
+
 
 class APIRoot(BaseResource):
     def __init__(self, request):

@@ -52,7 +52,7 @@ class StreamServer():
 
 
 class Finder(object):
-    def __init__(self, dev):
+    def __init__(self, dev, server):
         self.caps = None
         self.dev = dev
         self.pipeline = Gst.Pipeline()
@@ -63,6 +63,7 @@ class Finder(object):
         self.vc1 = Gst.ElementFactory.make('videoconvert', None)
         self.video = PlateFinder(dev)
         self.sink = GstOutputStream(dev['outstream'], split=False)
+	self.server = server
 
         self.pipeline.add(self.src)
         self.pipeline.add(self.vc1)
@@ -107,11 +108,15 @@ class Finder(object):
                 log.info("monitor '%s' main pipeline is stopped"% self.dev['name'])
             elif state == Gst.State.PLAYING:
                 if message.src == self.pipeline:
-                    log.info("'%s' cambio de %s a %s."%(self.dev['name'], self.get_state(old), self.get_state(state))) 
+                    log.info("'%s' cambio de %s a %s."%(self.dev['name'], self.get_state(old), self.get_state(state)))
         elif t == Gst.MessageType.APPLICATION and message.has_name('detection'):
-		msg = message.get_structure()
-		plate = msg.get_structure()
-		log.info('se detecto {}',plate[0])
+		plate = message.get_structure()
+		code = plate.get_value('code')
+		roi = plate.get_value('roi')
+		img = plate.get_value('img')
+		ts = plate.get_value('ts')
+		self.server.backend.log(self.dev['id'], ts, img, roi, code)
+
         elif t == Gst.MessageType.APPLICATION and message.has_name('video/x-raw'):
             s = message.get_structure()
             self.caps = s.to_string()
@@ -190,34 +195,13 @@ class PatchFinder(object):
             
         log.warn('configurando %s dispositivos',len(devs))
         for d in devs:
-            f = Finder(d)
+            f = Finder(d, self)
             f.start()
             finders.append(f)
+	    print 'add ', d['outstream']
             self.server.add(d['outstream'])
         return finders
 
-
-
-    def save(self, img, code, stats):
-        stats.detected()
-        if self.dev.logging:
-            log.debug("loging capture to db")
-            transaction.begin()
-            plate = Plate.findBy(code)
-            if plate.active:
-                self.src.alarm()
-            plate.log()
-            transaction.commit()
-        ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-        log.save_image(img,code+ts,'log/')
-        if img.filename:
-            real = path.splitext(path.basename(img.filename))[0].upper()
-            output = code.upper().replace(" ","")[:6]
-            if output == real[:6]:
-                log.debug("\033[92m" + output + ": OK \033[0m")
-                stats.found()
-            else:
-                log.debug(real[:6] + ": " + output)
 
 
     def quit(self):

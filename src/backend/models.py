@@ -66,6 +66,21 @@ class Command(Base):
     identity = Column(String(240))
 
 
+class Log(Base):
+    def __init__(self, dev_id, ts, roi, code, conf):
+	self.device_id = dev_id
+	self.ts = ts
+	self.roi = roi
+	self.code = code
+	self.conf = conf
+
+    device_id = Column('device_id', Integer, ForeignKey('device.id'))
+    ts = Column(DateTime, default=datetime.now)
+    roi = Column(String(20), nullable=True, unique=False)
+    code = Column(String(10), nullable=True, unique=False)
+    conf = Column(String(20), nullable=True, unique=False)
+
+
 class Device(Base):
     def __init__(self, name, instream, outstream, ip=None, username=None, password = None, roi=None, logging=True):
         self.name = name
@@ -85,7 +100,6 @@ class Device(Base):
     outstream = Column(String(100), nullable=False, unique=True)
     roi = Column(String(20), nullable=True, unique=False)
     logging = Column(Boolean, nullable=False, default=True)
-
 
     @classmethod
     def findBy(class_, id):

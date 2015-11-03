@@ -2,7 +2,7 @@
 colander schemas for validation
 """
 import colander
-from models import Device, User, Profile
+from models import Device, User, Profile, Log
 from colanderalchemy import SQLAlchemySchemaNode
 
 class LoginSchema(colander.MappingSchema):
@@ -15,9 +15,11 @@ DeviceSchema = SQLAlchemySchemaNode(Device,
                                          'ip':{'missing': None, 'default': None}},
                               title='Devices')
 
-
 ProfileSchema = SQLAlchemySchemaNode(Profile,
                     excludes=['updated_on','created_on','users'])
+
+LogSchema = SQLAlchemySchemaNode(Log,
+                    excludes=['updated_on','created_on'])
 
 UserSchema = SQLAlchemySchemaNode(User,
                     overrides= {'password': {'typ':colander.String, 'default':None},

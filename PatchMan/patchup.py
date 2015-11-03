@@ -31,6 +31,21 @@ def main(argv):
 		else:
                 	for d in r.result:
                     		print(json.dumps(d, sort_keys=True, indent=4, separators=(',',': ' )))
+
+            elif opt in ('-Z','--log-device'):
+                devargs = arg.split(',')
+                data = {'device_id':id, 'ts': devargs[0], 'roi': devargs[1], 'code': devargs[2], 'conf':devargs[3]}
+		r = backend.log(data)
+                if r.status_code != 201:
+                    print ("Error", r.text, r.status_code)
+
+            elif opt in ('-l','--list-devices'):
+                r = backend.devices()
+		if r.error():
+			print r.result
+		else:
+                	for d in r.result:
+                    		print(json.dumps(d, sort_keys=True, indent=4, separators=(',',': ' )))
             elif opt in ('-d','--delete-device'):
                 backend.delete_device(arg)
 
@@ -68,6 +83,7 @@ def usage():
     msg += "\t[-A | --add-plate] <XXXNNN>\n"
     msg += "\t[-D | --delete-plate] <XXXNNN>\n"
     msg += "\t[-L | --list-plates] \n"
+    msg += "\t[-Z | --log-plate] <dev_id>,<ts>,<roi>,<code>,<conf>\n"
     print(msg)
 
 
