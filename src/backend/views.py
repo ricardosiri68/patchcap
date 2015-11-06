@@ -10,7 +10,7 @@ from . import resource
 from . import schemas
 import colander
 from .mailers import send_email
-from models import Device, User, Profile
+from models import Device, User, Profile, Plate, Alarm
 from zope.sqlalchemy import mark_changed
 
 @view_config(route_name="home", renderer="home.html")
@@ -19,6 +19,8 @@ def home_view(request):
 
 @view_defaults(route_name='api', renderer='json')
 class RestView(object):
+    __serializer__ = None
+
     def __init__(self, context, request):
         self.request = request
         self.context = context
@@ -27,7 +29,7 @@ class RestView(object):
     def options_view(self):
         return Response(status_int=200) 
 
-    def _delete(self):
+    def __delete__(self):
         if self.context is None:
             raise HTTPNotFound()
 
@@ -36,29 +38,24 @@ class RestView(object):
             status='202 Accepted',
             content_type='application/json; charset=UTF-8')
 
+    def __list__(self):
+        r = self.context.list()
+        if r is None:
+            raise HTTPNotFound()
+        else:
+            elements = []
+            for e in r:
+                elements.append(__serializer__.serialize(__serializer__.dictify(e)))
+            return elements
 
-class DeviceView(RestView):
-    @view_config(request_method='POST', context = resource.DeviceContainer, permission="add")
-    def create(self):
+    def __create__(self):
         data = schemas.DeviceSchema.deserialize(self.request.json_body)
         r = self.context.create(**data)
         return Response(
             status='201 Created',
             content_type='application/json; charset=UTF-8')
 
-    @view_config(request_method='GET', context = resource.DeviceContainer)
-    def list(self):
-        r = self.context.list()
-        if r is None:
-            raise HTTPNotFound()
-        else:
-            devices = []
-            for d in r:
-                devices.append(schemas.DeviceSchema.serialize(d.__dict__))
-            return devices
-
-    @view_config(request_method='GET', context=Device)
-    def read(self):
+    def __read__(self):
         r = self.context
         if r is None:
             raise HTTPNotFound()
@@ -67,7 +64,22 @@ class DeviceView(RestView):
             self.request.response.headers['X-Content-Type-Options'] = 'nosniff'
             self.request.response.headers['Content-Type'] = 'application/json'
             del self.request.response.headers['Content-Type']
-            return schemas.DeviceSchema.serialize(r.__dict__)
+            return __serializer__.serialize(r.__dict__)
+
+
+class DeviceView(RestView):
+    __serializer__ = schemas.DeviceSchema
+    @view_config(request_method='POST', context = resource.DeviceContainer, permission="add")
+    def create(self):
+        return self.__create__()
+
+    @view_config(request_method='GET', context=Device)
+    def read(self):
+           return self.__read()
+
+    @view_config(request_method='GET', context = resource.DeviceContainer)
+    def list(self):
+        return self.__list__()
 
 
     @view_config(request_method='PUT', context=Device)
@@ -94,7 +106,7 @@ class DeviceView(RestView):
 
     @view_config(request_method='DELETE', context=Device)
     def delete(self):
-        return self._delete()
+        return self.__delete__()
 
     @view_config(name="log", request_method="POST", permission=security.NO_PERMISSION_REQUIRED)
     def log_view(self):
@@ -104,32 +116,18 @@ class DeviceView(RestView):
 
 
 class UserView(RestView):
+    __serializer__ = schemas.UserSchema
     @view_config(request_method='POST', context = resource.UserContainer)
     def create(self):
-        data = schemas.UserSchema.deserialize(self.request.json_body)
-        r = self.context.create(**data)
-        return Response(
-            status='201 Created',
-            content_type='application/json; charset=UTF-8')
+        return self.__create__()
 
     @view_config(request_method='GET', context = resource.UserContainer)
     def list(self):
-        r = self.context.list()
-        if r is None:
-            raise HTTPNotFound()
-        else:
-            users = []
-            for u in r:
-                users.append(schemas.UserSchema.serialize(u.__dict__))
-            return users
+        return self.__list__()
 
     @view_config(request_method='GET', context=User)
     def read(self):
-        u = self.context
-        if u is None:
-            raise HTTPNotFound()
-        return schemas.UserSchema.serialize(schemas.UserSchema.dictify(u))
-
+        return self.__read__()
 
     @view_config(request_method='PUT', context=User)
     def update(self):
@@ -159,7 +157,7 @@ class UserView(RestView):
     @view_config(request_method='DELETE', context=User)
     def delete(self):
         if self.context.id!=1:
-            return self._delete()
+            return self.__delete__()
         raise HTTPNotFound()
 
     @view_config(name="login", request_method="POST", permission=security.NO_PERMISSION_REQUIRED)
@@ -187,41 +185,26 @@ class UserView(RestView):
         context.request_reset(data["email"])
         return {}
 
-
     @view_config(name="reset", request_method="POST")
     def reset_view(context, request):
         data = schemas.ResetSchema().deserialize(request.POST)
         user = context.do_reset(**data)
         return dict(email=user.email, id=user.id)
 
+
 class ProfileView(RestView):
+    __serializer__ = schemas.ProfileSchema
     @view_config(request_method='POST', context = resource.ProfileContainer, permission="add")
     def create(self):
-        data = schemas.ProfileSchema.deserialize(self.request.json_body)
-        r = self.context.create(**data)
-        return Response(
-            status='201 Created',
-            content_type='application/json; charset=UTF-8')
+        return self.__create__()
 
     @view_config(request_method='GET', context = resource.ProfileContainer)
     def list(self):
-        r = self.context.list()
-        if r is None:
-            raise HTTPNotFound()
-        else:
-            profiles = []
-            for p in r:
-                profiles.append(schemas.ProfileSchema.serialize(p.__dict__))
-            return profiles
+        return self.__list__()
 
     @view_config(request_method='GET', context=Profile)
     def read(self):
-        r = self.context
-        if r is None:
-            raise HTTPNotFound()
-        else:
-            return schemas.ProfileSchema.serialize(r.__dict__)
-
+        return sel.__read__() 
 
     @view_config(request_method='PUT', context=Profile)
     def update(self):
@@ -229,7 +212,7 @@ class ProfileView(RestView):
         if p is None:
             raise HTTPNotFound()
         else:
-            data = schemas.DeviceSchema.deserialize(self.request.json_body)
+            data = __serializer__.deserialize(self.request.json_body)
             p.name = data['name']
             self.request.db.add(p)
 
@@ -237,10 +220,75 @@ class ProfileView(RestView):
             status='202 Accepted',
             content_type='application/json; charset=UTF-8')
 
-
     @view_config(request_method='DELETE', context=Profile)
     def delete(self):
-        return self._delete()
+        return self.__delete__()
+
+
+class PlateView(RestView):
+    __serializer__ = schemas.PlateSchema
+    @view_config(request_method='POST', context = resource.PlateContainer, permission="add")
+    def create(self):
+        return self.__create__()
+
+    @view_config(request_method='GET', context = resource.PlateContainer)
+    def list(self):
+        return self.__list__()
+
+    @view_config(request_method='GET', context=Plate)
+    def read(self):
+        return self.__read__() 
+
+    @view_config(request_method='PUT', context=Plate)
+    def update(self):
+        p = self.context
+        if p is None:
+            raise HTTPNotFound()
+        else:
+            data = __serializer__.deserialize(self.request.json_body)
+            p.name = data['name']
+            self.request.db.add(p)
+
+        return Response(
+            status='202 Accepted',
+            content_type='application/json; charset=UTF-8')
+
+    @view_config(request_method='DELETE', context=Plate)
+    def delete(self):
+        return self.__delete__()
+
+
+class AlarmView(RestView):
+    __serializer__ = schemas.AlarmSchema
+    @view_config(request_method='POST', context = resource.AlarmContainer, permission="add")
+    def create(self):
+        return self.__create__()
+
+    @view_config(request_method='GET', context = resource.AlarmContainer)
+    def list(self):
+        return self.__list__()
+
+    @view_config(request_method='GET', context=Alarm)
+    def read(self):
+        return self.__read__() 
+
+    @view_config(request_method='PUT', context=Alarm)
+    def update(self):
+        p = self.context
+        if p is None:
+            raise HTTPNotFound()
+        else:
+            data = __serializer__.deserialize(self.request.json_body)
+            p.name = data['name']
+            self.request.db.add(p)
+
+        return Response(
+            status='202 Accepted',
+            content_type='application/json; charset=UTF-8')
+
+    @view_config(request_method='DELETE', context=Alarm)
+    def delete(self):
+        return self.__delete__()
 
 
 @view_config(context=colander.Invalid, renderer="json",permission=security.NO_PERMISSION_REQUIRED)
@@ -249,9 +297,11 @@ def validation_error_view(exc, request):
     return exc.asdict()
 
 
-@view_config(route_name="socket.io")
+@view_config(route_name="socket.io",permission=security.NO_PERMISSION_REQUIRED)
 def socketio_service(request):
-    r = socketio_manage(request.environ, {'/devices': DeviceNamespace},
+    print request.environ
+
+    r = socketio_manage(request.environ, {'/log': LogNamespace},
                     request)
     return Response(r)
 

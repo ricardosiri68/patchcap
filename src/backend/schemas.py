@@ -2,7 +2,7 @@
 colander schemas for validation
 """
 import colander
-from models import Device, User, Profile, Log
+from models import Device, User, Profile, Log, Plate, Alarm
 from colanderalchemy import SQLAlchemySchemaNode
 
 class LoginSchema(colander.MappingSchema):
@@ -10,24 +10,29 @@ class LoginSchema(colander.MappingSchema):
     password = colander.SchemaNode(colander.String())
 
 DeviceSchema = SQLAlchemySchemaNode(Device,
-                              excludes=['updated_on','created_on'],
+                              excludes=['updated_on','created_on', 'updated_by'],
                               overrides={'roi':{'missing': None, 'default': None},
                                          'ip':{'missing': None, 'default': None}},
                               title='Devices')
 
 ProfileSchema = SQLAlchemySchemaNode(Profile,
-                    excludes=['updated_on','created_on','users'])
+                    excludes=['updated_on','created_on', 'updated_by','users'])
+
+AlarmSchema = SQLAlchemySchemaNode(Alarm,
+                    excludes=['updated_on','created_on', 'updated_by'])
+
+PlateSchema = SQLAlchemySchemaNode(Plate,
+                    excludes=['updated_on','created_on', 'updated_by'])
 
 LogSchema = SQLAlchemySchemaNode(Log,
-                    excludes=['updated_on','created_on'])
+                    excludes=['updated_on','created_on', 'updated_by'])
 
 UserSchema = SQLAlchemySchemaNode(User,
-                    overrides= {'password': {'typ':colander.String, 'default':None},
+        overrides= {'password': {'typ':colander.String, 'default':None},
                         'profiles':{'includes':['id','name'],
-                                    'default':[]}
-                        },
-                    excludes=['updated_on','created_on'],
-                    title='Users')
+                                    'default':[]}}, 
+                        excludes=['updated_on','created_on', 'updated_by'],
+                        title='Users')
 
  
 class RegisterSchema(colander.MappingSchema):

@@ -22,6 +22,7 @@ class ModelBase(object):
     id = Column(Integer, primary_key=True)
     created_on = Column(DateTime, default=datetime.now)
     updated_on = Column(DateTime, onupdate=datetime.now)
+    updated_by = Column(Integer)
     
     __mapper_args__ = {'extension': BaseExtension()}
 
@@ -37,6 +38,26 @@ association_table = Table('user_profile', Base.metadata,
     Column('profile_id', Integer, ForeignKey('profile.id'))
 )
 
+user_dev_assoc = Table('user_device', Base.metadata,
+    Column('user_id', Integer, ForeignKey('user.id')),
+    Column('device_id', Integer, ForeignKey('device.id'))
+)
+
+alarm_plate_assoc = Table('alarm_plate', Base.metadata,
+    Column('alarm_id', Integer, ForeignKey('alarm.id')),
+    Column('plate_id', Integer, ForeignKey('plate.id'))
+)
+
+
+class Alarm(Base):
+    name = Column(String(100))
+    plates = relationship("Plate", order_by="Plate.id", backref="alarms", 
+            secondary= alarm_plate_assoc)
+
+
+class Plate(Base):
+    code = Column(String(10))
+
 
 class Profile(Base):
     name = Column(String(100))
@@ -50,6 +71,9 @@ class User(Base):
     profiles = relationship('Profile',
                     secondary=association_table,
                     backref='users')
+    devices = relationship('Device',
+                    secondary=user_dev_assoc)
+
 
      
     #    @property
@@ -78,6 +102,7 @@ class Log(Base):
     ts = Column(DateTime, default=datetime.now)
     roi = Column(String(20), nullable=True, unique=False)
     code = Column(String(10), nullable=True, unique=False)
+    correction = Column(String(10), nullable=True, unique=False)
     conf = Column(String(20), nullable=True, unique=False)
 
 
