@@ -176,3 +176,39 @@ div.au-stagger {
     opacity: 1;
   }
 }
+
+.patent {
+    /*display: inline-block;*/
+    min-width: 10px;
+    padding: 3px 7px;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 1;
+    color: #ffffff;
+    text-align: center;
+    /*white-space: nowrap;*/
+    vertical-align: middle;
+    /*background-color: #000000;*/
+}
+
+.patent-warning {
+    color: #EFEF07;    
+    font-size: 16px;
+}
+
+.patent-danger {    
+    color: #F31C1C;        
+    font-size: 16px;    
+}
+
+.alert-patent-tipo-1{
+   background-color: #077115; 
+}
+
+.alert-patent-tipo-2{
+   background-color: #8C0808; 
+}
+
+.alert-patent-default{
+   background-color: #311FBF; 
+}

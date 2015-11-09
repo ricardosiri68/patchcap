@@ -10,7 +10,7 @@
             <div class="card">
                 <canvas class="header-bg" width="250" height="70" blur-image.bind="image"></canvas>
                 <div class="avatar">
-                    <img src="images.jpeg" crossorigin ref="image"/>
+                    <img src="./images/user.jpeg" crossorigin ref="image"/>
                 </div>
                 <div class="content">
                     <p class="name">${user.name}</p>                    
@@ -49,6 +49,17 @@
                   <option repeat.for="profile of profiles" value.bind="profile.id">${profile.name}</option>
               </select>              
             </div>      
+            <div class="form-group">
+              <label for="ln">Devices</label>
+              <!--select value.bind="user.devices" multiple class="form-control" -->  
+              <select multiple class="form-control" >  
+                  <option></option>
+                  <option repeat.for="device of devices" value.bind="device.id">${device.name}</option>
+                  <!--option>Mustard</option>
+                  <option>Ketchup</option>
+                  <option>Relish</option-->
+              </select>              
+            </div>
         </modal-body>
         <modal-footer>
           <button class="btn" click.trigger="submit()">Save</button>
