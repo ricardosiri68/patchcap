@@ -224,4 +224,3 @@ class APIRoot(BaseResource):
         self._create_child(DeviceContainer)
         self._create_child(UserContainer)
         self._create_child(ProfileContainer)
-        self._create_child(CommandContainer)
