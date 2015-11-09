@@ -25,7 +25,12 @@ PlateSchema = SQLAlchemySchemaNode(Plate,
                     excludes=['updated_on','created_on', 'updated_by'])
 
 LogSchema = SQLAlchemySchemaNode(Log,
-                    excludes=['updated_on','created_on', 'updated_by'])
+                    overrides={'roi':{'missing': None, 'default': None},
+                               'correction':{'missing': None, 'default': None},
+                               'conf':{'missing': None, 'default': None},
+                               'code':{'missing': None, 'default': None},
+                              'ts':{'missing': None, 'default': None}},
+                    excludes=['updated_on','created_on', 'updated_by', 'device'])
 
 UserSchema = SQLAlchemySchemaNode(User,
         overrides= {'password': {'typ':colander.String, 'default':None},
