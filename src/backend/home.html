@@ -1,0 +1,37 @@
+<html>
+<head>
+	<script src="/static/scripts/jquery.js"></script>
+	<script src="/static/scripts/socket.io.js"></script>
+
+<script name="javascript">	
+function connect() {
+    WEB_SOCKET_SWF_LOCATION = "/static/WebSocketMain.swf";
+    WEB_SOCKET_DEBUG = true;
+
+    // connect to the websocket
+    var socket = io.connect('/log');
+    
+    socket.emit('register', true);
+
+    $(window).bind("beforeunload", function() {
+        socket.disconnect();
+    });
+
+    socket.on("refresh", function(deviceId, data) {
+            console.log('recibiendo para '+deviceId);
+            console.log(data.log);
+            $('#data').append(JSON.stringify(data.log));
+    });
+
+   }
+
+$(function(){
+    connect();
+});
+</script>
+</head>
+<body>
+<div id="data">
+</div>
+</body>
+</html>
