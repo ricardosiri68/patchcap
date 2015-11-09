@@ -12,8 +12,14 @@ import colander
 from .mailers import send_email
 from models import Device, User, Profile, Plate, Alarm
 from zope.sqlalchemy import mark_changed
+import datetime
+import logging
+import transaction
+import json
 
-@view_config(route_name="home", renderer="home.html")
+log = logging.getLogger(__name__) 
+
+@view_config(route_name="home", renderer="home.html", permission=security.NO_PERMISSION_REQUIRED)
 def home_view(request):
     return {}
 
@@ -299,8 +305,6 @@ def validation_error_view(exc, request):
 
 @view_config(route_name="socket.io",permission=security.NO_PERMISSION_REQUIRED)
 def socketio_service(request):
-    print request.environ
-
     r = socketio_manage(request.environ, {'/log': LogNamespace},
                     request)
     return Response(r)
@@ -340,14 +344,14 @@ class LogNamespace(BaseNamespace, ClientRoomsMixin):
     _running = False
 
     def initialize(self):
-        logging.debug('iniciando name. %s', self._running)
+        log.debug('iniciando name. %s', self._running)
 
     def show_clients(self):
         for k in self._clients:
-            logging.debug('queda client %s con %s',k, len(self._clients[k]))
+            log.debug('queda client %s con %s',k, len(self._clients[k]))
 
     def on_register(self, state):
-        logging.debug(state)
+        log.debug(state)
 
 
     def register(self, user_id):
@@ -355,32 +359,37 @@ class LogNamespace(BaseNamespace, ClientRoomsMixin):
             self._clients[user_id] = []
 
         self._clients[user_id].append(id(self))
-        logging.debug('joining client %s to room %s',id(self), user_id)
-        self.join(user_id)
+        log.debug('joining client %s to room %s',id(self), user_id)
+        self.join(str(user_id))
         self.show_clients()
         self.session['user_id'] = user_id
 
 
 
     def recv_connect(self):
-        self.register(client_id)
+        if self.request.user:
+            user_id = self.request.user.id
+        else:
+            user_id = 0
+            log.info('connecting anonymous')
+        self.register(str(user_id))
     
         def senddata():
             user_id = int(self.session['user_id'])
             lastrefresh = {}
-            db = DBSession()
+            db = self.request.db
+            serializer = schemas.LogSchema
             while True:
-                devices = Log.findBy(client_id).devices() if client_id else db.query(Device).all()
-                sens = []
+                devices = User.findBy(user_id).devices if user_id else db.query(Device).all()
                 for d in devices:
-                    if d.id  not in lastrefresh:
-                        lastrefresh[d.id] = datetime(2010, 1, 1, 0, 0, 0)
+                    if d.id not in lastrefresh:
+                        lastrefresh[d.id] = datetime.datetime(2010, 1, 1, 0, 0, 0)
                     if not d.timestamp() or d.timestamp()<=lastrefresh[d.id]:
                         continue
-                
-                    for s in d.sensors:
-                        sens.append({'n':s.name,'v':d.lastvalue(s),'t':s.sensor_type,'i':s.id})
-                    self.emit_to_room(str(client_id), 'refresh',d.id , {'s':sens,'t':d.lastupdate()})
+                    logs = d.logsfrom(lastrefresh[d.id])
+                    for l in logs:
+                        data = serializer.serialize(serializer.dictify(l))
+                        self.emit_to_room(str(user_id), 'refresh',d.id , {'log':data,'t':json.dumps(d.timestamp(), default=deftime)})
                     lastrefresh[d.id] = d.timestamp()
                 transaction.commit()
                 gevent.sleep(1)
@@ -388,9 +397,22 @@ class LogNamespace(BaseNamespace, ClientRoomsMixin):
 
 
     def recv_disconnect(self):
-        client_id = self.session['client_id']
-        self._clients[client_id].remove(id(self))
-        if not self._clients[client_id]:
-            del self._clients[client_id]
+        user_id = self.session['user_id']
+        self._clients[user_id].remove(id(self))
+        if not self._clients[user_id]:
+            del self._clients[user_id]
         self.disconnect(silent=True)
 
+
+def deftime(obj):
+    """Default JSON serializer."""
+    import calendar, datetime
+
+    if isinstance(obj, datetime.datetime):
+        if obj.utcoffset() is not None:
+            obj = obj - obj.utcoffset()
+    millis = int(
+        calendar.timegm(obj.timetuple()) * 1000 +
+        obj.microsecond / 1000
+    )
+ 

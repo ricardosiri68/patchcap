@@ -48,12 +48,17 @@ alarm_plate_assoc = Table('alarm_plate', Base.metadata,
     Column('plate_id', Integer, ForeignKey('plate.id'))
 )
 
+class AlarmClass(Base):
+    __tablename__ = 'alarm_classes'
+    name = Column(String(100), nullable=False)
+
+
 
 class Alarm(Base):
     name = Column(String(100))
-    plates = relationship("Plate", order_by="Plate.id", backref="alarms", 
+    plates = relationship("Plate", order_by="Plate.id", backref="alarms",
             secondary= alarm_plate_assoc)
-
+    alarm_class_id =  Column(Integer, ForeignKey('alarm_classes.id'))
 
 class Plate(Base):
     code = Column(String(10))
@@ -92,11 +97,11 @@ class Command(Base):
 
 class Log(Base):
     def __init__(self, dev_id, ts, roi, code, conf):
-	self.device_id = dev_id
-	self.ts = ts
-	self.roi = roi
-	self.code = code
-	self.conf = conf
+	    self.device_id = dev_id
+	    self.ts = ts
+	    self.roi = roi
+	    self.code = code
+	    self.conf = conf
 
     device_id = Column('device_id', Integer, ForeignKey('device.id'))
     ts = Column(DateTime, default=datetime.now)
@@ -104,7 +109,6 @@ class Log(Base):
     code = Column(String(10), nullable=True, unique=False)
     correction = Column(String(10), nullable=True, unique=False)
     conf = Column(String(20), nullable=True, unique=False)
-
 
 class Device(Base):
     def __init__(self, name, instream, outstream, ip=None, username=None, password = None, roi=None, logging=True):
@@ -125,6 +129,7 @@ class Device(Base):
     outstream = Column(String(100), nullable=False, unique=True)
     roi = Column(String(20), nullable=True, unique=False)
     logging = Column(Boolean, nullable=False, default=True)
+    logs = relationship("Log", cascade="all,delete-orphan", order_by="Log.id",lazy = "dynamic", backref="device")
 
     @classmethod
     def findBy(class_, id):
@@ -133,6 +138,17 @@ class Device(Base):
     @classmethod
     def enabled(class_,):
         return DBSession.query(class_).filter_by(logging=True).all()
+
+
+    def timestamp(self):
+        l = self.logs.order_by(Log.ts.desc()).first()
+        if l:
+            return l.ts
+        return None
+
+    def logsfrom(self, ts):
+        return self.logs.filter(Log.ts>=ts).order_by(Log.ts)
+
 
     @classmethod
     def first(cls):
