@@ -1,0 +1,49 @@
+<template>
+  <require from="blur-image"></require>
+  <require from="./converter/take"></require>  
+
+  <section class="au-animate">
+      <h2>${heading}</h2>       
+      <button class="btn btn-default" click.delegate="newAlarm()"> Agregar Alarmas </button>
+      
+      <table class="table"> <!-- class="table table-striped"-->
+          <thead>
+            <tr>
+              <th>patente</th>              
+              <th>tipo alarma</th>                   
+            </tr>
+          </thead>
+          <tbody>
+            <!--tr repeat.for="patent of patents |filter:filterCamera:filterAlarma:filterPatent:alarms| take:take.value" class="${patent.alarma| alertPatent}"-->    
+            <tr repeat.for="alarm of alarms | take:10">                               
+              <td>${alarm.name}</td>
+              <td>${alarm.profiler}</td> <!--td>${alarm.profiler}</td--> 
+              <td class="btn btn-default" click.delegate="$parent.modify($index)"> Modificar </td>
+              <td class="btn btn-default" click.delegate="$parent.del($index)"> Borrar </td>
+            </tr>
+          </tbody>
+        </table>
+
+      <modal showing.bind="showing">
+        <modal-header title= "${headingModal}" close.call="closeModal()"></modal-header>
+        <modal-body>
+            <div class="form-group">
+              <label for="ln">Perfil</label>
+              <select value.bind="alarm.profiler" class="form-control" >  
+                  <option></option>
+                  <option repeat.for="typeAlarm of typeAlarms" value.bind="typeAlarm.id">${typeAlarm.name}</option>
+              </select>              
+            </div>  
+            <div if.bind="showingNewAlarm" class="form-group">
+              <label for="fn">Patentes</label>
+              <!--input type="text" value.bind="user.username" class="form-control" id="fn" placeholder="User Name"-->
+              <textarea rows="4" cols="50" value.bind="alarm.patent"> </textarea>
+            </div>    
+        </modal-body>
+        <modal-footer>
+          <button class="btn" click.trigger="submit()">Save</button>
+          <au-button text="Cancel" click.call="closeModal()"></au-button>
+        </modal-footer>
+      </modal>
+  </section>  
+</template>

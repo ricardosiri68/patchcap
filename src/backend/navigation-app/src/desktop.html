@@ -1,0 +1,79 @@
+<template>
+  <require from="./converter/date-format"></require>
+  <require from="./converter/count-desktop"></require>
+  <require from="./converter/filter-desktop"></require>
+  <require from="./converter/take"></require>  
+  <require from="./converter/style-trusts"></require>  
+  <require from="./converter/alert-patent"></require>  
+
+  ${currentDate} <br/>
+  
+  <select id ="take" ref="take" >
+    <option value="10" >10</option>
+    <option value="20" >20</option>
+    <option value="50" >50</option>
+    <option value="100"> 100</option>
+  </select>  
+
+  <label for="fn">Filtrar Patente</label>
+  <input type="text" value.bind="filterPatent" style="text-transform:uppercase;" class="form-control" id="ln">
+
+
+  <div class="btn-group" role="group">
+   <button type="button" class="btn btn-default" click.delegate="setCamera('')" >Todos<span class="badge">${patents |count:'':filterAlarm:alarms}</span></button>
+  <button type="button" class="btn btn-default" click.delegate="setCamera('1')" >Camara 1 <span class="badge">${patents |count:'1':filterAlarm:alarms}</button>
+  <button type="button" class="btn btn-default" click.delegate="setCamera('2')" >Camara 2 <span class="badge">${patents |count:'2':filterAlarm:alarms}</button>
+  <button type="button" class="btn btn-default" click.delegate="setCamera('3')" >Camara 3 <span class="badge">${patents |count:'3':filterAlarm:alarms}</button>
+  <button type="button" class="btn btn-default" click.delegate="setCamera('4')" >Camara 4 <span class="badge">${patents |count:'4':filterAlarm:alarms}</button>
+  </div>
+<br>
+  <div class="btn-group" role="group">
+   <button type="button" class="btn btn-default" click.delegate="setAlarm('')" >Todos<span class="badge">${patents |count:filterCamera:'':alarms}</span></button>
+  <button type="button" class="btn btn-default" click.delegate="setAlarm('1')" >Alarma 1 <span class="badge">${patents |count:filterCamera:'1':alarms}</button>
+  <button type="button" class="btn btn-default" click.delegate="setAlarm('2')" >Alarma 2 <span class="badge">${patents |count:filterCamera:'2':alarms}</button>
+  <button type="button" class="btn btn-default" click.delegate="setAlarm('3')" >Alarma 3 <span class="badge">${patents |count:filterCamera:'3':alarms}</button>  
+  </div>
+
+  
+
+  <table class="table"> <!-- class="table table-striped"-->
+    <thead>
+      <tr>
+        <th>Patente</th>        
+        <th>patente</th>
+        <th>camara</th>
+        <th>date</th>  
+        <th>tipo alarma</th> 
+        <th>picture</th>      
+      </tr>
+    </thead>
+    <tbody>
+      <tr repeat.for="patent of patents |filter:filterCamera:filterAlarm:filterPatent:alarms| take:take.value" class="${patent.alarmType| alertPatent}">                    
+        <td class="patent">
+          <span class="${patent.trust[1]| style}">${patent.patent[0]}</span>                
+          <span class="${patent.trust[2]| style}">${patent.patent[1]}</span>
+          <span class="${patent.trust[3]| style}">${patent.patent[2]}</span>
+          <span class="${patent.trust[4]| style}">${patent.patent[3]}</span>
+          <span class="${patent.trust[5]| style}">${patent.patent[4]}</span>
+          <span class="${patent.trust[6]| style}">${patent.patent[5]}</span>
+        </td>        
+
+        <td>${patent.patent}</td>
+        <td>${patent.camera}</td>
+        <td>${patent.date | dateFormat }</td> 
+        <td>${patent.alarmType}</td>  
+        
+        <td> <img src="${patent.picture}" click.delegate="$parent.showModal(patent.picture)" style="max-width: 70px; max-height: 70px" crossorigin ref="image"/></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <modal showing.bind="showing" style="max-width: 550px; max-height: 450px">
+        <modal-header title= "${headingModal}" close.call="closeModal()" data-dismiss="modal"></modal-header>
+        <modal-body style="max-width: 750px; max-height: 750px">            
+            <div>
+              <img id="img1" src="" style="max-width: 550px; max-height: 400px" crossorigin ref="image"/></td>
+            </div>            
+        </modal-body>        
+  </modal>
+</template>

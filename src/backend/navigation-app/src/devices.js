@@ -1,9 +1,9 @@
-import {Configuration} from './configuration'; 
+import {Config} from './config'; 
 import {inject} from 'aurelia-framework';
 import {HttpClient} from 'aurelia-fetch-client';
 import 'fetch';
 
-@inject(Configuration, HttpClient)
+@inject(Config, HttpClient)
 export class Devices{
   heading = 'Dispositivos';
   devices = [];
@@ -36,6 +36,7 @@ export class Devices{
   }
 
   newDevice(){
+    this.showing = false;
     this.device = {};
     this.headingModal= "Agregar Dispositivo";
     this.showingNewDevice = true;
@@ -58,6 +59,7 @@ export class Devices{
   } 
 
   modify(index){
+    this.showing = false;
     this.headingModal= "Modificar Dispositivo";
     this.device = this.devices[index];
     this.showingNewDevice = false;

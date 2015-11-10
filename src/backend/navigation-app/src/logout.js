@@ -1,9 +1,9 @@
-import {Configuration} from './configuration'; 
+import {Config} from './config'; 
 import {inject} from 'aurelia-framework';
 import {HttpClient} from 'aurelia-fetch-client';
 import 'fetch';
 
-@inject(Configuration, HttpClient )
+@inject(Config, HttpClient )
 export class Logout{
 
 	constructor(conf, http){
@@ -36,6 +36,7 @@ export class Logout{
               		console.log('Fetch Error :-S', err);                
         	});
 	    $('#userName').text('Login').attr("href", "#/login");
+	    localStorage.removeItem("user_name");  
 	    localStorage.removeItem("auth_token");	    
 	  }
 	  window.location.href='#';
