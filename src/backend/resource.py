@@ -68,6 +68,41 @@ class BaseQuery(BaseResource):
         return self._request.db.delete(id)
 
 
+class PlateContainer(BaseQuery):
+    __model__ = m.Plate
+    __name__ = "plates"
+
+    def create(self, name, alarms):
+        Alarms = AlarmContainer(self.request)
+        p = self.__model__()
+        p.name = name
+        p.alarms = []
+        for a in alarms:
+            p.alarms.append(Alarms[a['id']])
+        self._request.db.add(p)
+        return p
+
+    def get(self, code):
+        p = self._request.db.query(self.__model__).filter_by(code=code).first()
+        if not p:
+            p = Plate(code)
+            self._request.db.add(p)
+        return p
+
+
+class AlarmContainer(BaseQuery):
+    __model__ = m.Alarm
+    __name__ = "alarms"
+    def create(self, name, plates, color,  ):
+        Plates = PlateContainer(self._request)
+        a = self.__model__()
+        a.name = name
+        a.plates = []
+        for p in plates:
+            a.plates.append(Plates.get[p['code']])
+        self._request.db.add(a)
+        return a
+
 
 class UserContainer(BaseQuery):
     __model__ = m.User
@@ -85,7 +120,6 @@ class UserContainer(BaseQuery):
             raise HTTPUnauthorized("login failed")
 
     def logout(self):
-        
         self._request.response.headerlist.extend(security.forget(self._request))
 
 
@@ -104,6 +138,7 @@ class UserContainer(BaseQuery):
                    "activate.html", 
                    activation_link=activation_link)
 
+
     def activate(self, command_id=None, email=None, password=None):
         cmd = self._request.api_root["command"][command_id]
         if cmd and cmd.identity == email and cmd.command_type == self.CMD_REGISTER:
@@ -117,11 +152,11 @@ class UserContainer(BaseQuery):
             raise ValueError(msg)
 
     def create(self, username, name, email, password, profiles):
-        profiles = ProfileContainer()
+        Profiles = ProfileContainer(self._request)
         u = self.__model__(name=name, username=username, email=email, password=password)
         u.profiles = []
         for p in profiles:
-            u.profiles.append(profiles[p['id']])
+            u.profiles.append(Profiles[p['id']])
 
 
         self._request.db.add(u)
@@ -156,38 +191,6 @@ class UserContainer(BaseQuery):
 
 
 
-class CommandContainer(BaseQuery):
-    __model__ = m.Command
-    __name__ = "command"
-
-    def __getitem__(self, key):
-        result = self.__qry__().filter_by(command_id=key).filter(
-            self.__model__.expire_on > datetime.now()
-        ).order_by(-self.__model__.created_on).first()
-        if result:
-            return result
-        else:
-            raise KeyError("%s(%s) not found or expired" % \
-                           (self.__model__.__name__, key))
-
-
-    def get_command(self, identity, command_type):
-        return self.__qry__().filter_by(identity=identity, 
-                                        command_type=command_type
-        ).order_by(-self.__model__.created_on
-        ).filter(self.__model__.expire_on < datetime.now()).first()
-
-    def create_command(self, identity, command_type, **command_args):
-        expire_on = datetime.now() + timedelta(days=30)
-        result = self.__model__(identity=identity, 
-                                command_type=command_type, 
-                                command_id=str(uuid.uuid4()), 
-                                expire_on=expire_on,
-                                **command_args)
-        self._request.db.add(result)
-        return result
-
-
 class ProfileContainer(BaseQuery):
     __model__ = m.Profile
     __name__ = "profiles"
@@ -208,6 +211,11 @@ class DeviceContainer(BaseQuery):
         self._request.db.add(d)
         return d
 
+    def log(self, device_id, ts, roi, code, conf):
+        l = m.Log(roi, ts, code, conf)
+        self._request.db.add(l)
+        return l
+
 
 class APIRoot(BaseResource):
     def __init__(self, request):
@@ -216,4 +224,3 @@ class APIRoot(BaseResource):
         self._create_child(DeviceContainer)
         self._create_child(UserContainer)
         self._create_child(ProfileContainer)
-        self._create_child(CommandContainer)

@@ -62,6 +62,8 @@ def config_routes(config):
     config.add_route('home', '/')
     config.scan()
     config.add_route("api", '/api/*traverse', factory=APIRoot)
+    config.add_route('socket.io', 'socket.io/*remaining'),
+
 
 def config_auth_policy(config, settings):
     policy = authentication.AuthTktAuthenticationPolicy(

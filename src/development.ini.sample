@@ -8,6 +8,7 @@ pyramid.debug_authorization = false
 pyramid.debug_notfound = false
 pyramid.debug_routematch = false
 pyramid.default_locale_name = en
+pyramid.available_languages = es
 auth_secret = supersecretsecret
 
 mail_sender = me@example.com
@@ -19,6 +20,11 @@ mail.transport.host = smtp.gmail.com
 mail.transport.port = 465
 mail.transport.tls = ssl
 mail.transport.debug.on = true
+
+storage = /media/storage/log
+
+[condor]
+storage = /media/storage/log
 
 
 
