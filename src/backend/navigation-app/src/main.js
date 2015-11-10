@@ -1,4 +1,5 @@
 import 'bootstrap';
+import {I18N} from 'aurelia-i18n';
 
 export function configure(aurelia) {
   aurelia.use
@@ -16,6 +17,22 @@ export function configure(aurelia) {
   // Install the plugin
   aurelia.use.plugin('aurelia-bs-modal');
   //aurelia.use.plugin('socket.io-client');
+  aurelia.use.plugin('aurelia-i18n', (instance) => {
+        // adapt options to your needs (see http://i18next.com/pages/doc_init.html)
+        instance.setup({
+          resGetPath : 'locale/__lng__/__ns__.json',
+          lng : 'en',
+          attributes : ['t','i18n'],
+          getAsync : true,
+          sendMissing : false,
+          fallbackLng : 'en',
+          debug : false,
+          ns: {
+            namespaces: ['translation','nav'],
+            defaultNs: 'translation'
+          }
+        });
+      });
 
   
   aurelia.start().then(a => a.setRoot());     

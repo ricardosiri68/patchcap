@@ -1,9 +1,10 @@
 import {Config} from './config'; 
+import {I18N} from 'aurelia-i18n';
 import io from 'socket.io-client';
 import {inject} from 'aurelia-framework';
 
 
-@inject(Config)
+@inject(Config, I18N)
 export class Desktop {
   patents;
   alarms;
@@ -13,12 +14,14 @@ export class Desktop {
   config;
   showing = false;
 
-  constructor(conf) {
+  constructor(conf, i18n) {
 
     //localStorage.removeItem('patents');
     // Put the object into storage        
     //localStorage.setItem('patents', JSON.stringify(this.patents));
-    this.config = conf;   
+    this.config = conf;
+    this.i18n = i18n;
+    console.log(this.i18n.getLocale());
     
 
     //this.patents = JSON.parse(localStorage.getItem('patents') );
