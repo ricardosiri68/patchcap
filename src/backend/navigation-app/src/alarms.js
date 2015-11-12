@@ -23,7 +23,7 @@ export class Alarms{
 
   activate(){
     this.alarms= [];
-    return this.http.fetch('users', {credentials: 'include'}) 
+    return this.http.fetch('alarms', {credentials: 'include'}) 
              .then(response => response.json())      
              .then(alarms => this.alarms = alarms)
              .catch(function(err) {
@@ -42,7 +42,7 @@ export class Alarms{
   	this.headingModal= "Agregar Alarmas";
   	this.showingNewAlarm = true;
     this.showing = true;    
-    this.submit = function () { this.http.fetch('users' , { method: "POST", 
+    this.submit = function () { this.http.fetch('alarms' , { method: "POST", 
                                                             body: JSON.stringify({ profiles:[{id:this.alarm.profiler}]
                                                                                     , name: this.alarm.name}),
                                                             credentials: 'include'
@@ -63,10 +63,10 @@ export class Alarms{
     this.showing = false;
     this.getTypeAlarms();
     this.headingModal= "Modificar Alarma";
-    this.user = this.alarms[index];
+    this.alarm = this.alarms[index];
     this.showingNewAlarm = false;
     this.showing = true;    
-    this.submit = function () { this.http.fetch('users/'+this.alarms[index].id, 
+    this.submit = function () { this.http.fetch('alarms/'+this.alarms[index].id, 
                                                   { method: "PUT",
 												    	                      body: JSON.stringify({profiles:[{id:this.alarm.profiler}]
                                                                             , name: this.alarm.name}),
@@ -86,7 +86,7 @@ export class Alarms{
 
   del(index){
   	if(confirm('Desea eliminar esta alarma. Usted esta seguro? ')){
-          this.http.fetch('users/'+this.alarms[index].id , {method: "DELETE", credentials: 'include'} );
+          this.http.fetch('alarms/'+this.alarms[index].id , {method: "DELETE", credentials: 'include'} );
     	    this.activate();
   	}    
   } 
