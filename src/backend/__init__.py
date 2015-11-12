@@ -33,8 +33,7 @@ def db(request):
     return session
 
 def config_static(config):
-    config.add_static_view('static', 'static', cache_max_age=3600)
-
+    config.add_static_view('app', 'navigation-app', cache_max_age=3600)
 
 def config_jinja2(config):
     config.include('pyramid_jinja2')

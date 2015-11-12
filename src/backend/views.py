@@ -19,7 +19,7 @@ import json
 
 log = logging.getLogger(__name__) 
 
-@view_config(route_name="home", renderer="home.html", permission=security.NO_PERMISSION_REQUIRED)
+@view_config(route_name="home", renderer="navigation-app/index.html", permission=security.NO_PERMISSION_REQUIRED)
 def home_view(request):
     return {}
 
