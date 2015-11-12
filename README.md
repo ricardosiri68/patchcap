@@ -36,7 +36,7 @@ El rtsp mount es el nombre del mount point donde estara accesible el streaming
 en este caso,
 luego de ejecutar el analizador con el id del dispositivo, 
 
-./main.py 1
+./patchfinder.py 1
 
 Estara disponible en:
 rtsp://localhost:8554/test

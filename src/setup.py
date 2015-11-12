@@ -9,8 +9,7 @@ with open(os.path.join(here, 'CHANGES.md')) as f:
     CHANGES = f.read()
 
 requires = [
-    'pyramid',
-    'waitress',
+    'pyramid',    
     'sqlalchemy',
     'alembic',
     'pyramid_jinja2',
@@ -20,7 +19,10 @@ requires = [
     'html2text',
     'pyramid_tm',
     'sqlalchemy-utils',
-    'colanderalchemy'
+    'colanderalchemy',
+    'gevent',
+    'gevent-socketio',
+    'pyramid_socketio'
     ]
 
 setup(name='backend',
