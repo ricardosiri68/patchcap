@@ -53,12 +53,33 @@ class AlarmClass(Base):
     name = Column(String(100), nullable=False)
 
 
-
 class Alarm(Base):
     name = Column(String(100))
     plates = relationship("Plate", order_by="Plate.id", backref="alarms",
             secondary= alarm_plate_assoc)
     alarm_class_id =  Column(Integer, ForeignKey('alarm_classes.id'))
+    events = relationship("Event", order_by="Event.id", backref="alarm")
+
+    def test(self, text):
+        if text in plates:
+            return Event(self.id, text, timestamp.timestamp())                 
+        return False
+
+
+class Event(Base):
+    __tablename__ = 'events'
+    def __init__(self, alert_id, value, t):
+        self.alert_id = alert_id
+        self.value = value
+        self.timestamp = t
+        
+    id = Column(Integer(), primary_key=True, autoincrement=True)
+    alarm_id = Column(Integer, ForeignKey('alarm.id'))
+    ts = Column(DateTime,nullable=False)
+    readed = Column(Boolean, default=False)
+    comments = Column(String(100), nullable=False)
+    value = Column(String(10), nullable=False,default='')
+    
 
 class Plate(Base):
     code = Column(String(10))

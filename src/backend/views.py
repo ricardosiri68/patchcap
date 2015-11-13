@@ -27,6 +27,10 @@ def home_view(request):
 class RestView(object):
     __serializer__ = None
 
+    @classmethod
+    def serializer(cls):
+        return cls.__serializer__
+
     def __init__(self, context, request):
         self.request = request
         self.context = context
@@ -51,11 +55,11 @@ class RestView(object):
         else:
             elements = []
             for e in r:
-                elements.append(__serializer__.serialize(__serializer__.dictify(e)))
+                elements.append(self.serializer().serialize(self.serializer().dictify(e)))
             return elements
 
     def __create__(self):
-        data = schemas.DeviceSchema.deserialize(self.request.json_body)
+        data = self.serializer().deserialize(self.request.json_body)
         r = self.context.create(**data)
         return Response(
             status='201 Created',
@@ -70,7 +74,7 @@ class RestView(object):
             self.request.response.headers['X-Content-Type-Options'] = 'nosniff'
             self.request.response.headers['Content-Type'] = 'application/json'
             del self.request.response.headers['Content-Type']
-            return __serializer__.serialize(r.__dict__)
+            return self.serializer().serialize(r.__dict__)
 
 
 class DeviceView(RestView):
@@ -81,7 +85,7 @@ class DeviceView(RestView):
 
     @view_config(request_method='GET', context=Device)
     def read(self):
-           return self.__read()
+           return self.__read__()
 
     @view_config(request_method='GET', context = resource.DeviceContainer)
     def list(self):
@@ -113,12 +117,6 @@ class DeviceView(RestView):
     @view_config(request_method='DELETE', context=Device)
     def delete(self):
         return self.__delete__()
-
-    @view_config(name="log", request_method="POST", permission=security.NO_PERMISSION_REQUIRED)
-    def log_view(self):
-        data = schemas.LogSchema().deserialize(self.request.json_body)
-        self.context.log(data['device_id'], data['ts'], data['roi'], data['code'], data['conf'])
-        return {}
 
 
 class UserView(RestView):
@@ -295,6 +293,15 @@ class AlarmView(RestView):
     @view_config(request_method='DELETE', context=Alarm)
     def delete(self):
         return self.__delete__()
+
+class LogViews(RestView):
+    __serializer__ = schemas.LogSchema
+   
+    @view_config(name="log", request_method="POST", permission=security.NO_PERMISSION_REQUIRED)
+    def log_view(self):
+        data = schemas.LogSchema().deserialize(self.request.json_body)
+        self.context.log(data['device_id'], data['ts'], data['roi'], data['code'], data['conf'])
+        return {}
 
 
 @view_config(context=colander.Invalid, renderer="json",permission=security.NO_PERMISSION_REQUIRED)

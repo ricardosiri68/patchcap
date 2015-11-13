@@ -202,6 +202,11 @@ class ProfileContainer(BaseQuery):
         return p
 
 
+class LogContainer(BaseQuery):
+    __model__ = m.Log
+    __name__ = "logs"
+
+
 class DeviceContainer(BaseQuery):
     __model__ = m.Device
     __name__ = "devices"
