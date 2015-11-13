@@ -33,6 +33,8 @@ def db(request):
     return session
 
 def config_static(config):
+    
+    config.include("frontend")
     config.add_static_view('static', 'static', cache_max_age=3600)
 
 
