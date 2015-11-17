@@ -10,6 +10,7 @@ import uuid
 import contextlib
 from .mailers import send_email
 
+import logging
 
 @contextlib.contextmanager
 def cleanup_rec(rec, session):
@@ -68,6 +69,40 @@ class BaseQuery(BaseResource):
         return self._request.db.delete(id)
 
 
+class AlarmContainer(BaseQuery):
+    __model__ = m.Alarm
+    __name__ = "alarms"
+    def create(self, name, plates, class_id):
+        Plates = PlateContainer(self._request)
+        a = self.__model__()
+        a.name = name
+        a.alarm_class_id = class_id
+        a.plates = []
+        for p in plates:
+            a.plates.append(Plates.get[p['code']])
+        self._request.db.add(a)
+        return a
+
+
+class DeviceContainer(BaseQuery):
+    __model__ = m.Device
+    __name__ = "devices"
+
+    def create(self, username, roi, name, ip, outstream, password, instream, logging):
+        d = self.__model__(name, instream, outstream, ip, username, password, roi, logging)
+        self._request.db.add(d)
+        return d
+
+
+class LogContainer(BaseQuery):
+    __model__ = m.Log
+    __name__ = "logs"
+    def create(self, roi, code, ts, conf, device_id):
+        l = self.__model__(device_id, ts, roi, code, conf)
+        self._request.db.add(l)
+        return l
+
+
 class PlateContainer(BaseQuery):
     __model__ = m.Plate
     __name__ = "plates"
@@ -88,20 +123,6 @@ class PlateContainer(BaseQuery):
             p = Plate(code)
             self._request.db.add(p)
         return p
-
-
-class AlarmContainer(BaseQuery):
-    __model__ = m.Alarm
-    __name__ = "alarms"
-    def create(self, name, plates, color,  ):
-        Plates = PlateContainer(self._request)
-        a = self.__model__()
-        a.name = name
-        a.plates = []
-        for p in plates:
-            a.plates.append(Plates.get[p['code']])
-        self._request.db.add(a)
-        return a
 
 
 class UserContainer(BaseQuery):
@@ -202,30 +223,12 @@ class ProfileContainer(BaseQuery):
         return p
 
 
-class LogContainer(BaseQuery):
-    __model__ = m.Log
-    __name__ = "logs"
-
-
-class DeviceContainer(BaseQuery):
-    __model__ = m.Device
-    __name__ = "devices"
-
-    def create(self, username, roi, name, ip, outstream, password, instream, logging):
-        d = self.__model__(name, instream, outstream, ip, username, password, roi, logging)
-        self._request.db.add(d)
-        return d
-
-    def log(self, device_id, ts, roi, code, conf):
-        l = m.Log(roi, ts, code, conf)
-        self._request.db.add(l)
-        return l
-
-
 class APIRoot(BaseResource):
     def __init__(self, request):
         super(self.__class__, self).__init__(request)
         request.api_root = self
+        self._create_child(AlarmContainer)
         self._create_child(DeviceContainer)
-        self._create_child(UserContainer)
+        self._create_child(LogContainer)
         self._create_child(ProfileContainer)
+        self._create_child(UserContainer)

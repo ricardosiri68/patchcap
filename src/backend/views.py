@@ -10,7 +10,7 @@ from . import resource
 from . import schemas
 import colander
 from .mailers import send_email
-from models import Device, User, Profile, Plate, Alarm
+from models import Device, User, Profile, Plate, Alarm, Log
 from zope.sqlalchemy import mark_changed
 import datetime
 import logging
@@ -75,6 +75,20 @@ class RestView(object):
             self.request.response.headers['Content-Type'] = 'application/json'
             del self.request.response.headers['Content-Type']
             return self.serializer().serialize(r.__dict__)
+
+    def __update(self):
+        p = self.context
+        if p is None:
+            raise HTTPNotFound()
+        else:
+            data = self.serializer().deserialize(self.request.json_body)
+            p.name = data['name']
+            self.request.db.add(p)
+
+        return Response(
+            status='202 Accepted',
+            content_type='application/json; charset=UTF-8')
+
 
 
 class DeviceView(RestView):
@@ -212,17 +226,7 @@ class ProfileView(RestView):
 
     @view_config(request_method='PUT', context=Profile)
     def update(self):
-        p = self.context
-        if p is None:
-            raise HTTPNotFound()
-        else:
-            data = __serializer__.deserialize(self.request.json_body)
-            p.name = data['name']
-            self.request.db.add(p)
-
-        return Response(
-            status='202 Accepted',
-            content_type='application/json; charset=UTF-8')
+        return self.__update__()
 
     @view_config(request_method='DELETE', context=Profile)
     def delete(self):
@@ -245,17 +249,7 @@ class PlateView(RestView):
 
     @view_config(request_method='PUT', context=Plate)
     def update(self):
-        p = self.context
-        if p is None:
-            raise HTTPNotFound()
-        else:
-            data = __serializer__.deserialize(self.request.json_body)
-            p.name = data['name']
-            self.request.db.add(p)
-
-        return Response(
-            status='202 Accepted',
-            content_type='application/json; charset=UTF-8')
+        return self.__update__()
 
     @view_config(request_method='DELETE', context=Plate)
     def delete(self):
@@ -282,7 +276,7 @@ class AlarmView(RestView):
         if p is None:
             raise HTTPNotFound()
         else:
-            data = __serializer__.deserialize(self.request.json_body)
+            data = self.serializer().deserialize(self.request.json_body)
             p.name = data['name']
             self.request.db.add(p)
 
@@ -294,14 +288,35 @@ class AlarmView(RestView):
     def delete(self):
         return self.__delete__()
 
+
 class LogViews(RestView):
     __serializer__ = schemas.LogSchema
    
-    @view_config(name="log", request_method="POST", permission=security.NO_PERMISSION_REQUIRED)
-    def log_view(self):
-        data = schemas.LogSchema().deserialize(self.request.json_body)
-        self.context.log(data['device_id'], data['ts'], data['roi'], data['code'], data['conf'])
-        return {}
+    @view_config(request_method='POST', context = resource.LogContainer, permission="add")
+    def create(self):
+        return self.__create__()
+
+    @view_config(request_method='GET', context = resource.LogContainer)
+    def list(self):
+        return self.__list__()
+
+    @view_config(request_method='GET', context=Log)
+    def read(self):
+        return self.__read__() 
+
+    @view_config(request_method='PUT', context=Log)
+    def update(self):
+        p = self.context
+        if p is None:
+            raise HTTPNotFound()
+        else:
+            data = self.serializer().deserialize(self.request.json_body)
+            p.correction = data['correction']
+            self.request.db.add(p)
+
+        return Response(
+            status='202 Accepted',
+            content_type='application/json; charset=UTF-8')
 
 
 @view_config(context=colander.Invalid, renderer="json",permission=security.NO_PERMISSION_REQUIRED)

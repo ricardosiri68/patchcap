@@ -10,7 +10,7 @@ class LoginSchema(colander.MappingSchema):
     password = colander.SchemaNode(colander.String())
 
 DeviceSchema = SQLAlchemySchemaNode(Device,
-                              excludes=['updated_on','created_on', 'updated_by'],
+                              excludes=['updated_on','created_on', 'updated_by', 'logs'],
                               overrides={'roi':{'missing': None, 'default': None},
                                          'ip':{'missing': None, 'default': None}},
                               title='Devices')
@@ -30,7 +30,7 @@ LogSchema = SQLAlchemySchemaNode(Log,
                                'conf':{'missing': None, 'default': None},
                                'code':{'missing': None, 'default': None},
                               'ts':{'missing': None, 'default': None}},
-                    excludes=['updated_on','created_on', 'updated_by', 'device'])
+                    excludes=['updated_on','created_on', 'updated_by', 'device', 'correction'])
 
 UserSchema = SQLAlchemySchemaNode(User,
         overrides= {'password': {'typ':colander.String, 'default':None},
