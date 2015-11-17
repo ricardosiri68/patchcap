@@ -14,6 +14,8 @@ from log import ImageLogger
 import multiprocessing
 from multiprocessing import Manager, Process, Queue
 from Queue import Empty
+import tracker
+
 
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GObject, GstVideo, GLib
@@ -21,13 +23,13 @@ from gi.repository import Gst, GObject, GstVideo, GLib
 GObject.threads_init()
 Gst.init(None)
 
-def analyze(src, dst, log, roi):
+def analyze(src, dst, log):
     detector  = PlateDetector()
     while True:
         img, ts = src.get()
         if img is None: return
         try:
-            plate, r = detector.find2(img[roi[1]:roi[3], roi[0]:roi[2]])
+            plate, r = detector.find2(img)
             if r is not None:
                 pr = [r[0]+roi[0], r[1]+roi[1], r[2], r[3]]
                 dst.put((plate,pr, img, ts))
@@ -83,6 +85,8 @@ class PlateFinder(GstVideo.VideoFilter):
         self.lastt = 0
         self.h = 0
         self.w = 0
+        self.tracker = Tracker(bgsample)
+        
     
     def do_start(self):
         for _ in range(self.procs): multiprocessing.Process(target=analyze, args=(self.src, self.dst, self.log, self.roi)).start()
