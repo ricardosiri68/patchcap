@@ -51,17 +51,31 @@ export class Login{
         	    
   	            })
   	            .catch(function(err) {  
-                		console.log('Fetch Error :-S', err);                
+                		console.log('Fetch Error :-S', err);    
+
               	});
-
-
    	          	window.location.href='#';
 
-
-
-            })  
-            .catch(function(err) {  
-              console.log('Fetch Error :-S', err);                
+        })  
+        .catch(function(err) {  
+          console.log('Fetch Error :-S', err);                
+          if (err.status == 400) {  
+            //Usuario Requerido
+            err.json().then(function(data) { 
+                var mensaje = '';
+                if (data.username != undefined && data.username == 'Required'){
+                  mensaje += 'Username Requerido \n';
+                }
+                if (data.password != undefined && data.password == 'Required'){
+                  mensaje += 'Password Requerido';
+                }
+                $('#alert-login').html('<div class="alert alert-danger" role="alert"> <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span> <span class="sr-only">Error:</span>'+mensaje+'</div>');
             });
+           
+          } else if (err.status == 401) {  
+            //Usuario No Autorizado
+            $('#alert-login').html('<div class="alert alert-danger" role="alert"> <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span> <span class="sr-only">Error:</span> Usuario No autorizado</div>');
+          }
+        });
 	}
 }
