@@ -34,12 +34,12 @@ LogSchema = SQLAlchemySchemaNode(Log,
 
 UserSchema = SQLAlchemySchemaNode(User,
         overrides= {'password': {'typ':colander.String, 'default':None},
-                        'profiles':{'includes':['id','name'],
-                                    'default':[]}}, 
-                        excludes=['updated_on','created_on', 'updated_by'],
+                    'devices': {'includes':['id'], 'default':[]},
+                    'profiles': {'includes':['id','name'], 'default':[]}},
+        excludes=['updated_on','created_on', 'updated_by'],
                         title='Users')
 
- 
+
 class RegisterSchema(colander.MappingSchema):
     email = colander.SchemaNode(colander.String(), 
                                 validator=colander.Email())

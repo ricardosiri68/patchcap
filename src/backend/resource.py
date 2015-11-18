@@ -172,12 +172,17 @@ class UserContainer(BaseQuery):
                   (self.CMD_REGISTER, command_id, email)
             raise ValueError(msg)
 
-    def create(self, username, name, email, password, profiles):
+    def create(self, username, name, email, password, profiles, devices):
         Profiles = ProfileContainer(self._request)
+        Devices = DeviceContainer(self._request)
         u = self.__model__(name=name, username=username, email=email, password=password)
         u.profiles = []
         for p in profiles:
             u.profiles.append(Profiles[p['id']])
+
+        u.devices = []
+        for d in devices:
+            u.devices.append(Devices[d['id']])
 
 
         self._request.db.add(u)

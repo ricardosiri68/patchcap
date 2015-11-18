@@ -3,8 +3,9 @@
 #list
 curl -XGET -i localhost/api/users
 
-#add
+#create
 curl -i -H "Content-Type: application/json" -X POST -d '{"name":"Name Lastname","username":"user", "password":"pepe","email":"user@mirich.com.ar"}' localhost/api/users
+curl -i -H "Content-Type: application/json" -b auth-cookie.txt -X POST -d {"name":"Service User","username":"service", "password":"xxxxxx","email":"condor@mirich.com.ar"} localhost/api/users
 
 #get id = 1
 curl -XGET -i localhost/api/users/1
