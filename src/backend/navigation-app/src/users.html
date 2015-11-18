@@ -1,5 +1,6 @@
 <template>
   <require from="blur-image"></require>
+  <require from="./converter/selected"></require>  
 
   <section class="au-animate">
       <h2>${heading}</h2>       
@@ -44,21 +45,17 @@
             </div>
             <div class="form-group">
               <label for="ln">Perfil</label>
-              <select value.bind="user.profiler" class="form-control" >  
+              <select id="selectProfiles" class="form-control"> 
                   <option></option>
-                  <option repeat.for="profile of profiles" value.bind="profile.id">${profile.name}</option>
+                  <option repeat.for="profile of profiles" value.bind="profile.id" selected.bind= "profile.id |selected:$parent.user.profiles">${profile.name}</option>
               </select>              
             </div>      
             <div class="form-group">
-              <label for="ln">Devices</label>
-              <!--select value.bind="user.devices" multiple class="form-control" -->  
-              <select multiple class="form-control" >  
+              <label for="ln">Devices</label>              
+              <select id="selectDevices" multiple class="form-control"> 
                   <option></option>
-                  <option repeat.for="device of devices" value.bind="device.id">${device.name}</option>
-                  <!--option>Mustard</option>
-                  <option>Ketchup</option>
-                  <option>Relish</option-->
-              </select>              
+                  <option repeat.for="device of devices" value.bind="device.id" selected.bind= "device.id |selected:$parent.user.devices">${device.name}</option>
+              </select>
             </div>
         </modal-body>
         <modal-footer>

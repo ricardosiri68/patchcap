@@ -8,6 +8,8 @@ export class Users{
   heading = 'Usuarios';
   users = [];
   showing = false;
+  profiles =[];
+  devices =[];
 
   constructor(conf, http){
     http.configure(config => {
@@ -44,9 +46,13 @@ export class Users{
   	this.headingModal= "Agregar Usuario";
   	this.showingNewUser = true;
     this.showing = true;    
-    this.submit = function () { this.http.fetch('users' , { method: "POST", 
-                                                            body: JSON.stringify({ profiles:[{id:this.user.profiler}]
-                                                                                    ,username: this.user.username
+    this.submit = function () { 
+                                var arrProfiles = this.optionsSelected('selectProfiles');
+                                var arrDevices = this.optionsSelected('selectDevices');
+                                this.http.fetch('users' , { method: "POST", 
+                                                            body: JSON.stringify({ profiles: arrProfiles
+                                                                                    , devices: arrDevices
+                                                                                    , username: this.user.username
                                                                                     , name: this.user.name
                                                                                     , email: this.user.email
                                                                                     , password: this.user.password}),
@@ -69,13 +75,17 @@ export class Users{
     this.getProfiles();
     this.getDevices();
     this.headingModal= "Modificar Usuario";
-    this.user = this.users[index];
+    this.user = this.users[index];        
     this.showingNewUser = false;
     this.showing = true;    
-    this.submit = function () { this.http.fetch('users/'+this.users[index].id, 
+    this.submit = function () { var arrProfiles = this.optionsSelected('selectProfiles');
+                                var arrDevices = this.optionsSelected('selectDevices');
+                                this.http.fetch('users/'+this.users[index].id, 
                                                   { method: "PUT",
-												    	                      body: JSON.stringify({profiles:[{id:this.user.profiler}]
+												    	                      body: JSON.stringify({profiles: arrProfiles
+                                                                            , devices: arrDevices
                                                                             , name: this.user.name
+                                                                            , username: this.user.username
                                                                             , email: this.user.email}),
                                                     credentials: 'include'
 												                        })
@@ -103,8 +113,8 @@ export class Users{
   }
 
   getProfiles(){
-    this.profiles =[];
-    this.http.fetch('profiles', {credentials: 'include'}) 
+    if(this.profiles.length == 0){
+      this.http.fetch('profiles', {credentials: 'include'}) 
              .then(response => response.json())      
              .then(profiles => this.profiles = profiles)
              .catch(function(err) {
@@ -114,11 +124,12 @@ export class Users{
                         window.location.reload();
                     }
               });
+    }  
   }
 
   getDevices(){
-    this.devices =[];
-    this.http.fetch('devices', {credentials: 'include'}) 
+    if(this.devices.length == 0){
+        this.http.fetch('devices', {credentials: 'include'}) 
              .then(response => response.json())      
              .then(devices => this.devices = devices)
              .catch(function(err) {
@@ -128,5 +139,16 @@ export class Users{
                         window.location.reload();
                     }
               });
+    }
+  }
+
+  optionsSelected( divSelect){
+    var result = []; 
+    var object = Object();
+    $('#'+divSelect+' :selected').each(function(i, selected){ 
+      object.id = $(selected).val(); 
+      result[i] = object;
+    });
+    return result;
   }
 }
