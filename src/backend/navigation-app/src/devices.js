@@ -43,7 +43,13 @@ export class Devices{
     this.showing = true;        
     this.submit = function () { this.http.fetch('devices', { method: "POST", 
                                                               body: JSON.stringify({ name: this.device.name,
-                                                                                      ip: this.device.ip}),
+                                                                                      ip: this.device.ip,
+                                                                                      instream: this.device.instream,
+                                                                                      outstream: this.device.outstream,
+                                                                                      username: this.device.username,
+                                                                                      password: this.device.password,
+                                                                                      roi: this.device.roi
+                                                                                    }),
                                                               credentials: 'include'
                                                })
                                                .catch(function(err) {
@@ -52,7 +58,7 @@ export class Devices{
                                                     localStorage.removeItem("auth_token");  
                                                     window.location.reload();
                                                   }
-                                                });                                              
+                                                });                                     
                                   this.activate();
                                   this.showing = false;
                               }
@@ -66,7 +72,13 @@ export class Devices{
     this.showing = true;        
     this.submit = function () { this.http.fetch('devices/'+this.devices[index].id , 
                                                   { method: "PUT", body: JSON.stringify({ name: this.device.name,
-                                                                                          ip: this.device.ip}),
+                                                                                          ip: this.device.ip,
+                                                                                          instream: this.device.instream,
+                                                                                          outstream: this.device.outstream,
+                                                                                          username: this.device.username,
+                                                                                          password: this.device.password,
+                                                                                          roi: this.device.roi
+                                                                                        }),
                                                     credentials: 'include'
                                               })
                                               .catch(function(err) {
@@ -76,8 +88,8 @@ export class Devices{
                                                           window.location.reload();
                                                         }
                                               });
-                                  this.activate();
-                                  this.showing = false;
+                                this.activate();
+                                this.showing = false;
                               }
   }
 

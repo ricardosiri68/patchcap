@@ -43,7 +43,19 @@
             <div class="form-group">
               <label for="ln">Name</label>
               <input type="text" value.bind="device.name" class="form-control" id="ln" placeholder="Name">
-            </div>      
+            </div>
+            <div class="form-group">
+              <label for="ln">Username</label>
+              <input type="text" value.bind="device.username" class="form-control" id="ln" placeholder="Username">
+            </div>
+            <div class="form-group">
+              <label for="ln">Password</label>
+              <input type="password" value.bind="device.password" class="form-control" id="ln" placeholder="Password">
+            </div>
+            <div class="form-group">
+              <label for="ln">ROI</label>
+              <input type="text" value.bind="device.roi" class="form-control" id="ln" placeholder="Roi">
+            </div>
         </modal-body>
         <modal-footer>
           <button class="btn" click.trigger="submit()">Save</button>
