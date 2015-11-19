@@ -8,8 +8,8 @@ import 'fetch';
 
 @inject(Config, I18N,HttpClient)
 export class Desktop {
-  patents;
-  alarms;
+  patents=[];
+  alarms=[];
   filterPatent = '';
   filterCamera = '';
   filterAlarm = '';
@@ -30,8 +30,8 @@ export class Desktop {
     this.i18n = i18n;
     console.log(this.i18n.getLocale());
 
-    this.socket = io('http://localhost:8084/log');                  
-    //this.socket = io.connect('/log');
+    //this.socket = io('http://localhost:8084/log');                  
+/*    this.socket = io.connect('/log');
     this.socket.emit('register', true);
 
     $(window).bind("beforeunload", function() {
@@ -43,19 +43,33 @@ export class Desktop {
             console.log(data.log);
 //            $('#data').append(JSON.stringify(data.log));
     });
-  
+*/  
 //this.socket.emit('patent', {"patent":"EQF"+("0" +Math.floor(Math.random() * 999)).slice(-3),"camara":""+Math.floor((Math.random() * 4)+1), "date":new Date() , "confianza": { "1": Math.floor((Math.random() * 100)), "2": Math.floor((Math.random() * 100)), "3": Math.floor((Math.random() * 100)), "4": Math.floor((Math.random() * 100)), "5": Math.floor((Math.random() * 100)), "6": Math.floor((Math.random() * 100))} });  
 
     setInterval(() => this.update(), 10000);
+    this.activate();
   }
 
   update() {
     this.currentDate = new Date();
     //Inserto para cargar y probar la aplicacion.    
-    this.addLog();
-    //this.addPatent();
+    //this.addLog();   
     //this.activate();
     
+  }
+
+  addLog() {
+    var genPatent = "EQF"+("0" +Math.floor(Math.random() * 999)).slice(-3);
+    var date = new Date();  
+    var strDate = ''+date.getFullYear()+'-'+("0" + (date.getMonth()+1)).slice(-2)+'-'+ ("0" + date.getDate()).slice(-2)+'T'+("0" + date.getHours()).slice(-2)+':'+("0" + date.getMinutes()).slice(-2); //+''+("0" + date.getSeconds()).slice(-2);
+    var log = Object({code: genPatent, device_id: Math.floor((Math.random() * 4)+1), ts:strDate , conf: ''+ Math.floor((Math.random() * 100))+','+ Math.floor((Math.random() * 100))+','+ Math.floor((Math.random() * 100))+','+ Math.floor((Math.random() * 100))+','+ Math.floor((Math.random() * 100))+','+ Math.floor((Math.random() * 100)) });
+    console.log(log);
+    this.http.fetch('logs' , { method: "POST", body: JSON.stringify(log), credentials: 'include'})
+                    .catch(function(err) {  
+                                            if(err.status == 403){ 
+                                              localStorage.removeItem("auth_token");   
+                                              window.location.reload();}
+                                          });
   }
 
   activate(){
@@ -70,42 +84,7 @@ export class Desktop {
                         window.location.reload();
                     }
               });
-  }
-
-addLog() {
-    var genPatent = "EQF"+("0" +Math.floor(Math.random() * 999)).slice(-3);
-    var date = new Date();
-    var strDate = ''+date.getFullYear()+''+("0" + (date.getMonth()+1)).slice(-2)+''+ ("0" + date.getDate()).slice(-2)+''+("0" + date.getHours()).slice(-2)+''+("0" + date.getMinutes()).slice(-2)+''+("0" + date.getSeconds()).slice(-2);
-    var log = {"code": genPatent,"device_id":""+Math.floor((Math.random() * 4)+1), "ts":strDate , "conf": { "1": Math.floor((Math.random() * 100)), "2": Math.floor((Math.random() * 100)), "3": Math.floor((Math.random() * 100)), "4": Math.floor((Math.random() * 100)), "5": Math.floor((Math.random() * 100)), "6": Math.floor((Math.random() * 100))} };
-    console.log(log);
-    this.http.fetch('logs' , { method: "POST", body: JSON.stringify(log), credentials: 'include'})
-                    .catch(function(err) {  
-                                            if(err.status == 403){ 
-                                              localStorage.removeItem("auth_token");   
-                                              window.location.reload();}
-                                          });
-}
-
-addPatent() {
-    var genPatent = "EQF"+("0" +Math.floor(Math.random() * 999)).slice(-3);
-    var patent = {"patent": genPatent,"camera":""+Math.floor((Math.random() * 4)+1), "date":new Date() , "trust": { "1": Math.floor((Math.random() * 100)), "2": Math.floor((Math.random() * 100)), "3": Math.floor((Math.random() * 100)), "4": Math.floor((Math.random() * 100)), "5": Math.floor((Math.random() * 100)), "6": Math.floor((Math.random() * 100))} };
-    var alarm = {'patent': genPatent,'alarm':""+Math.floor((Math.random() * 3)+1)}; 
-
-    this.patents = JSON.parse(localStorage.getItem('patents') );
-    if (this.patents == null) {
-      this.patents = [];
-    }
-    this.patents.unshift(patent);
-    localStorage.setItem('patents', JSON.stringify(this.patents));
-
-    this.alarms = JSON.parse(localStorage.getItem('alarms') );
-    if (this.alarms == null) {
-      this.alarms = [];
-    }
-    this.alarms.unshift(alarm);
-    localStorage.setItem('alarms', JSON.stringify(this.alarms));
-
-  }
+  }  
 
   showModal(src ){    
     this.showing = false;

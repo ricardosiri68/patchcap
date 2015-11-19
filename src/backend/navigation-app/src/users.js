@@ -143,11 +143,9 @@ export class Users{
   }
 
   optionsSelected( divSelect){
-    var result = []; 
-    var object = Object();
-    $('#'+divSelect+' :selected').each(function(i, selected){ 
-      object.id = $(selected).val(); 
-      result[i] = object;
+    var result = [];     
+    $('#'+divSelect+' :selected').each(function(i, selected){       
+      result[i] = Object({id:$(selected).val()});
     });
     return result;
   }

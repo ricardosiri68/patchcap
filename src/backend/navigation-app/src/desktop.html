@@ -50,17 +50,17 @@
     <tbody>
       <tr repeat.for="patent of patents |filter:filterCamera:filterAlarm:filterPatent:alarms| take:take.value" class="${patent.alarmType| alertPatent}">                    
         <td class="patent">
-          <span class="${patent.trust[1]| style}">${patent.patent[0]}</span>                
-          <span class="${patent.trust[2]| style}">${patent.patent[1]}</span>
-          <span class="${patent.trust[3]| style}">${patent.patent[2]}</span>
-          <span class="${patent.trust[4]| style}">${patent.patent[3]}</span>
-          <span class="${patent.trust[5]| style}">${patent.patent[4]}</span>
-          <span class="${patent.trust[6]| style}">${patent.patent[5]}</span>
+          <span class="${patent.trust[0]| style}">${patent.code[0]}</span>                
+          <span class="${patent.trust[1]| style}">${patent.code[1]}</span>
+          <span class="${patent.trust[2]| style}">${patent.code[2]}</span>
+          <span class="${patent.trust[3]| style}">${patent.code[3]}</span>
+          <span class="${patent.trust[4]| style}">${patent.code[4]}</span>
+          <span class="${patent.trust[5]| style}">${patent.code[5]}</span>
         </td>        
 
-        <td>${patent.patent}</td>
+        <td>${patent.code}</td>
         <td>${patent.camera}</td>
-        <td>${patent.date | dateFormat }</td> 
+        <td>${patent.ts | dateFormat }</td> 
         <td>${patent.alarmType}</td>  
         
         <td> <img src="${patent.picture}" click.delegate="$parent.showModal(patent.picture)" style="max-width: 70px; max-height: 70px" crossorigin ref="image"/></td>
