@@ -1,6 +1,5 @@
 export class SelectedValueConverter {
   toView(value, array) {
-	console.log("value:",value);
   	var selected = false;
   	if(array != undefined){
 	    array.forEach(
@@ -10,7 +9,6 @@ export class SelectedValueConverter {
 	        }	        
 	    });
     }
-    console.log("selected:",selected);
    	return selected;
   }
 }
