@@ -117,8 +117,8 @@ class Command(Base):
 
 
 class Log(Base):
-    def __init__(self, dev_id, ts, roi, code, conf):
-	    self.device_id = dev_id
+    def __init__(self, device_id, ts, roi, code, conf):
+	    self.device_id = device_id
 	    self.ts = ts
 	    self.roi = roi
 	    self.code = code
@@ -130,6 +130,10 @@ class Log(Base):
     code = Column(String(10), nullable=True, unique=False)
     correction = Column(String(10), nullable=True, unique=False)
     conf = Column(String(20), nullable=True, unique=False)
+
+    def correct(self, correction):
+        self.correction = correction
+
 
 class Device(Base):
     def __init__(self, name, instream, outstream, ip=None, username=None, password = None, roi=None, logging=True):
