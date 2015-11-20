@@ -39,6 +39,8 @@ def upgrade():
     )
     op.add_column(u'alarm', sa.Column('alarm_class_id', sa.Integer(), nullable=True))
     op.create_foreign_key(None, 'alarm', 'alarm_classes', ['alarm_class_id'], ['id'])
+    
+
     ### end Alembic commands ###
 
 

@@ -58,55 +58,12 @@ class Alarm(Base):
     plates = relationship("Plate", order_by="Plate.id", backref="alarms",
             secondary= alarm_plate_assoc)
     alarm_class_id =  Column(Integer, ForeignKey('alarm_classes.id'))
-    events = relationship("Event", order_by="Event.id", backref="alarm")
 
-    def test(self, text):
-        if text in plates:
-            return Event(self.id, text, timestamp.timestamp())                 
+    def test(self, l):
+        for p in plates:
+            if l.code.lower() == p.code:
+                return Event(self.id, text, timestamp.timestamp())
         return False
-
-
-class Event(Base):
-    __tablename__ = 'events'
-    def __init__(self, alert_id, value, t):
-        self.alert_id = alert_id
-        self.value = value
-        self.timestamp = t
-        
-    id = Column(Integer(), primary_key=True, autoincrement=True)
-    alarm_id = Column(Integer, ForeignKey('alarm.id'))
-    ts = Column(DateTime,nullable=False)
-    readed = Column(Boolean, default=False)
-    comments = Column(String(100), nullable=False)
-    value = Column(String(10), nullable=False,default='')
-    
-
-class Plate(Base):
-    code = Column(String(10))
-
-
-class Profile(Base):
-    name = Column(String(100))
-
-
-class User(Base):
-    email = Column(String(100), unique=True)
-    name = Column(String(100))
-    username = Column(String(50))
-    password = Column(PasswordType(schemes=['pbkdf2_sha512', ]), nullable=True)
-    profiles = relationship('Profile',
-                    secondary=association_table,
-                    backref='users')
-    devices = relationship('Device',
-                    secondary=user_dev_assoc)
-
-
-     
-    #    @property
-    #def __acl__(self):
-    #    return [
-    #        (Allow, self., 'view'),
-    #    ]
 
 class Command(Base):
     expire_on = Column(DateTime, nullable=False)
@@ -115,24 +72,6 @@ class Command(Base):
     command_date = Column(String(20))
     identity = Column(String(240))
 
-
-class Log(Base):
-    def __init__(self, device_id, ts, roi, code, conf):
-	    self.device_id = device_id
-	    self.ts = ts
-	    self.roi = roi
-	    self.code = code
-	    self.conf = conf
-
-    device_id = Column('device_id', Integer, ForeignKey('device.id'))
-    ts = Column(DateTime, default=datetime.now)
-    roi = Column(String(20), nullable=True, unique=False)
-    code = Column(String(10), nullable=True, unique=False)
-    correction = Column(String(10), nullable=True, unique=False)
-    conf = Column(String(20), nullable=True, unique=False)
-
-    def correct(self, correction):
-        self.correction = correction
 
 
 class Device(Base):
@@ -174,12 +113,74 @@ class Device(Base):
     def logsfrom(self, ts):
         return self.logs.filter(Log.ts>=ts).order_by(Log.ts)
 
-
     @classmethod
     def first(cls):
         return DBSession.query(Device).first()
 
 #    def __repr__(self):
 #        return "[%i]: in-> %s. out->%s" % (self.id,self.instream, self.outstream)
+
+
+class Event(Base):
+    __tablename__ = 'events'
+    def __init__(self, alarm_id, log_id, value):
+        self.alarm_id = alarm_id
+        self.log_id = log_id
+        self.value = value
+
+    id = Column(Integer(), primary_key=True, autoincrement=True)
+    alarm_id = Column(Integer, ForeignKey('alarm.id'))
+    log_id = Column(Integer, ForeignKey('log.id'))
+    readed = Column(Boolean, default=False)
+    comments = Column(String(100), nullable=False)
+    value = Column(String(10), nullable=False,default='')
+
+
+class Log(Base):
+    def __init__(self, device_id, ts, roi, code, conf):
+	    self.device_id = device_id
+	    self.ts = ts
+	    self.roi = roi
+	    self.code = code
+	    self.conf = conf
+
+    device_id = Column('device_id', Integer, ForeignKey('device.id'))
+    ts = Column(DateTime, default=datetime.now)
+    roi = Column(String(20), nullable=True, unique=False)
+    code = Column(String(10), nullable=True, unique=False)
+    correction = Column(String(10), nullable=True, unique=False)
+    conf = Column(String(20), nullable=True, unique=False)
+    events = relationship("Event", cascade="all, delete-orphan", order_by="Event.id",lazy = "dynamic", backref="log")
+
+    def correct(self, correction):
+        self.correction = correction
+
+
+class Plate(Base):
+    code = Column(String(10))
+
+
+class Profile(Base):
+    name = Column(String(100))
+
+
+class User(Base):
+    email = Column(String(100), unique=True)
+    name = Column(String(100))
+    username = Column(String(50))
+    password = Column(PasswordType(schemes=['pbkdf2_sha512', ]), nullable=True)
+    profiles = relationship('Profile',
+                    secondary=association_table,
+                    backref='users')
+    devices = relationship('Device',
+                    secondary=user_dev_assoc)
+
+
+     
+    #    @property
+    #def __acl__(self):
+    #    return [
+    #        (Allow, self., 'view'),
+    #    ]
 
 
