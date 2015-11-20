@@ -7,6 +7,8 @@ import 'fetch';
 export class Alarms{
   heading = 'Alarmas';
   alarms = [];
+  devices = [];
+  typeAlarms =[];
   showing = false;
 
   constructor(conf, http){
@@ -23,6 +25,7 @@ export class Alarms{
 
   activate(){
     this.alarms= [];
+    var there = this;
     return this.http.fetch('alarms', {credentials: 'include'}) 
              .then(response => response.json())      
              .then(alarms => this.alarms = alarms)
@@ -31,6 +34,16 @@ export class Alarms{
                     if(err.status == 403){
                         localStorage.removeItem("auth_token");  
                         window.location.reload();
+                    }else{
+                      var result = [];       
+                      result[0] = Object({id:1});
+                      result[1] = Object({id:2});
+                      var typeR = [];
+                      typeR[0] = Object({id:1});
+                      var alarm1 = Object({name:'Puesto 2', plate: 'EQF111,EQF112,EQF113', alarmType: typeR, devices: result});
+                      var alarm2 = Object({name:'Puesto 1', plate: 'EQF222,EQF223,EQF224', alarmType: typeR, devices: result});
+                      there.alarms.push(alarm1);
+                      there.alarms.push(alarm2);
                     }
               });
   }
@@ -39,8 +52,9 @@ export class Alarms{
     this.showing = false;
   	this.alarm = {};
     this.getTypeAlarms();
+    this.getDevices();
   	this.headingModal= "Agregar Alarmas";
-  	this.showingNewAlarm = true;
+  	//this.showingNewAlarm = true;
     this.showing = true;    
     this.submit = function () { this.http.fetch('alarms' , { method: "POST", 
                                                             body: JSON.stringify({ profiles:[{id:this.alarm.profiler}]
@@ -62,9 +76,10 @@ export class Alarms{
   modify(index){
     this.showing = false;
     this.getTypeAlarms();
+    this.getDevices();
     this.headingModal= "Modificar Alarma";
     this.alarm = this.alarms[index];
-    this.showingNewAlarm = false;
+    //this.showingNewAlarm = false;
     this.showing = true;    
     this.submit = function () { this.http.fetch('alarms/'+this.alarms[index].id, 
                                                   { method: "PUT",
@@ -95,9 +110,10 @@ export class Alarms{
     this.showing = false;
   }
 
-  getTypeAlarms(){
-    this.typeAlarms =[];
-    this.http.fetch('profiles', {credentials: 'include'}) 
+  getTypeAlarms(){    
+    if(this.typeAlarms.length == 0){
+    var there = this;
+    this.http.fetch('alarms/classes', {credentials: 'include'}) 
              .then(response => response.json())      
              .then(typeAlarms => this.typeAlarms = typeAlarms)
              .catch(function(err) {
@@ -105,7 +121,28 @@ export class Alarms{
                     if(err.status == 403){
                         localStorage.removeItem("auth_token");  
                         window.location.reload();
+                    }else{
+                        var alarmtype1 = Object({id: 1 , name: 'Lista Blanca'});
+                        var alarmtype2 = Object({id: 2 , name: 'Lista Negra'});
+                        there.typeAlarms.push(alarmtype1);
+                        there.typeAlarms.push(alarmtype2);
                     }
               });
+    }
+  }
+
+  getDevices(){
+    if(this.devices.length == 0){
+        this.http.fetch('devices', {credentials: 'include'}) 
+             .then(response => response.json())      
+             .then(devices => this.devices = devices)
+             .catch(function(err) {
+                    console.log('Fetch Error :-S', err);                
+                    if(err.status == 403){
+                        localStorage.removeItem("auth_token");  
+                        window.location.reload();
+                    }
+              });
+    }
   }
 }
