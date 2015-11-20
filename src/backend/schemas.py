@@ -9,13 +9,12 @@ from colanderalchemy import SQLAlchemySchemaNode
 AlarmClassSchema = SQLAlchemySchemaNode(AlarmClass,
                     excludes=['updated_on','created_on', 'updated_by','alarms'])
 
-
 class LoginSchema(colander.MappingSchema):
     username = colander.SchemaNode(colander.String())
     password = colander.SchemaNode(colander.String())
 
 DeviceSchema = SQLAlchemySchemaNode(Device,
-                              excludes=['updated_on','created_on', 'updated_by', 'logs'],
+                              excludes=['updated_on','created_on', 'updated_by', 'logs', 'alarms'],
                               overrides={'roi':{'missing': None, 'default': None},
                                          'ip':{'missing': None, 'default': None}},
                               title='Devices')

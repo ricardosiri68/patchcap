@@ -10,7 +10,6 @@ class BaseExtension(MapperExtension):
     """
     Base entension class for all entities
     """
-
     def before_insert(self, mapper, connection, instance):
         instance.created_on = datetime.now()
 
@@ -23,7 +22,7 @@ class ModelBase(object):
     created_on = Column(DateTime, default=datetime.now)
     updated_on = Column(DateTime, onupdate=datetime.now)
     updated_by = Column(Integer)
-    
+
     __mapper_args__ = {'extension': BaseExtension()}
 
     @declared_attr
@@ -48,6 +47,11 @@ alarm_plate_assoc = Table('alarm_plate', Base.metadata,
     Column('plate_id', Integer, ForeignKey('plate.id'))
 )
 
+alarm_device_assoc = Table('alarm_device', Base.metadata,
+Column('alarm_id', Integer, ForeignKey('alarm.id')),
+Column('device_id', Integer, ForeignKey('device.id'))
+)
+
 class AlarmClass(Base):
     __tablename__ = 'alarm_classes'
     name = Column(String(100), nullable=False)
@@ -57,6 +61,8 @@ class Alarm(Base):
     name = Column(String(100))
     plates = relationship("Plate", order_by="Plate.id", backref="alarms",
             secondary= alarm_plate_assoc)
+    devices = relationship("Device", order_by="Device.id", backref="alarms",
+            secondary= alarm_device_assoc)
     alarm_class_id =  Column(Integer, ForeignKey('alarm_classes.id'))
 
     def test(self, l):
@@ -158,7 +164,8 @@ class Log(Base):
 
 class Plate(Base):
     code = Column(String(10))
-
+    def __init__(self, code):
+        self.code = code
 
 class Profile(Base):
     name = Column(String(100))

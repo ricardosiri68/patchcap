@@ -78,14 +78,20 @@ class BaseQuery(BaseResource):
 class AlarmContainer(BaseQuery):
     __model__ = m.Alarm
     __name__ = "alarms"
-    def create(self, name, plates, class_id):
+    def create(self, plates, alarm_class_id, name, devices):
         Plates = PlateContainer(self._request)
         a = self.__model__()
         a.name = name
-        a.alarm_class_id = class_id
+        a.alarm_class_id = alarm_class_id
+        
+       
         a.plates = []
         for p in plates:
-            a.plates.append(Plates.get[p['code']])
+            a.plates.append(Plates.get(p['code']))
+
+        a.devices = []
+        for d in devices:
+            a.devices.append(Devices.get(d['id']))
         self._request.db.add(a)
         return a
 
@@ -143,9 +149,14 @@ class PlateContainer(BaseQuery):
     def get(self, code):
         p = self._request.db.query(self.__model__).filter_by(code=code).first()
         if not p:
-            p = Plate(code)
+            p = m.Plate(code)
             self._request.db.add(p)
         return p
+
+
+class ProfileContainer(BaseQuery):
+    __model__ = m.Profile
+    __name__ = "profiles"
 
 
 class UserContainer(BaseQuery):
@@ -240,16 +251,12 @@ class UserContainer(BaseQuery):
 
 
 
-class ProfileContainer(BaseQuery):
-    __model__ = m.Profile
-    __name__ = "profiles"
-
-
 class APIRoot(BaseResource):
     def __init__(self, request):
         super(self.__class__, self).__init__(request)
         request.api_root = self
         self._create_child(AlarmContainer)
+        self._create_child(AlarmClassContainer)
         self._create_child(DeviceContainer)
         self._create_child(LogContainer)
         self._create_child(ProfileContainer)
