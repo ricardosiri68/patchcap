@@ -68,6 +68,12 @@ class BaseQuery(BaseResource):
     def delete(self, id):
         return self._request.db.delete(id)
 
+    def create(self, name):
+        p = self.__model__()
+        p.name = name
+        self._request.db.add(p)
+        return p
+
 
 class AlarmContainer(BaseQuery):
     __model__ = m.Alarm
@@ -82,6 +88,16 @@ class AlarmContainer(BaseQuery):
             a.plates.append(Plates.get[p['code']])
         self._request.db.add(a)
         return a
+
+    def class_list(self):
+        classes = AlarmClassContainer(self.request)
+        return classes.list()
+
+
+class AlarmClassContainer(BaseQuery):
+    __model__ = m.AlarmClass
+    __name__ = "alarm_classes"
+
 
 
 class DeviceContainer(BaseQuery):
@@ -99,6 +115,13 @@ class LogContainer(BaseQuery):
     __name__ = "logs"
     def create(self, roi, code, ts, conf, device_id):
         l = self.__model__(device_id, ts, roi, code, conf)
+        Alarms = AlarmContainer(self.request)
+        
+        alarms = Alarms.list()
+        for a in alarms:
+            e = a.test(l)
+            if e:
+                l.events.add(e)
         self._request.db.add(l)
         return l
 
@@ -220,12 +243,6 @@ class UserContainer(BaseQuery):
 class ProfileContainer(BaseQuery):
     __model__ = m.Profile
     __name__ = "profiles"
-
-    def create(self, name):
-        p = self.__model__()
-        p.name = name
-        self._request.db.add(p)
-        return p
 
 
 class APIRoot(BaseResource):

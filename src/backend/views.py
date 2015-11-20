@@ -10,7 +10,7 @@ from . import resource
 from . import schemas
 import colander
 from .mailers import send_email
-from models import Device, User, Profile, Plate, Alarm, Log
+from models import Device, User, Profile, Plate, Alarm, Log, AlarmClass
 from zope.sqlalchemy import mark_changed
 import datetime
 import logging
@@ -88,6 +88,29 @@ class RestView(object):
         return Response(
             status='202 Accepted',
             content_type='application/json; charset=UTF-8')
+
+        
+class AlarmClassView(RestView):
+    __serializer__ = schemas.AlarmClassSchema
+    @view_config(request_method='POST', context = resource.AlarmClassContainer, permission="add")
+    def create(self):
+        return self.__create__()
+
+    @view_config(request_method='GET', context = resource.AlarmClassContainer)
+    def list(self):
+        return self.__list__()
+
+    @view_config(request_method='GET', context=AlarmClass)
+    def read(self):
+        return sel.__read__() 
+
+    @view_config(request_method='PUT', context=AlarmClass)
+    def update(self):
+        return self.__update__()
+
+    @view_config(request_method='DELETE', context=AlarmClass)
+    def delete(self):
+        return self.__delete__()
 
 
 
@@ -284,6 +307,18 @@ class AlarmView(RestView):
             status='202 Accepted',
             content_type='application/json; charset=UTF-8')
 
+    @view_config(name='classes', request_method='GET', context=resource.AlarmClassContainer)
+    def classes(self):
+        c = self.context.list()
+        if c is None:
+            raise HTTPNotFound()
+        else:
+            elements = []
+            for e in c:
+                elements.append(self.serializer().serialize(self.serializer().dictify(e)))
+            return elements
+
+
     @view_config(request_method='DELETE', context=Alarm)
     def delete(self):
         return self.__delete__()
@@ -395,7 +430,7 @@ class LogNamespace(BaseNamespace, ClientRoomsMixin):
             user_id = 0
             log.info('connecting anonymous')
         self.register(str(user_id))
-    
+
         def senddata():
             user_id = int(self.session['user_id'])
             lastrefresh = {}

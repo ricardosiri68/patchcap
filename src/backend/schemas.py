@@ -2,8 +2,13 @@
 colander schemas for validation
 """
 import colander
-from models import Device, User, Profile, Log, Plate, Alarm
+from models import Device, User, Profile, Log, Plate, Alarm, AlarmClass
 from colanderalchemy import SQLAlchemySchemaNode
+
+
+AlarmClassSchema = SQLAlchemySchemaNode(AlarmClass,
+                    excludes=['updated_on','created_on', 'updated_by','alarms'])
+
 
 class LoginSchema(colander.MappingSchema):
     username = colander.SchemaNode(colander.String())
@@ -26,6 +31,7 @@ PlateSchema = SQLAlchemySchemaNode(Plate,
 
 LogSchema = SQLAlchemySchemaNode(Log,
                     overrides={'roi':{'missing': None, 'default': None},
+                               'events':{'missing': None, 'default': None},
                                'correction':{'missing': None, 'default': None},
                                'conf':{'missing': None, 'default': None},
                                'code':{'missing': None, 'default': None},
