@@ -25,7 +25,7 @@ class MyFactory(GstRtspServer.RTSPMediaFactory):
     def __init__(self, fmt, name):
         self.fmt = fmt
         self.name = name
-        GstRtspServer.RTSPMediaFactory.__init__(self)
+        super(MyFactory, self).__init__()
         self.set_shared(True)
         self.vaapi_enabled = Gst.ElementFactory.make('vaapipostproc', None)
 
